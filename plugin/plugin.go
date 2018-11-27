@@ -1,4 +1,4 @@
-package plugin
+package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/cloudfoundry/cpu-entitlement-plugin/logstreamer"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
 )
 
 type CPUEntitlementPlugin struct{}

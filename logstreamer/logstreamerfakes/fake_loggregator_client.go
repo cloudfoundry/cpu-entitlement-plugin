@@ -2,20 +2,20 @@
 package logstreamerfakes
 
 import (
-	"context"
-	"sync"
+	context "context"
+	sync "sync"
 
-	"code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"github.com/cloudfoundry/cpu-entitlement-plugin/logstreamer"
+	logstreamer "code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
+	loggregator "code.cloudfoundry.org/go-loggregator"
+	loggregator_v2 "code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
 
 type FakeLoggregatorClient struct {
-	StreamStub        func(ctx context.Context, req *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream
+	StreamStub        func(context.Context, *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream
 	streamMutex       sync.RWMutex
 	streamArgsForCall []struct {
-		ctx context.Context
-		req *loggregator_v2.EgressBatchRequest
+		arg1 context.Context
+		arg2 *loggregator_v2.EgressBatchRequest
 	}
 	streamReturns struct {
 		result1 loggregator.EnvelopeStream
@@ -27,22 +27,23 @@ type FakeLoggregatorClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeLoggregatorClient) Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream {
+func (fake *FakeLoggregatorClient) Stream(arg1 context.Context, arg2 *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream {
 	fake.streamMutex.Lock()
 	ret, specificReturn := fake.streamReturnsOnCall[len(fake.streamArgsForCall)]
 	fake.streamArgsForCall = append(fake.streamArgsForCall, struct {
-		ctx context.Context
-		req *loggregator_v2.EgressBatchRequest
-	}{ctx, req})
-	fake.recordInvocation("Stream", []interface{}{ctx, req})
+		arg1 context.Context
+		arg2 *loggregator_v2.EgressBatchRequest
+	}{arg1, arg2})
+	fake.recordInvocation("Stream", []interface{}{arg1, arg2})
 	fake.streamMutex.Unlock()
 	if fake.StreamStub != nil {
-		return fake.StreamStub(ctx, req)
+		return fake.StreamStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.streamReturns.result1
+	fakeReturns := fake.streamReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeLoggregatorClient) StreamCallCount() int {
@@ -51,13 +52,22 @@ func (fake *FakeLoggregatorClient) StreamCallCount() int {
 	return len(fake.streamArgsForCall)
 }
 
+func (fake *FakeLoggregatorClient) StreamCalls(stub func(context.Context, *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream) {
+	fake.streamMutex.Lock()
+	defer fake.streamMutex.Unlock()
+	fake.StreamStub = stub
+}
+
 func (fake *FakeLoggregatorClient) StreamArgsForCall(i int) (context.Context, *loggregator_v2.EgressBatchRequest) {
 	fake.streamMutex.RLock()
 	defer fake.streamMutex.RUnlock()
-	return fake.streamArgsForCall[i].ctx, fake.streamArgsForCall[i].req
+	argsForCall := fake.streamArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeLoggregatorClient) StreamReturns(result1 loggregator.EnvelopeStream) {
+	fake.streamMutex.Lock()
+	defer fake.streamMutex.Unlock()
 	fake.StreamStub = nil
 	fake.streamReturns = struct {
 		result1 loggregator.EnvelopeStream
@@ -65,6 +75,8 @@ func (fake *FakeLoggregatorClient) StreamReturns(result1 loggregator.EnvelopeStr
 }
 
 func (fake *FakeLoggregatorClient) StreamReturnsOnCall(i int, result1 loggregator.EnvelopeStream) {
+	fake.streamMutex.Lock()
+	defer fake.streamMutex.Unlock()
 	fake.StreamStub = nil
 	if fake.streamReturnsOnCall == nil {
 		fake.streamReturnsOnCall = make(map[int]struct {

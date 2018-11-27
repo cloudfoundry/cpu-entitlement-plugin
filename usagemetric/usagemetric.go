@@ -1,4 +1,4 @@
-package usagemetric
+package usagemetric // import "code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 
 import "code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 

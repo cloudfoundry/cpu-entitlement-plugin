@@ -1,4 +1,4 @@
-package logstreamer
+package logstreamer // import "code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
-	"github.com/cloudfoundry/cpu-entitlement-plugin/usagemetric"
 )
 
 type LogStreamer struct {

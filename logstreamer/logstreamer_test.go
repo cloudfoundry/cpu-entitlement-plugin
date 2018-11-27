@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/cpu-entitlement-plugin/logstreamer"
-	"github.com/cloudfoundry/cpu-entitlement-plugin/logstreamer/logstreamerfakes"
-	"github.com/cloudfoundry/cpu-entitlement-plugin/usagemetric"
+	. "code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer/logstreamerfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 )
 
 var _ = Describe("Logstreamer", func() {

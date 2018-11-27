@@ -1,4 +1,4 @@
-package plugin
+package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 
 import "code.cloudfoundry.org/cli/plugin"
 

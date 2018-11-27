@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/cloudfoundry/cpu-entitlement-plugin/usagemetric"
+	. "code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 )
 
 var _ = Describe("Usagemetric", func() {
