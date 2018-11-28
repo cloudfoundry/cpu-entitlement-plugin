@@ -46,7 +46,7 @@ func (s LogStreamer) Stream(appGuid string) chan usagemetric.UsageMetric {
 func streamToUsageChan(stream loggregator.EnvelopeStream, usageMetricsStream chan<- usagemetric.UsageMetric) {
 	for {
 		for _, envelope := range stream() {
-			usageMetric, ok := usagemetric.FromGaugeMetric(envelope.GetGauge().GetMetrics())
+			usageMetric, ok := usagemetric.FromGaugeMetric(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
 			if !ok {
 				continue
 			}

@@ -29,14 +29,14 @@ var _ = Describe("Logstreamer", func() {
 		currentBatchIndex := 0
 		batches := [][]*loggregator_v2.Envelope{
 			{
-				MetricEnvelope(appGuid, Metric{Usage: 1000, Entitlement: 5000, Age: 10000}),
-				MetricEnvelope(appGuid, Metric{Usage: 2000, Entitlement: 6000, Age: 11000}),
-				MetricEnvelope(appGuid, Metric{Usage: 3000, Entitlement: 7000, Age: 12000}),
+				MetricEnvelope(appGuid, "0", Metric{Usage: 1000, Entitlement: 5000, Age: 10000}),
+				MetricEnvelope(appGuid, "1", Metric{Usage: 2000, Entitlement: 6000, Age: 11000}),
+				MetricEnvelope(appGuid, "0", Metric{Usage: 3000, Entitlement: 7000, Age: 12000}),
 			},
 			{
 				OtherEnvelope(appGuid),
-				MetricEnvelope(appGuid, Metric{Usage: 4000, Entitlement: 8000, Age: 13000}),
-				MetricEnvelope(appGuid, Metric{Usage: 5000, Entitlement: 9000, Age: 14000}),
+				MetricEnvelope(appGuid, "1", Metric{Usage: 4000, Entitlement: 8000, Age: 13000}),
+				MetricEnvelope(appGuid, "0", Metric{Usage: 5000, Entitlement: 9000, Age: 14000}),
 			},
 		}
 
@@ -78,11 +78,11 @@ var _ = Describe("Logstreamer", func() {
 		Consistently(metrics).ShouldNot(Receive())
 
 		Expect(receivedMetrics).To(ConsistOf(
-			usagemetric.UsageMetric{AbsoluteUsage: 1000, AbsoluteEntitlement: 5000, ContainerAge: 10000},
-			usagemetric.UsageMetric{AbsoluteUsage: 2000, AbsoluteEntitlement: 6000, ContainerAge: 11000},
-			usagemetric.UsageMetric{AbsoluteUsage: 3000, AbsoluteEntitlement: 7000, ContainerAge: 12000},
-			usagemetric.UsageMetric{AbsoluteUsage: 4000, AbsoluteEntitlement: 8000, ContainerAge: 13000},
-			usagemetric.UsageMetric{AbsoluteUsage: 5000, AbsoluteEntitlement: 9000, ContainerAge: 14000},
+			usagemetric.UsageMetric{InstanceId: "0", AbsoluteUsage: 1000, AbsoluteEntitlement: 5000, ContainerAge: 10000},
+			usagemetric.UsageMetric{InstanceId: "1", AbsoluteUsage: 2000, AbsoluteEntitlement: 6000, ContainerAge: 11000},
+			usagemetric.UsageMetric{InstanceId: "0", AbsoluteUsage: 3000, AbsoluteEntitlement: 7000, ContainerAge: 12000},
+			usagemetric.UsageMetric{InstanceId: "1", AbsoluteUsage: 4000, AbsoluteEntitlement: 8000, ContainerAge: 13000},
+			usagemetric.UsageMetric{InstanceId: "0", AbsoluteUsage: 5000, AbsoluteEntitlement: 9000, ContainerAge: 14000},
 		))
 	})
 })
@@ -93,9 +93,10 @@ type Metric struct {
 	Age         float64
 }
 
-func MetricEnvelope(appGuid string, metric Metric) *loggregator_v2.Envelope {
+func MetricEnvelope(appGuid, instanceId string, metric Metric) *loggregator_v2.Envelope {
 	return &loggregator_v2.Envelope{
-		SourceId: appGuid,
+		SourceId:   appGuid,
+		InstanceId: instanceId,
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{

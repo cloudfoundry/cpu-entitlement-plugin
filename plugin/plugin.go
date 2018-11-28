@@ -56,8 +56,9 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	logStreamer := logstreamer.New(logStreamURL, token)
 
 	usageMetricsStream := logStreamer.Stream(app.Guid)
+	ui.Say("CPU usage for %s:\n", appName)
 	for usageMetric := range usageMetricsStream {
-		ui.Say("CPU usage for %s: %.2f%%", appName, usageMetric.CPUUsage()*100)
+		ui.Say("#%-2s: %.2f%%", usageMetric.InstanceId, usageMetric.CPUUsage()*100)
 	}
 }
 

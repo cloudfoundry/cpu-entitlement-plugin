@@ -25,12 +25,17 @@ var _ = Describe("Usagemetric", func() {
 		})
 
 		JustBeforeEach(func() {
-			usageMetric, ok = FromGaugeMetric(gaugeValues)
+			usageMetric, ok = FromGaugeMetric("0", gaugeValues)
 		})
 
 		It("builds an UsageMetric from a gauge metric message map", func() {
 			Expect(ok).To(BeTrue())
-			Expect(usageMetric).To(Equal(UsageMetric{AbsoluteUsage: 1, AbsoluteEntitlement: 2, ContainerAge: 3}))
+			Expect(usageMetric).To(Equal(UsageMetric{
+				InstanceId:          "0",
+				AbsoluteUsage:       1,
+				AbsoluteEntitlement: 2,
+				ContainerAge:        3,
+			}))
 		})
 
 		Context("when the gauce metric is missing the absolute_usage", func() {
