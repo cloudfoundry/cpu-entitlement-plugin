@@ -19,6 +19,10 @@ func New() *CPUEntitlementPlugin {
 }
 
 func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
+	if args[0] == "CLI-MESSAGE-UNINSTALL" {
+		os.Exit(0)
+	}
+
 	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
 
