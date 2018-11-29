@@ -2,6 +2,7 @@ package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	"github.com/fatih/color"
 )
 
 type CPUEntitlementPlugin struct{}
@@ -57,10 +59,18 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	logStreamer := logstreamer.New(logStreamURL, tokenGetter)
 
 	usageMetricsStream := logStreamer.Stream(app.Guid)
-	ui.Say("CPU usage for %s:\n", appName)
+	ui.Say("CPU entitlement usage by instance for %s...\n", terminal.EntityNameColor(appName))
+	table := ui.Table([]string{bold("Instance ID"), bold("Usage")})
+	table.Print()
+
 	for usageMetric := range usageMetricsStream {
-		ui.Say("#%-2s: %.2f%%", usageMetric.InstanceId, usageMetric.CPUUsage()*100)
+		table.Add(fmt.Sprintf("#%s", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
+		table.Print()
 	}
+}
+
+func bold(message string) string {
+	return terminal.Colorize(message, color.Bold)
 }
 
 func buildLogStreamURL(dopplerURL string) (string, error) {
