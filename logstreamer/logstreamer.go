@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
@@ -20,12 +21,12 @@ type LoggregatorClient interface {
 	Stream(ctx context.Context, req *loggregator_v2.EgressBatchRequest) loggregator.EnvelopeStream
 }
 
-func New(logStreamURL, token string) LogStreamer {
+func New(logStreamURL string, tokenGetter *token.TokenGetter) LogStreamer {
 	return LogStreamer{
 		client: loggregator.NewRLPGatewayClient(
 			logStreamURL,
 			loggregator.WithRLPGatewayClientLogger(log.New(os.Stderr, "", log.LstdFlags)),
-			loggregator.WithRLPGatewayHTTPClient(authenticatedBy(token)),
+			loggregator.WithRLPGatewayHTTPClient(authenticatedBy(tokenGetter)),
 		),
 	}
 }
@@ -67,15 +68,19 @@ func streamRequest(sourceID string) *loggregator_v2.EgressBatchRequest {
 	}
 }
 
-func authenticatedBy(token string) *authClient {
-	return &authClient{token: token}
+func authenticatedBy(tokenGetter *token.TokenGetter) *authClient {
+	return &authClient{tokenGetter: tokenGetter}
 }
 
 type authClient struct {
-	token string
+	tokenGetter *token.TokenGetter
 }
 
 func (a *authClient) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", a.token)
+	t, err := a.tokenGetter.Token()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", t)
 	return http.DefaultClient.Do(req)
 }

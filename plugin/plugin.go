@@ -5,11 +5,13 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 )
 
 type CPUEntitlementPlugin struct{}
@@ -39,12 +41,6 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	token, err := cli.AccessToken()
-	if err != nil {
-		ui.Failed(err.Error())
-		os.Exit(1)
-	}
-
 	dopplerURL, err := cli.DopplerEndpoint()
 	if err != nil {
 		ui.Failed(err.Error())
@@ -57,7 +53,8 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	logStreamer := logstreamer.New(logStreamURL, token)
+	tokenGetter := token.NewTokenGetter(cli.AccessToken, 9*time.Minute)
+	logStreamer := logstreamer.New(logStreamURL, tokenGetter)
 
 	usageMetricsStream := logStreamer.Stream(app.Guid)
 	ui.Say("CPU usage for %s:\n", appName)
