@@ -55,14 +55,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0d61f3720450c2da8714304e943442ca8289f31835d1e017175337d81e404dd1"
+  digest = "1:32d94202dd2f196df6638a94df2e814a63cca022a7f84c2d9871342d4367303b"
   name = "code.cloudfoundry.org/go-loggregator"
   packages = [
     ".",
     "rpc/loggregator_v2",
   ]
   pruneopts = "UT"
-  revision = "ac5108573974ebe61bf4aa346f4b2692545259ac"
+  revision = "7eacadc7c6c75fbf98bf9ed618e7d88fbb67ea44"
 
 [[projects]]
   branch = "master"
