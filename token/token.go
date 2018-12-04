@@ -1,7 +1,10 @@
 package token
 
 import (
-	"sync"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -9,40 +12,29 @@ import (
 type GetToken func() (string, error)
 
 type TokenGetter struct {
-	getToken     GetToken
-	expired      bool
-	currentToken string
-	mutex        *sync.Mutex
+	getToken            GetToken
+	currentToken        string
+	tokenExpirationTime time.Time
 }
 
-func NewTokenGetter(getToken GetToken, tokenLifetime time.Duration) *TokenGetter {
-	ticker := time.NewTicker(tokenLifetime)
+func NewTokenGetter(getToken GetToken) *TokenGetter {
 	tokenGetter := &TokenGetter{
-		getToken: getToken,
-		expired:  true,
-		mutex:    &sync.Mutex{},
+		getToken:            getToken,
+		tokenExpirationTime: time.Now(),
 	}
-	go tokenGetter.expireToken(ticker)
 
 	return tokenGetter
 }
 
 func (t *TokenGetter) Token() (string, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	if t.expired {
+	if t.tokenExpired() {
 		return t.refreshToken()
 	}
 	return t.currentToken, nil
 }
 
-func (t *TokenGetter) expireToken(ticker *time.Ticker) {
-	for range ticker.C {
-		t.mutex.Lock()
-		t.expired = true
-		t.mutex.Unlock()
-	}
+func (t *TokenGetter) tokenExpired() bool {
+	return time.Now().After(t.tokenExpirationTime)
 }
 
 func (t *TokenGetter) refreshToken() (string, error) {
@@ -52,6 +44,31 @@ func (t *TokenGetter) refreshToken() (string, error) {
 	}
 
 	t.currentToken = token
-	t.expired = false
+
+	t.tokenExpirationTime, err = extractExpirationTimeFromToken(token)
+	if err != nil {
+		return "", err
+	}
 	return token, nil
+}
+
+type tokenJson struct {
+	ExpTime int64 `json:"exp"`
+}
+
+func extractExpirationTimeFromToken(token string) (time.Time, error) {
+	encodedMetadata := strings.Split(token, ".")[1]
+
+	decodedMetadata, err := base64.RawURLEncoding.DecodeString(encodedMetadata)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to decode token from base64: %s", err.Error())
+	}
+
+	var metadata tokenJson
+	err = json.Unmarshal(decodedMetadata, &metadata)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid token: %s", err.Error())
+	}
+
+	return time.Unix(metadata.ExpTime, 0), nil
 }

@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
@@ -55,7 +54,7 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	tokenGetter := token.NewTokenGetter(cli.AccessToken, 9*time.Minute)
+	tokenGetter := token.NewTokenGetter(cli.AccessToken)
 	logStreamer := logstreamer.New(logStreamURL, tokenGetter)
 
 	usageMetricsStream := logStreamer.Stream(app.Guid)
