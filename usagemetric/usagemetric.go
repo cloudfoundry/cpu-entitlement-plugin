@@ -1,11 +1,15 @@
 package usagemetric // import "code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 
-import "code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+import (
+	"strconv"
+
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+)
 
 type gaugeMetric map[string]*loggregator_v2.GaugeValue
 
 type UsageMetric struct {
-	InstanceId          string
+	InstanceId          int
 	AbsoluteUsage       float64
 	AbsoluteEntitlement float64
 	ContainerAge        float64
@@ -28,8 +32,13 @@ func FromGaugeMetric(instanceId string, metric gaugeMetric) (UsageMetric, bool) 
 		return UsageMetric{}, false
 	}
 
+	instanceIndex, err := strconv.Atoi(instanceId)
+	if err != nil {
+		return UsageMetric{}, false
+	}
+
 	return UsageMetric{
-		InstanceId:          instanceId,
+		InstanceId:          instanceIndex,
 		AbsoluteUsage:       absoluteUsage.Value,
 		AbsoluteEntitlement: absoluteEntitlement.Value,
 		ContainerAge:        containerAge.Value,

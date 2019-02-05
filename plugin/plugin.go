@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/logstreamer"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"github.com/fatih/color"
 )
@@ -48,31 +48,35 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	logStreamURL, err := buildLogStreamURL(dopplerURL)
+	logCacheURL, err := buildLogCacheURL(dopplerURL)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)
 	}
 
 	tokenGetter := token.NewTokenGetter(cli.AccessToken)
-	logStreamer := logstreamer.New(logStreamURL, tokenGetter)
+	metricFetcher := metricfetcher.New(logCacheURL, tokenGetter)
 
-	usageMetricsStream := logStreamer.Stream(app.Guid)
-	ui.Say("CPU entitlement usage by instance for %s...\n", terminal.EntityNameColor(appName))
-	table := ui.Table([]string{bold("Instance ID"), bold("Usage")})
-	table.Print()
-
-	for usageMetric := range usageMetricsStream {
-		table.Add(fmt.Sprintf("#%s", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
-		table.Print()
+	usageMetrics, err := metricFetcher.FetchLatest(app.Guid, app.InstanceCount)
+	if err != nil {
+		ui.Failed(err.Error())
+		os.Exit(1)
 	}
+
+	ui.Say("CPU entitlement usage by instance for %s:\n", terminal.EntityNameColor(appName))
+
+	table := ui.Table([]string{bold("Instance ID"), bold("Usage")})
+	for _, usageMetric := range usageMetrics {
+		table.Add(fmt.Sprintf("#%d", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
+	}
+	table.Print()
 }
 
 func bold(message string) string {
 	return terminal.Colorize(message, color.Bold)
 }
 
-func buildLogStreamURL(dopplerURL string) (string, error) {
+func buildLogCacheURL(dopplerURL string) (string, error) {
 	logStreamURL, err := url.Parse(dopplerURL)
 	if err != nil {
 		return "", err
@@ -86,7 +90,7 @@ func buildLogStreamURL(dopplerURL string) (string, error) {
 	}
 
 	logStreamURL.Scheme = "http"
-	logStreamURL.Host = "log-stream" + match[1]
+	logStreamURL.Host = "log-cache" + match[1]
 
 	return logStreamURL.String(), nil
 }

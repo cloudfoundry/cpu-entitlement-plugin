@@ -1,4 +1,4 @@
-package logstreamer_test
+package metricfetcher_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestLogstreamer(t *testing.T) {
+func TestMetricfetcher(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Logstreamer Suite")
+	RunSpecs(t, "Metricfetcher Suite")
 }

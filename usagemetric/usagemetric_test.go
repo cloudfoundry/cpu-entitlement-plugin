@@ -31,7 +31,7 @@ var _ = Describe("Usagemetric", func() {
 		It("builds an UsageMetric from a gauge metric message map", func() {
 			Expect(ok).To(BeTrue())
 			Expect(usageMetric).To(Equal(UsageMetric{
-				InstanceId:          "0",
+				InstanceId:          0,
 				AbsoluteUsage:       1,
 				AbsoluteEntitlement: 2,
 				ContainerAge:        3,

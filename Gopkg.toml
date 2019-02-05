@@ -32,8 +32,8 @@ required = ["gopkg.in/fsnotify.v1"]
   name = "code.cloudfoundry.org/cli"
 
 [[constraint]]
-  branch = "master"
-  name = "code.cloudfoundry.org/go-loggregator"
+  version = "2.1.0"
+  name = "code.cloudfoundry.org/log-cache"
 
 [[constraint]]
   branch = "master"

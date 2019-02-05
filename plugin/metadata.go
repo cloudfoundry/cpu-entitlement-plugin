@@ -14,7 +14,7 @@ func (p *CPUEntitlementPlugin) GetMetadata() plugin.PluginMetadata {
 			{
 				Name:     "cpu-entitlement",
 				Alias:    "cpu",
-				HelpText: "See cpu entitlement per app",
+				HelpText: "See cpu usage per app",
 				UsageDetails: plugin.Usage{
 					Usage: "cf cpu-entitlement APP_NAME",
 				},
