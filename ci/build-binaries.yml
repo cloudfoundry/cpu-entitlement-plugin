@@ -12,7 +12,7 @@ inputs:
   path: src/code.cloudfoundry.org/cpu-entitlement-plugin
 - name: version
 
-output:
+outputs:
 - name: plugin-binaries
 
 run:
