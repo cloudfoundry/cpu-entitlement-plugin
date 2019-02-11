@@ -10,6 +10,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"github.com/fatih/color"
@@ -36,7 +37,7 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	appName := args[1]
 
-	app, err := cli.GetApp(appName)
+	info, err := getCFInfo(cli, appName)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)
@@ -57,19 +58,55 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	tokenGetter := token.NewTokenGetter(cli.AccessToken)
 	metricFetcher := metricfetcher.New(logCacheURL, tokenGetter)
 
-	usageMetrics, err := metricFetcher.FetchLatest(app.Guid, app.InstanceCount)
+	usageMetrics, err := metricFetcher.FetchLatest(info.app.Guid, info.app.InstanceCount)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)
 	}
 
-	ui.Say("CPU entitlement usage by instance for %s:\n", terminal.EntityNameColor(appName))
+	ui.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n", terminal.EntityNameColor(appName), terminal.EntityNameColor(info.org), terminal.EntityNameColor(info.space), terminal.EntityNameColor(info.username))
 
-	table := ui.Table([]string{bold("Instance ID"), bold("Usage")})
+	table := ui.Table([]string{"", bold("usage")})
 	for _, usageMetric := range usageMetrics {
 		table.Add(fmt.Sprintf("#%d", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
 	}
 	table.Print()
+}
+
+type cfInfo struct {
+	app      plugin_models.GetAppModel
+	username string
+	org      string
+	space    string
+}
+
+func getCFInfo(cli plugin.CliConnection, appName string) (cfInfo, error) {
+	app, err := cli.GetApp(appName)
+	if err != nil {
+		return cfInfo{}, err
+	}
+
+	user, err := cli.Username()
+	if err != nil {
+		return cfInfo{}, err
+	}
+
+	org, err := cli.GetCurrentOrg()
+	if err != nil {
+		return cfInfo{}, err
+	}
+
+	space, err := cli.GetCurrentSpace()
+	if err != nil {
+		return cfInfo{}, err
+	}
+
+	return cfInfo{
+		app:      app,
+		username: user,
+		org:      org.Name,
+		space:    space.Name,
+	}, nil
 }
 
 func bold(message string) string {
