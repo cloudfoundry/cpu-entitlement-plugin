@@ -29,6 +29,7 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
+	ui.Warn("Note: This feature is experimental.")
 
 	if len(args) != 2 {
 		ui.Failed("Usage: `cf cpu-entitlement APP_NAME`")

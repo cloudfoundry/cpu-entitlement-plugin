@@ -1,4 +1,4 @@
-# Cloud Foundry CPU Entitlement Plugin
+# Cloud Foundry CPU Entitlement Plugin (EXPERIMENTAL)
 
 Examine the CPU usage of Cloud Foundry applications, relative to their CPU
 entitlement.
