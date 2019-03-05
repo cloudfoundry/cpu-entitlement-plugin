@@ -41,10 +41,6 @@ memory to CPU is determined by the platform operator.
 This plugin allows Cloud Foundry application developers to make better decisions
 about scaling applications and initial resource allocation of applications.
 
-## Can I use this plugin on my Cloud Foundry?
-
-???
-
 ### Will my application be throttled?
 
 Current versions of Cloud Foundry allow applications to use more CPU than they
