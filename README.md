@@ -22,12 +22,16 @@ $ cf cpu-entitlement $APP_NAME
 
 ## Building
 
+_Note: Dependencies for cpu-entitlement-plugin are managed using `go modules`. You do not need
+to clone this repo to your GOPATH. Please ensure you have go version >=1.11 installed._
+
 To install the latest version:
 
 ```bash
 $ cd cpu-entitlement-plugin
-$ make
 $ make install
+
+# for more options run: make help
 ```
 
 ## What is the cpu-entitlement-plugin?

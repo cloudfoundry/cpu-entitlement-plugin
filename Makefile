@@ -2,13 +2,13 @@
 
 help:
 	@echo 'Help:'
-	@echo '  build ........................ builds the cpu entitlement binary'
-	@echo '  install ...................... builds and installs the cpu entitlement binary'
+	@echo '  build ........................ build the cpu entitlement binary'
+	@echo '  install ...................... build and install the cpu entitlement binary'
 	@echo '  test ......................... run tests (such as they are)'
 	@echo '  help ......................... show help menu'
 
 build:
-	go build
+	go build -mod vendor
 
 test:
 	ginkgo -r --race
