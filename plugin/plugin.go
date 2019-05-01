@@ -29,7 +29,6 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
-	ui.Warn("Note: This feature is experimental.")
 
 	if len(args) != 2 {
 		ui.Failed("Usage: `cf cpu-entitlement APP_NAME`")
@@ -62,9 +61,11 @@ func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	usageMetrics, err := metricFetcher.FetchLatest(info.app.Guid, info.app.InstanceCount)
 	if err != nil {
 		ui.Failed(err.Error())
+		ui.Warn(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 		os.Exit(1)
 	}
 
+	ui.Warn("Note: This feature is experimental.")
 	ui.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n", terminal.EntityNameColor(appName), terminal.EntityNameColor(info.org), terminal.EntityNameColor(info.space), terminal.EntityNameColor(info.username))
 
 	table := ui.Table([]string{"", bold("usage")})
