@@ -9,12 +9,11 @@ image_resource:
 
 inputs:
 - name: cpu-entitlement-plugin
-  path: src/code.cloudfoundry.org/cpu-entitlement-plugin
 - name: version
 
 outputs:
 - name: plugin-binaries
 
 run:
-  path: src/code.cloudfoundry.org/cpu-entitlement-plugin/ci/build-binaries.sh
+  path: cpu-entitlement-plugin/ci/build-binaries.sh
 
