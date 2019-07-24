@@ -2,7 +2,6 @@ package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
 	"regexp"
@@ -12,6 +11,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"github.com/fatih/color"
 )
@@ -66,13 +66,9 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	}
 
 	ui.Warn("Note: This feature is experimental.")
-	ui.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n", terminal.EntityNameColor(appName), terminal.EntityNameColor(info.Org), terminal.EntityNameColor(info.Space), terminal.EntityNameColor(info.Username))
 
-	table := ui.Table([]string{"", bold("usage")})
-	for _, usageMetric := range usageMetrics {
-		table.Add(fmt.Sprintf("#%d", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
-	}
-	table.Print()
+	metricsRenderer := output.NewRenderer(ui)
+	metricsRenderer.ShowMetrics(info, usageMetrics)
 }
 
 func bold(message string) string {
