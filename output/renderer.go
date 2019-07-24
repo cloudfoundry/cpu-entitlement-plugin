@@ -10,21 +10,34 @@ import (
 )
 
 type Renderer struct {
-	ui terminal.UI
+	display Display
 }
 
-func NewRenderer(ui terminal.UI) Renderer {
-	return Renderer{ui: ui}
+//go:generate counterfeiter . Display
+
+type Display interface {
+	ShowMessage(message string, values ...interface{})
+	ShowTable(headers []string, rows [][]string)
+}
+
+func NewRenderer(display Display) Renderer {
+	return Renderer{display: display}
 }
 
 func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.UsageMetric) {
-	r.ui.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n", terminal.EntityNameColor(info.App.Name), terminal.EntityNameColor(info.Org), terminal.EntityNameColor(info.Space), terminal.EntityNameColor(info.Username))
+	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
+		terminal.EntityNameColor(info.App.Name),
+		terminal.EntityNameColor(info.Org),
+		terminal.EntityNameColor(info.Space),
+		terminal.EntityNameColor(info.Username),
+	)
 
-	table := r.ui.Table([]string{"", bold("usage")})
-	for _, usageMetric := range metrics {
-		table.Add(fmt.Sprintf("#%d", usageMetric.InstanceId), fmt.Sprintf("%.2f%%", usageMetric.CPUUsage()*100))
+	var rows [][]string
+	for _, metric := range metrics {
+		rows = append(rows, []string{fmt.Sprintf("#%d", metric.InstanceId), fmt.Sprintf("%.2f%%", metric.CPUUsage()*100)})
 	}
-	table.Print()
+
+	r.display.ShowTable([]string{"", bold("usage")}, rows)
 }
 
 func bold(message string) string {

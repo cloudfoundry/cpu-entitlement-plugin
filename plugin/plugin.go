@@ -67,7 +67,8 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	ui.Warn("Note: This feature is experimental.")
 
-	metricsRenderer := output.NewRenderer(ui)
+	display := output.NewTerminalDisplay(ui)
+	metricsRenderer := output.NewRenderer(display)
 	metricsRenderer.ShowMetrics(info, usageMetrics)
 }
 
