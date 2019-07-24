@@ -33,11 +33,25 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.Usa
 	)
 
 	var rows [][]string
+
+	overentitled := false
 	for _, metric := range metrics {
-		rows = append(rows, []string{fmt.Sprintf("#%d", metric.InstanceId), fmt.Sprintf("%.2f%%", metric.CPUUsage()*100)})
+		instanceId := fmt.Sprintf("#%d", metric.InstanceId)
+		cpuUsage := fmt.Sprintf("%.2f%%", metric.CPUUsage()*100)
+		if metric.CPUUsage() > 1 {
+			overentitled = true
+			instanceId = terminal.Colorize(instanceId, color.FgRed)
+			cpuUsage = terminal.Colorize(cpuUsage, color.FgRed)
+		}
+
+		rows = append(rows, []string{instanceId, cpuUsage})
 	}
 
 	r.display.ShowTable([]string{"", bold("usage")}, rows)
+
+	if overentitled {
+		r.display.ShowMessage(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan))
+	}
 }
 
 func bold(message string) string {

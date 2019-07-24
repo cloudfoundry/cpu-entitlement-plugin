@@ -37,7 +37,7 @@ var _ = Describe("Renderer", func() {
 			},
 			{
 				InstanceId:          432,
-				AbsoluteUsage:       1.25,
+				AbsoluteUsage:       1.0,
 				AbsoluteEntitlement: 1.0,
 				ContainerAge:        3.0,
 			},
@@ -70,8 +70,30 @@ var _ = Describe("Renderer", func() {
 			Expect(headers).To(Equal([]string{"", terminal.Colorize("usage", color.Bold)}))
 			Expect(rows).To(Equal([][]string{
 				{"#123", "50.00%"},
-				{"#432", "125.00%"},
+				{"#432", "100.00%"},
 			}))
+		})
+
+		When("one of the instances is above entitlement", func() {
+			BeforeEach(func() {
+				usageMetrics[1].AbsoluteUsage = 1.5
+			})
+
+			It("highlights the overentitled row", func() {
+				Expect(display.ShowTableCallCount()).To(Equal(1))
+				headers, rows := display.ShowTableArgsForCall(0)
+				Expect(headers).To(Equal([]string{"", terminal.Colorize("usage", color.Bold)}))
+				Expect(rows).To(Equal([][]string{
+					{"#123", "50.00%"},
+					{terminal.Colorize("#432", color.FgRed), terminal.Colorize("150.00%", color.FgRed)},
+				}))
+			})
+
+			It("prints a tip about overentitlement", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+				message, _ := display.ShowMessageArgsForCall(1)
+				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+			})
 		})
 	})
 })
