@@ -18,11 +18,11 @@ import (
 
 type CPUEntitlementPlugin struct{}
 
-func New() *CPUEntitlementPlugin {
-	return &CPUEntitlementPlugin{}
+func New() CPUEntitlementPlugin {
+	return CPUEntitlementPlugin{}
 }
 
-func (p *CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
+func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	if args[0] == "CLI-MESSAGE-UNINSTALL" {
 		os.Exit(0)
 	}
