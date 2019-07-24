@@ -12,6 +12,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"github.com/fatih/color"
 )
@@ -30,18 +31,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
 
-	if len(args) != 2 {
-		ui.Failed("Usage: `cf cpu-entitlement APP_NAME`")
-		os.Exit(1)
-	}
-
-	appName := args[1]
-
-	info, err := metadata.GetCFAppInfo(cli, appName)
-	if err != nil {
-		ui.Failed(err.Error())
-		os.Exit(1)
-	}
+	ui.Warn("Note: This feature is experimental.")
 
 	dopplerURL, err := cli.DopplerEndpoint()
 	if err != nil {
@@ -55,21 +45,53 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
+	infoGetter := metadata.NewInfoGetter(cli)
 	tokenGetter := token.NewTokenGetter(cli.AccessToken)
 	metricFetcher := metricfetcher.New(logCacheURL, tokenGetter)
-
-	usageMetrics, err := metricFetcher.FetchLatest(info.App.Guid, info.App.InstanceCount)
-	if err != nil {
-		ui.Failed(err.Error())
-		ui.Warn(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
-		os.Exit(1)
-	}
-
-	ui.Warn("Note: This feature is experimental.")
-
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
-	metricsRenderer.ShowMetrics(info, usageMetrics)
+
+	runner := NewRunner(infoGetter, metricFetcher, metricsRenderer)
+	res := runner.Run(args)
+	if res.IsFailure() {
+		res.WriteTo(ui)
+		os.Exit(1)
+	}
+}
+
+type Runner struct {
+	infoGetter      metadata.InfoGetter
+	metricFetcher   metricfetcher.CachedUsageMetricFetcher
+	metricsRenderer output.Renderer
+}
+
+func NewRunner(infoGetter metadata.InfoGetter, metricFetcher metricfetcher.CachedUsageMetricFetcher, metricsRenderer output.Renderer) Runner {
+	return Runner{infoGetter: infoGetter, metricFetcher: metricFetcher, metricsRenderer: metricsRenderer}
+}
+
+func (r Runner) Run(args []string) result.Result {
+	if len(args) != 2 {
+		return result.Failure("Usage: `cf cpu-entitlement APP_NAME`")
+	}
+
+	appName := args[1]
+
+	info, err := r.infoGetter.GetCFAppInfo(appName)
+	if err != nil {
+		return result.FailureFromError(err)
+	}
+
+	usageMetrics, err := r.metricFetcher.FetchLatest(info.App.Guid, info.App.InstanceCount)
+	if err != nil {
+		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
+	}
+
+	err = r.metricsRenderer.ShowMetrics(info, usageMetrics)
+	if err != nil {
+		return result.FailureFromError(err)
+	}
+
+	return result.Success()
 }
 
 func bold(message string) string {

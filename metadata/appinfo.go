@@ -12,23 +12,31 @@ type CFAppInfo struct {
 	Space    string
 }
 
-func GetCFAppInfo(cli plugin.CliConnection, appName string) (CFAppInfo, error) {
-	app, err := cli.GetApp(appName)
+type InfoGetter struct {
+	cli plugin.CliConnection
+}
+
+func NewInfoGetter(cli plugin.CliConnection) InfoGetter {
+	return InfoGetter{cli: cli}
+}
+
+func (g InfoGetter) GetCFAppInfo(appName string) (CFAppInfo, error) {
+	app, err := g.cli.GetApp(appName)
 	if err != nil {
 		return CFAppInfo{}, err
 	}
 
-	user, err := cli.Username()
+	user, err := g.cli.Username()
 	if err != nil {
 		return CFAppInfo{}, err
 	}
 
-	org, err := cli.GetCurrentOrg()
+	org, err := g.cli.GetCurrentOrg()
 	if err != nil {
 		return CFAppInfo{}, err
 	}
 
-	space, err := cli.GetCurrentSpace()
+	space, err := g.cli.GetCurrentSpace()
 	if err != nil {
 		return CFAppInfo{}, err
 	}

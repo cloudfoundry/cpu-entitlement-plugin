@@ -17,14 +17,14 @@ type Renderer struct {
 
 type Display interface {
 	ShowMessage(message string, values ...interface{})
-	ShowTable(headers []string, rows [][]string)
+	ShowTable(headers []string, rows [][]string) error
 }
 
 func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.UsageMetric) {
+func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.UsageMetric) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(info.App.Name),
 		terminal.EntityNameColor(info.Org),
@@ -47,11 +47,16 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.Usa
 		rows = append(rows, []string{instanceId, cpuUsage})
 	}
 
-	r.display.ShowTable([]string{"", bold("usage")}, rows)
+	err := r.display.ShowTable([]string{"", bold("usage")}, rows)
+	if err != nil {
+		return err
+	}
 
 	if overentitled {
-		r.display.ShowMessage(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan))
+		r.display.ShowMessage(terminal.Colorize("\nTIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan))
 	}
+
+	return nil
 }
 
 func bold(message string) string {

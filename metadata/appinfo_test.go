@@ -13,13 +13,14 @@ import (
 var _ = Describe("CFAppInfo", func() {
 
 	var (
-		cli  *pluginfakes.FakeCliConnection
-		info CFAppInfo
-		err  error
+		infoGetter InfoGetter
+		cli        *pluginfakes.FakeCliConnection
+		info       CFAppInfo
+		err        error
 	)
 
 	JustBeforeEach(func() {
-		info, err = GetCFAppInfo(cli, "myapp")
+		info, err = infoGetter.GetCFAppInfo("myapp")
 	})
 
 	BeforeEach(func() {
@@ -29,6 +30,8 @@ var _ = Describe("CFAppInfo", func() {
 		cli.UsernameReturns("infouser", nil)
 		cli.GetCurrentOrgReturns(plugin_models.Organization{OrganizationFields: plugin_models.OrganizationFields{Name: "currentorg"}}, nil)
 		cli.GetCurrentSpaceReturns(plugin_models.Space{SpaceFields: plugin_models.SpaceFields{Name: "currentspace"}}, nil)
+
+		infoGetter = NewInfoGetter(cli)
 	})
 
 	It("gets the application info", func() {

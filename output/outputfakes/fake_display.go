@@ -14,11 +14,17 @@ type FakeDisplay struct {
 		arg1 string
 		arg2 []interface{}
 	}
-	ShowTableStub        func([]string, [][]string)
+	ShowTableStub        func([]string, [][]string) error
 	showTableMutex       sync.RWMutex
 	showTableArgsForCall []struct {
 		arg1 []string
 		arg2 [][]string
+	}
+	showTableReturns struct {
+		result1 error
+	}
+	showTableReturnsOnCall map[int]struct {
+		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -56,7 +62,7 @@ func (fake *FakeDisplay) ShowMessageArgsForCall(i int) (string, []interface{}) {
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeDisplay) ShowTable(arg1 []string, arg2 [][]string) {
+func (fake *FakeDisplay) ShowTable(arg1 []string, arg2 [][]string) error {
 	var arg1Copy []string
 	if arg1 != nil {
 		arg1Copy = make([]string, len(arg1))
@@ -68,6 +74,7 @@ func (fake *FakeDisplay) ShowTable(arg1 []string, arg2 [][]string) {
 		copy(arg2Copy, arg2)
 	}
 	fake.showTableMutex.Lock()
+	ret, specificReturn := fake.showTableReturnsOnCall[len(fake.showTableArgsForCall)]
 	fake.showTableArgsForCall = append(fake.showTableArgsForCall, struct {
 		arg1 []string
 		arg2 [][]string
@@ -75,8 +82,13 @@ func (fake *FakeDisplay) ShowTable(arg1 []string, arg2 [][]string) {
 	fake.recordInvocation("ShowTable", []interface{}{arg1Copy, arg2Copy})
 	fake.showTableMutex.Unlock()
 	if fake.ShowTableStub != nil {
-		fake.ShowTableStub(arg1, arg2)
+		return fake.ShowTableStub(arg1, arg2)
 	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.showTableReturns
+	return fakeReturns.result1
 }
 
 func (fake *FakeDisplay) ShowTableCallCount() int {
@@ -85,7 +97,7 @@ func (fake *FakeDisplay) ShowTableCallCount() int {
 	return len(fake.showTableArgsForCall)
 }
 
-func (fake *FakeDisplay) ShowTableCalls(stub func([]string, [][]string)) {
+func (fake *FakeDisplay) ShowTableCalls(stub func([]string, [][]string) error) {
 	fake.showTableMutex.Lock()
 	defer fake.showTableMutex.Unlock()
 	fake.ShowTableStub = stub
@@ -96,6 +108,29 @@ func (fake *FakeDisplay) ShowTableArgsForCall(i int) ([]string, [][]string) {
 	defer fake.showTableMutex.RUnlock()
 	argsForCall := fake.showTableArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeDisplay) ShowTableReturns(result1 error) {
+	fake.showTableMutex.Lock()
+	defer fake.showTableMutex.Unlock()
+	fake.ShowTableStub = nil
+	fake.showTableReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeDisplay) ShowTableReturnsOnCall(i int, result1 error) {
+	fake.showTableMutex.Lock()
+	defer fake.showTableMutex.Unlock()
+	fake.ShowTableStub = nil
+	if fake.showTableReturnsOnCall == nil {
+		fake.showTableReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.showTableReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeDisplay) Invocations() map[string][][]interface{} {

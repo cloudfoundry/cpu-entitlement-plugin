@@ -92,7 +92,7 @@ var _ = Describe("Renderer", func() {
 			It("prints a tip about overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+				Expect(message).To(Equal(terminal.Colorize("\nTIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
 			})
 		})
 	})
