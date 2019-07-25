@@ -37,8 +37,8 @@ var _ = Describe("Renderer", func() {
 			},
 			{
 				InstanceId:          432,
-				AbsoluteUsage:       1.0,
-				AbsoluteEntitlement: 1.0,
+				AbsoluteUsage:       1.5,
+				AbsoluteEntitlement: 2.0,
 				ContainerAge:        3.0,
 			},
 		}
@@ -70,19 +70,18 @@ var _ = Describe("Renderer", func() {
 			Expect(headers).To(Equal([]string{"", terminal.Colorize("usage", color.Bold)}))
 			Expect(rows).To(Equal([][]string{
 				{"#123", "50.00%"},
-				{"#432", "100.00%"},
+				{"#432", "75.00%"},
 			}))
 		})
 
-		When("one of the instances is above entitlement", func() {
+		When("one or more of the instances is above entitlement", func() {
 			BeforeEach(func() {
-				usageMetrics[1].AbsoluteUsage = 1.5
+				usageMetrics[1].AbsoluteUsage = 3.0
 			})
 
 			It("highlights the overentitled row", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
-				headers, rows := display.ShowTableArgsForCall(0)
-				Expect(headers).To(Equal([]string{"", terminal.Colorize("usage", color.Bold)}))
+				_, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
 					{"#123", "50.00%"},
 					{terminal.Colorize("#432", color.FgRed), terminal.Colorize("150.00%", color.FgRed)},
@@ -90,6 +89,51 @@ var _ = Describe("Renderer", func() {
 			})
 
 			It("prints a tip about overentitlement", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+				message, _ := display.ShowMessageArgsForCall(1)
+				Expect(message).To(Equal(terminal.Colorize("\nTIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+			})
+		})
+
+		When("one of the instances is between 95% and 100% entitlement", func() {
+			BeforeEach(func() {
+				usageMetrics[1].AbsoluteUsage = 1.92
+			})
+
+			It("highlights the near overentitled row", func() {
+				Expect(display.ShowTableCallCount()).To(Equal(1))
+				_, rows := display.ShowTableArgsForCall(0)
+				Expect(rows).To(Equal([][]string{
+					{"#123", "50.00%"},
+					{terminal.Colorize("#432", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
+				}))
+			})
+
+			It("prints a tip about near overentitlement", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+				message, _ := display.ShowMessageArgsForCall(1)
+				Expect(message).To(Equal(terminal.Colorize("\nTIP: Some instances are near their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+			})
+		})
+
+		When("one of the instances is between 95% and 100% entitlement, and one is over 100%", func() {
+			BeforeEach(func() {
+				usageMetrics[0].AbsoluteUsage = 1.92
+				usageMetrics[1].AbsoluteUsage = 3.0
+				usageMetrics = append(usageMetrics, usageMetrics[0])
+			})
+
+			It("highlights both rows in various colours", func() {
+				Expect(display.ShowTableCallCount()).To(Equal(1))
+				_, rows := display.ShowTableArgsForCall(0)
+				Expect(rows).To(Equal([][]string{
+					{terminal.Colorize("#123", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
+					{terminal.Colorize("#432", color.FgRed), terminal.Colorize("150.00%", color.FgRed)},
+					{terminal.Colorize("#123", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
+				}))
+			})
+
+			It("prints a tip about over overentitlement and not about near overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
 				Expect(message).To(Equal(terminal.Colorize("\nTIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))

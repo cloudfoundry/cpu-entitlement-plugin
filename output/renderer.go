@@ -34,14 +34,20 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []metrics.Usage) 
 
 	var rows [][]string
 
-	overentitled := false
+	var status string
 	for _, metric := range metrics {
 		instanceId := fmt.Sprintf("#%d", metric.InstanceId)
 		entitlementRatio := fmt.Sprintf("%.2f%%", metric.EntitlementRatio()*100)
 		if metric.EntitlementRatio() > 1 {
-			overentitled = true
+			status = "over"
 			instanceId = terminal.Colorize(instanceId, color.FgRed)
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
+		} else if metric.EntitlementRatio() > 0.95 {
+			if status == "" {
+				status = "near"
+			}
+			instanceId = terminal.Colorize(instanceId, color.FgYellow)
+			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgYellow)
 		}
 
 		rows = append(rows, []string{instanceId, entitlementRatio})
@@ -52,8 +58,8 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []metrics.Usage) 
 		return err
 	}
 
-	if overentitled {
-		r.display.ShowMessage(terminal.Colorize("\nTIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan))
+	if status != "" {
+		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("\nTIP: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", status), color.FgCyan))
 	}
 
 	return nil
