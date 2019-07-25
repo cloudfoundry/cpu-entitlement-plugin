@@ -5,10 +5,10 @@ import (
 
 	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin/pluginfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,7 +38,7 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricFetcher.FetchLatestReturns([]usagemetric.UsageMetric{
+		metricFetcher.FetchLatestReturns([]metrics.Usage{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,
@@ -77,7 +77,7 @@ var _ = Describe("Runner", func() {
 		Expect(instanceCount).To(Equal(3))
 
 		Expect(metricsRenderer.ShowMetricsCallCount()).To(Equal(1))
-		info, metrics := metricsRenderer.ShowMetricsArgsForCall(0)
+		info, usageMetrics := metricsRenderer.ShowMetricsArgsForCall(0)
 		Expect(info).To(Equal(metadata.CFAppInfo{
 			App: models.GetAppModel{
 				Guid:          "123",
@@ -85,7 +85,7 @@ var _ = Describe("Runner", func() {
 				InstanceCount: 3,
 			},
 		}))
-		Expect(metrics).To(Equal([]usagemetric.UsageMetric{
+		Expect(usageMetrics).To(Equal([]metrics.Usage{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,

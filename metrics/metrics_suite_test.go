@@ -1,4 +1,4 @@
-package metricfetcher_test
+package metrics_test
 
 import (
 	"testing"

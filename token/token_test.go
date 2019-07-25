@@ -10,14 +10,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token/tokenfakes"
 )
 
 var _ = Describe("Token", func() {
 	var (
 		fakeGetToken       *tokenfakes.FakeGetToken
-		tokenGetter        *TokenGetter
+		tokenGetter        *token.Getter
 		tenMinutesToken    string
 		twentyMinutesToken string
 	)
@@ -36,7 +36,7 @@ var _ = Describe("Token", func() {
 	})
 
 	JustBeforeEach(func() {
-		tokenGetter = NewTokenGetter(fakeGetToken.Spy)
+		tokenGetter = token.NewGetter(fakeGetToken.Spy)
 	})
 
 	It("returns a token", func() {

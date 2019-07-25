@@ -8,15 +8,15 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 )
 
 var _ = Describe("Renderer", func() {
 	var (
 		appInfo      metadata.CFAppInfo
-		usageMetrics []usagemetric.UsageMetric
+		usageMetrics []metrics.Usage
 		display      *outputfakes.FakeDisplay
 		renderer     output.Renderer
 	)
@@ -28,7 +28,7 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		usageMetrics = []usagemetric.UsageMetric{
+		usageMetrics = []metrics.Usage{
 			{
 				InstanceId:          123,
 				AbsoluteUsage:       1.0,

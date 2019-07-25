@@ -4,30 +4,30 @@ package pluginfakes
 import (
 	"sync"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 )
 
 type FakeMetricFetcher struct {
-	FetchLatestStub        func(string, int) ([]usagemetric.UsageMetric, error)
+	FetchLatestStub        func(string, int) ([]metrics.Usage, error)
 	fetchLatestMutex       sync.RWMutex
 	fetchLatestArgsForCall []struct {
 		arg1 string
 		arg2 int
 	}
 	fetchLatestReturns struct {
-		result1 []usagemetric.UsageMetric
+		result1 []metrics.Usage
 		result2 error
 	}
 	fetchLatestReturnsOnCall map[int]struct {
-		result1 []usagemetric.UsageMetric
+		result1 []metrics.Usage
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricFetcher) FetchLatest(arg1 string, arg2 int) ([]usagemetric.UsageMetric, error) {
+func (fake *FakeMetricFetcher) FetchLatest(arg1 string, arg2 int) ([]metrics.Usage, error) {
 	fake.fetchLatestMutex.Lock()
 	ret, specificReturn := fake.fetchLatestReturnsOnCall[len(fake.fetchLatestArgsForCall)]
 	fake.fetchLatestArgsForCall = append(fake.fetchLatestArgsForCall, struct {
@@ -52,7 +52,7 @@ func (fake *FakeMetricFetcher) FetchLatestCallCount() int {
 	return len(fake.fetchLatestArgsForCall)
 }
 
-func (fake *FakeMetricFetcher) FetchLatestCalls(stub func(string, int) ([]usagemetric.UsageMetric, error)) {
+func (fake *FakeMetricFetcher) FetchLatestCalls(stub func(string, int) ([]metrics.Usage, error)) {
 	fake.fetchLatestMutex.Lock()
 	defer fake.fetchLatestMutex.Unlock()
 	fake.FetchLatestStub = stub
@@ -65,28 +65,28 @@ func (fake *FakeMetricFetcher) FetchLatestArgsForCall(i int) (string, int) {
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeMetricFetcher) FetchLatestReturns(result1 []usagemetric.UsageMetric, result2 error) {
+func (fake *FakeMetricFetcher) FetchLatestReturns(result1 []metrics.Usage, result2 error) {
 	fake.fetchLatestMutex.Lock()
 	defer fake.fetchLatestMutex.Unlock()
 	fake.FetchLatestStub = nil
 	fake.fetchLatestReturns = struct {
-		result1 []usagemetric.UsageMetric
+		result1 []metrics.Usage
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMetricFetcher) FetchLatestReturnsOnCall(i int, result1 []usagemetric.UsageMetric, result2 error) {
+func (fake *FakeMetricFetcher) FetchLatestReturnsOnCall(i int, result1 []metrics.Usage, result2 error) {
 	fake.fetchLatestMutex.Lock()
 	defer fake.fetchLatestMutex.Unlock()
 	fake.FetchLatestStub = nil
 	if fake.fetchLatestReturnsOnCall == nil {
 		fake.fetchLatestReturnsOnCall = make(map[int]struct {
-			result1 []usagemetric.UsageMetric
+			result1 []metrics.Usage
 			result2 error
 		})
 	}
 	fake.fetchLatestReturnsOnCall[i] = struct {
-		result1 []usagemetric.UsageMetric
+		result1 []metrics.Usage
 		result2 error
 	}{result1, result2}
 }

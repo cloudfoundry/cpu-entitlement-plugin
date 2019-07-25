@@ -3,8 +3,8 @@ package plugin
 import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 	"github.com/fatih/color"
 )
 
@@ -17,13 +17,13 @@ type CFAppInfoGetter interface {
 //go:generate counterfeiter . MetricFetcher
 
 type MetricFetcher interface {
-	FetchLatest(appGUID string, instanceCount int) ([]usagemetric.UsageMetric, error)
+	FetchLatest(appGUID string, instanceCount int) ([]metrics.Usage, error)
 }
 
 //go:generate counterfeiter . MetricsRenderer
 
 type MetricsRenderer interface {
-	ShowMetrics(metadata.CFAppInfo, []usagemetric.UsageMetric) error
+	ShowMetrics(metadata.CFAppInfo, []metrics.Usage) error
 }
 
 type Runner struct {

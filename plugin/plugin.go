@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 )
@@ -49,13 +49,13 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	}
 
 	infoGetter := metadata.NewInfoGetter(cli)
-	tokenGetter := token.NewTokenGetter(cli.AccessToken)
-	metricFetcher := metricfetcher.New(logCacheURL, tokenGetter)
+	tokenGetter := token.NewGetter(cli.AccessToken)
+	metricsFetcher := metrics.NewFetcher(logCacheURL, tokenGetter)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
 
 	appName := args[1]
-	runner := NewRunner(infoGetter, metricFetcher, metricsRenderer)
+	runner := NewRunner(infoGetter, metricsFetcher, metricsRenderer)
 	res := runner.Run(appName)
 	if res.IsFailure {
 		if res.ErrorMessage != "" {
@@ -70,6 +70,27 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	}
 }
 
+func (p CPUEntitlementPlugin) GetMetadata() plugin.PluginMetadata {
+	return plugin.PluginMetadata{
+		Name: "CPUEntitlementPlugin",
+		Version: plugin.VersionType{
+			Major: 0,
+			Minor: 0,
+			Build: 2,
+		},
+		Commands: []plugin.Command{
+			{
+				Name:     "cpu-entitlement",
+				Alias:    "cpu",
+				HelpText: "See cpu usage per app",
+				UsageDetails: plugin.Usage{
+					Usage: "cf cpu-entitlement APP_NAME",
+				},
+			},
+		},
+	}
+}
+
 func buildLogCacheURL(dopplerURL string) (string, error) {
 	logStreamURL, err := url.Parse(dopplerURL)
 	if err != nil {
@@ -77,6 +98,10 @@ func buildLogCacheURL(dopplerURL string) (string, error) {
 	}
 
 	regex, err := regexp.Compile("doppler(\\S+):443")
+	if err != nil {
+		return "", err
+	}
+
 	match := regex.FindStringSubmatch(logStreamURL.Host)
 
 	if len(match) != 2 {

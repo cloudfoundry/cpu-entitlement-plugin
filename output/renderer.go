@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"github.com/fatih/color"
 )
 
@@ -24,7 +24,7 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.UsageMetric) error {
+func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []metrics.Usage) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(info.App.Name),
 		terminal.EntityNameColor(info.Org),
@@ -37,14 +37,14 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []usagemetric.Usa
 	overentitled := false
 	for _, metric := range metrics {
 		instanceId := fmt.Sprintf("#%d", metric.InstanceId)
-		cpuUsage := fmt.Sprintf("%.2f%%", metric.CPUUsage()*100)
-		if metric.CPUUsage() > 1 {
+		entitlementRatio := fmt.Sprintf("%.2f%%", metric.EntitlementRatio()*100)
+		if metric.EntitlementRatio() > 1 {
 			overentitled = true
 			instanceId = terminal.Colorize(instanceId, color.FgRed)
-			cpuUsage = terminal.Colorize(cpuUsage, color.FgRed)
+			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
 		}
 
-		rows = append(rows, []string{instanceId, cpuUsage})
+		rows = append(rows, []string{instanceId, entitlementRatio})
 	}
 
 	err := r.display.ShowTable([]string{"", bold("usage")}, rows)

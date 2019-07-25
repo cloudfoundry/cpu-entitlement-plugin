@@ -1,4 +1,4 @@
-package usagemetric // import "code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
+package metrics // import "code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 
 import (
 	"strconv"
@@ -8,36 +8,36 @@ import (
 
 type gaugeMetric map[string]*loggregator_v2.GaugeValue
 
-type UsageMetric struct {
+type Usage struct {
 	InstanceId          int
 	AbsoluteUsage       float64
 	AbsoluteEntitlement float64
 	ContainerAge        float64
 }
 
-func FromGaugeMetric(instanceId string, metric gaugeMetric) (UsageMetric, bool) {
+func UsageFromGauge(instanceId string, metric gaugeMetric) (Usage, bool) {
 	absoluteUsage := metric["absolute_usage"]
 	absoluteEntitlement := metric["absolute_entitlement"]
 	containerAge := metric["container_age"]
 
 	if absoluteUsage == nil {
-		return UsageMetric{}, false
+		return Usage{}, false
 	}
 
 	if absoluteEntitlement == nil {
-		return UsageMetric{}, false
+		return Usage{}, false
 	}
 
 	if containerAge == nil {
-		return UsageMetric{}, false
+		return Usage{}, false
 	}
 
 	instanceIndex, err := strconv.Atoi(instanceId)
 	if err != nil {
-		return UsageMetric{}, false
+		return Usage{}, false
 	}
 
-	return UsageMetric{
+	return Usage{
 		InstanceId:          instanceIndex,
 		AbsoluteUsage:       absoluteUsage.Value,
 		AbsoluteEntitlement: absoluteEntitlement.Value,
@@ -45,6 +45,6 @@ func FromGaugeMetric(instanceId string, metric gaugeMetric) (UsageMetric, bool) 
 	}, true
 }
 
-func (m UsageMetric) CPUUsage() float64 {
+func (m Usage) EntitlementRatio() float64 {
 	return m.AbsoluteUsage / m.AbsoluteEntitlement
 }

@@ -5,16 +5,16 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 )
 
 type FakeMetricsRenderer struct {
-	ShowMetricsStub        func(metadata.CFAppInfo, []usagemetric.UsageMetric) error
+	ShowMetricsStub        func(metadata.CFAppInfo, []metrics.Usage) error
 	showMetricsMutex       sync.RWMutex
 	showMetricsArgsForCall []struct {
 		arg1 metadata.CFAppInfo
-		arg2 []usagemetric.UsageMetric
+		arg2 []metrics.Usage
 	}
 	showMetricsReturns struct {
 		result1 error
@@ -26,17 +26,17 @@ type FakeMetricsRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsRenderer) ShowMetrics(arg1 metadata.CFAppInfo, arg2 []usagemetric.UsageMetric) error {
-	var arg2Copy []usagemetric.UsageMetric
+func (fake *FakeMetricsRenderer) ShowMetrics(arg1 metadata.CFAppInfo, arg2 []metrics.Usage) error {
+	var arg2Copy []metrics.Usage
 	if arg2 != nil {
-		arg2Copy = make([]usagemetric.UsageMetric, len(arg2))
+		arg2Copy = make([]metrics.Usage, len(arg2))
 		copy(arg2Copy, arg2)
 	}
 	fake.showMetricsMutex.Lock()
 	ret, specificReturn := fake.showMetricsReturnsOnCall[len(fake.showMetricsArgsForCall)]
 	fake.showMetricsArgsForCall = append(fake.showMetricsArgsForCall, struct {
 		arg1 metadata.CFAppInfo
-		arg2 []usagemetric.UsageMetric
+		arg2 []metrics.Usage
 	}{arg1, arg2Copy})
 	fake.recordInvocation("ShowMetrics", []interface{}{arg1, arg2Copy})
 	fake.showMetricsMutex.Unlock()
@@ -56,13 +56,13 @@ func (fake *FakeMetricsRenderer) ShowMetricsCallCount() int {
 	return len(fake.showMetricsArgsForCall)
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsCalls(stub func(metadata.CFAppInfo, []usagemetric.UsageMetric) error) {
+func (fake *FakeMetricsRenderer) ShowMetricsCalls(stub func(metadata.CFAppInfo, []metrics.Usage) error) {
 	fake.showMetricsMutex.Lock()
 	defer fake.showMetricsMutex.Unlock()
 	fake.ShowMetricsStub = stub
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsArgsForCall(i int) (metadata.CFAppInfo, []usagemetric.UsageMetric) {
+func (fake *FakeMetricsRenderer) ShowMetricsArgsForCall(i int) (metadata.CFAppInfo, []metrics.Usage) {
 	fake.showMetricsMutex.RLock()
 	defer fake.showMetricsMutex.RUnlock()
 	argsForCall := fake.showMetricsArgsForCall[i]

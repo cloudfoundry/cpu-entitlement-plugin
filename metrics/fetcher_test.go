@@ -1,4 +1,4 @@
-package metricfetcher_test
+package metrics_test
 
 import (
 	"context"
@@ -9,29 +9,28 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher/metricfetcherfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics/metricsfakes"
 )
 
 var _ = Describe("Logstreamer", func() {
 	var (
-		logCacheClient *metricfetcherfakes.FakeLogCacheClient
-		metricFetcher  metricfetcher.CachedUsageMetricFetcher
+		logCacheClient *metricsfakes.FakeLogCacheClient
+		metricsFetcher metrics.LogCacheFetcher
 		appGuid        string
-		metrics        []usagemetric.UsageMetric
+		usageMetrics   []metrics.Usage
 		metricsErr     error
 	)
 
 	BeforeEach(func() {
-		logCacheClient = new(metricfetcherfakes.FakeLogCacheClient)
-		metricFetcher = metricfetcher.NewWithLogCacheClient(logCacheClient)
+		logCacheClient = new(metricsfakes.FakeLogCacheClient)
+		metricsFetcher = metrics.NewFetcherWithLogCacheClient(logCacheClient)
 
 		appGuid = "foo"
 	})
 
 	JustBeforeEach(func() {
-		metrics, metricsErr = metricFetcher.FetchLatest(appGuid, 3)
+		usageMetrics, metricsErr = metricsFetcher.FetchLatest(appGuid, 3)
 	})
 
 	When("reading from log-cache succeeds", func() {
@@ -55,7 +54,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns the correct metrics", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(metrics).To(Equal([]usagemetric.UsageMetric{
+			Expect(usageMetrics).To(Equal([]metrics.Usage{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,
@@ -85,7 +84,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns an error", func() {
 			Expect(metricsErr).To(MatchError("log-cache read failed: boo"))
-			Expect(metrics).To(BeNil())
+			Expect(usageMetrics).To(BeNil())
 		})
 	})
 
@@ -100,7 +99,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns an error", func() {
 			Expect(metricsErr).To(MatchError("No CPU metrics found for '" + appGuid + "'"))
-			Expect(metrics).To(BeNil())
+			Expect(usageMetrics).To(BeNil())
 		})
 	})
 
@@ -115,7 +114,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns a partial result", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(metrics).To(Equal([]usagemetric.UsageMetric{
+			Expect(usageMetrics).To(Equal([]metrics.Usage{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,
@@ -137,7 +136,7 @@ var _ = Describe("Logstreamer", func() {
 		})
 
 		It("ignores the data from old instances", func() {
-			Expect(metrics).To(Equal([]usagemetric.UsageMetric{
+			Expect(usageMetrics).To(Equal([]metrics.Usage{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,

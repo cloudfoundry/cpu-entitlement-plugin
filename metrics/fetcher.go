@@ -1,4 +1,4 @@
-package metricfetcher // import "code.cloudfoundry.org/cpu-entitlement-plugin/metricfetcher"
+package metrics // import "code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 
 import (
 	"context"
@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
-type CachedUsageMetricFetcher struct {
+type LogCacheFetcher struct {
 	client LogCacheClient
 }
 
@@ -21,8 +20,8 @@ type LogCacheClient interface {
 	Read(ctx context.Context, sourceID string, start time.Time, opts ...logcache.ReadOption) ([]*loggregator_v2.Envelope, error)
 }
 
-func New(logCacheURL string, tokenGetter *token.TokenGetter) CachedUsageMetricFetcher {
-	return CachedUsageMetricFetcher{
+func NewFetcher(logCacheURL string, tokenGetter *token.Getter) LogCacheFetcher {
+	return LogCacheFetcher{
 		client: logcache.NewClient(
 			logCacheURL,
 			logcache.WithHTTPClient(authenticatedBy(tokenGetter)),
@@ -30,11 +29,11 @@ func New(logCacheURL string, tokenGetter *token.TokenGetter) CachedUsageMetricFe
 	}
 }
 
-func NewWithLogCacheClient(client LogCacheClient) CachedUsageMetricFetcher {
-	return CachedUsageMetricFetcher{client: client}
+func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
+	return LogCacheFetcher{client: client}
 }
 
-func (f CachedUsageMetricFetcher) FetchLatest(appGuid string, instanceCount int) ([]usagemetric.UsageMetric, error) {
+func (f LogCacheFetcher) FetchLatest(appGuid string, instanceCount int) ([]Usage, error) {
 	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-5*time.Minute), logcache.WithDescending())
 	if err != nil {
 		return nil, fmt.Errorf("log-cache read failed: %s", err.Error())
@@ -48,10 +47,10 @@ func (f CachedUsageMetricFetcher) FetchLatest(appGuid string, instanceCount int)
 	return latestMetrics, nil
 }
 
-func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount int) []usagemetric.UsageMetric {
-	latestMetrics := make(map[int]usagemetric.UsageMetric, instanceCount)
+func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount int) []Usage {
+	latestMetrics := make(map[int]Usage, instanceCount)
 	for _, envelope := range envelopes {
-		usageMetric, ok := usagemetric.FromGaugeMetric(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
+		usageMetric, ok := UsageFromGauge(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
 		if ok && usageMetric.InstanceId < instanceCount {
 			_, exists := latestMetrics[usageMetric.InstanceId]
 			if !exists {
@@ -67,8 +66,8 @@ func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount in
 	return buildMetricsSlice(latestMetrics, instanceCount)
 }
 
-func buildMetricsSlice(metricsMap map[int]usagemetric.UsageMetric, instanceCount int) []usagemetric.UsageMetric {
-	var metrics []usagemetric.UsageMetric
+func buildMetricsSlice(metricsMap map[int]Usage, instanceCount int) []Usage {
+	var metrics []Usage
 	for i := 0; i < instanceCount; i++ {
 		metric, ok := metricsMap[i]
 		if ok {
@@ -79,12 +78,12 @@ func buildMetricsSlice(metricsMap map[int]usagemetric.UsageMetric, instanceCount
 	return metrics
 }
 
-func authenticatedBy(tokenGetter *token.TokenGetter) *authClient {
+func authenticatedBy(tokenGetter *token.Getter) *authClient {
 	return &authClient{tokenGetter: tokenGetter}
 }
 
 type authClient struct {
-	tokenGetter *token.TokenGetter
+	tokenGetter *token.Getter
 }
 
 func (a *authClient) Do(req *http.Request) (*http.Response, error) {

@@ -1,11 +1,11 @@
-package usagemetric_test
+package metrics_test
 
 import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "code.cloudfoundry.org/cpu-entitlement-plugin/usagemetric"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 )
 
 var _ = Describe("Usagemetric", func() {
@@ -13,7 +13,7 @@ var _ = Describe("Usagemetric", func() {
 		var (
 			gaugeValues map[string]*loggregator_v2.GaugeValue
 			ok          bool
-			usageMetric UsageMetric
+			usageMetric metrics.Usage
 		)
 
 		BeforeEach(func() {
@@ -25,12 +25,12 @@ var _ = Describe("Usagemetric", func() {
 		})
 
 		JustBeforeEach(func() {
-			usageMetric, ok = FromGaugeMetric("0", gaugeValues)
+			usageMetric, ok = metrics.UsageFromGauge("0", gaugeValues)
 		})
 
-		It("builds an UsageMetric from a gauge metric message map", func() {
+		It("builds an Usage metric from a gauge metric message map", func() {
 			Expect(ok).To(BeTrue())
-			Expect(usageMetric).To(Equal(UsageMetric{
+			Expect(usageMetric).To(Equal(metrics.Usage{
 				InstanceId:          0,
 				AbsoluteUsage:       1,
 				AbsoluteEntitlement: 2,
@@ -45,7 +45,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(UsageMetric{}))
+				Expect(usageMetric).To(Equal(metrics.Usage{}))
 			})
 		})
 
@@ -56,7 +56,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(UsageMetric{}))
+				Expect(usageMetric).To(Equal(metrics.Usage{}))
 			})
 		})
 
@@ -67,14 +67,14 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(UsageMetric{}))
+				Expect(usageMetric).To(Equal(metrics.Usage{}))
 			})
 		})
 	})
 
-	Describe("CPUUsage", func() {
+	Describe("EntitlementRatio", func() {
 		It("calculates the CPU usage", func() {
-			Expect(UsageMetric{AbsoluteUsage: 5, AbsoluteEntitlement: 10}.CPUUsage()).To(Equal(0.5))
+			Expect(metrics.Usage{AbsoluteUsage: 5, AbsoluteEntitlement: 10}.EntitlementRatio()).To(Equal(0.5))
 		})
 	})
 })
