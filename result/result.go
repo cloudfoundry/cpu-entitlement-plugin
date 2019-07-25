@@ -1,28 +1,22 @@
 package result
 
-import "code.cloudfoundry.org/cli/cf/terminal"
-
 type Result struct {
-	isFailure      bool
-	errorMessage   string
-	warningMessage string
-}
-
-func (r Result) IsFailure() bool {
-	return r.isFailure
+	IsFailure      bool
+	ErrorMessage   string
+	WarningMessage string
 }
 
 func Failure(errorMessage string) Result {
 	return Result{
-		isFailure:    true,
-		errorMessage: errorMessage,
+		IsFailure:    true,
+		ErrorMessage: errorMessage,
 	}
 }
 
 func FailureFromError(err error) Result {
 	return Result{
-		isFailure:    true,
-		errorMessage: err.Error(),
+		IsFailure:    true,
+		ErrorMessage: err.Error(),
 	}
 }
 
@@ -32,18 +26,8 @@ func Success() Result {
 
 func (r Result) WithWarning(warning string) Result {
 	return Result{
-		isFailure:      r.isFailure,
-		errorMessage:   r.errorMessage,
-		warningMessage: warning,
-	}
-}
-
-func (r Result) WriteTo(ui terminal.UI) {
-	if r.errorMessage != "" {
-		ui.Failed(r.errorMessage)
-	}
-
-	if r.warningMessage != "" {
-		ui.Warn(r.warningMessage)
+		IsFailure:      r.IsFailure,
+		ErrorMessage:   r.ErrorMessage,
+		WarningMessage: warning,
 	}
 }
