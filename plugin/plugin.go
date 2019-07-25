@@ -30,7 +30,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
 
 	if len(args) != 2 {
-		ui.Failed("Usage: `cf cpu-entitlement APP_NAME`")
+		ui.Failed("Usage: cf cpu-entitlement <APP_NAME>")
 		os.Exit(1)
 	}
 
