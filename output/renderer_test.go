@@ -15,10 +15,10 @@ import (
 
 var _ = Describe("Renderer", func() {
 	var (
-		appInfo       metadata.CFAppInfo
-		instanceInfos []calculator.InstanceInfo
-		display       *outputfakes.FakeDisplay
-		renderer      output.Renderer
+		appInfo         metadata.CFAppInfo
+		instanceReports []calculator.InstanceReport
+		display         *outputfakes.FakeDisplay
+		renderer        output.Renderer
 	)
 
 	BeforeEach(func() {
@@ -28,7 +28,7 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		instanceInfos = []calculator.InstanceInfo{
+		instanceReports = []calculator.InstanceReport{
 			{
 				InstanceId:       123,
 				EntitlementUsage: 0.5,
@@ -45,7 +45,7 @@ var _ = Describe("Renderer", func() {
 
 	Describe("ShowMetrics", func() {
 		JustBeforeEach(func() {
-			renderer.ShowInfos(appInfo, instanceInfos)
+			renderer.ShowInstanceReports(appInfo, instanceReports)
 		})
 
 		It("shows a message with the application info", func() {
@@ -72,7 +72,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more of the instances is above entitlement", func() {
 			BeforeEach(func() {
-				instanceInfos[1].EntitlementUsage = 1.5
+				instanceReports[1].EntitlementUsage = 1.5
 			})
 
 			It("highlights the overentitled row", func() {
@@ -93,7 +93,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement", func() {
 			BeforeEach(func() {
-				instanceInfos[1].EntitlementUsage = 0.96
+				instanceReports[1].EntitlementUsage = 0.96
 			})
 
 			It("highlights the near overentitled row", func() {
@@ -114,9 +114,9 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement, and one is over 100%", func() {
 			BeforeEach(func() {
-				instanceInfos[0].EntitlementUsage = 0.96
-				instanceInfos[1].EntitlementUsage = 1.5
-				instanceInfos = append(instanceInfos, instanceInfos[0])
+				instanceReports[0].EntitlementUsage = 0.96
+				instanceReports[1].EntitlementUsage = 1.5
+				instanceReports = append(instanceReports, instanceReports[0])
 			})
 
 			It("highlights both rows in various colours", func() {

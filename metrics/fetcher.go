@@ -33,7 +33,7 @@ func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
 	return LogCacheFetcher{client: client}
 }
 
-func (f LogCacheFetcher) FetchLatest(appGuid string, instanceCount int) ([]Usage, error) {
+func (f LogCacheFetcher) FetchLatest(appGuid string, instanceCount int) ([]InstanceData, error) {
 	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-5*time.Minute), logcache.WithDescending())
 	if err != nil {
 		return nil, fmt.Errorf("log-cache read failed: %s", err.Error())
@@ -47,14 +47,14 @@ func (f LogCacheFetcher) FetchLatest(appGuid string, instanceCount int) ([]Usage
 	return latestMetrics, nil
 }
 
-func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount int) []Usage {
-	latestMetrics := make(map[int]Usage, instanceCount)
+func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount int) []InstanceData {
+	latestMetrics := make(map[int]InstanceData, instanceCount)
 	for _, envelope := range envelopes {
-		usageMetric, ok := UsageFromGauge(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
-		if ok && usageMetric.InstanceId < instanceCount {
-			_, exists := latestMetrics[usageMetric.InstanceId]
+		instanceData, ok := InstanceDataFromGauge(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
+		if ok && instanceData.InstanceId < instanceCount {
+			_, exists := latestMetrics[instanceData.InstanceId]
 			if !exists {
-				latestMetrics[usageMetric.InstanceId] = usageMetric
+				latestMetrics[instanceData.InstanceId] = instanceData
 			}
 
 			if len(latestMetrics) == instanceCount {
@@ -66,8 +66,8 @@ func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount in
 	return buildMetricsSlice(latestMetrics, instanceCount)
 }
 
-func buildMetricsSlice(metricsMap map[int]Usage, instanceCount int) []Usage {
-	var metrics []Usage
+func buildMetricsSlice(metricsMap map[int]InstanceData, instanceCount int) []InstanceData {
+	var metrics []InstanceData
 	for i := 0; i < instanceCount; i++ {
 		metric, ok := metricsMap[i]
 		if ok {

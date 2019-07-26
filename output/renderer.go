@@ -24,7 +24,7 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowInfos(info metadata.CFAppInfo, infos []calculator.InstanceInfo) error {
+func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []calculator.InstanceReport) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(info.App.Name),
 		terminal.EntityNameColor(info.Org),
@@ -35,14 +35,14 @@ func (r Renderer) ShowInfos(info metadata.CFAppInfo, infos []calculator.Instance
 	var rows [][]string
 
 	var status string
-	for _, i := range infos {
-		instanceId := fmt.Sprintf("#%d", i.InstanceId)
-		entitlementRatio := fmt.Sprintf("%.2f%%", i.EntitlementUsage*100)
-		if i.EntitlementUsage > 1 {
+	for _, report := range instanceReports {
+		instanceId := fmt.Sprintf("#%d", report.InstanceId)
+		entitlementRatio := fmt.Sprintf("%.2f%%", report.EntitlementUsage*100)
+		if report.EntitlementUsage > 1 {
 			status = "over"
 			instanceId = terminal.Colorize(instanceId, color.FgRed)
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
-		} else if i.EntitlementUsage > 0.95 {
+		} else if report.EntitlementUsage > 0.95 {
 			if status == "" {
 				status = "near"
 			}

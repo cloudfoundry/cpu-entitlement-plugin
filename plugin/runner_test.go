@@ -18,7 +18,7 @@ import (
 var _ = Describe("Runner", func() {
 	var (
 		infoGetter        *pluginfakes.FakeCFAppInfoGetter
-		metricFetcher     *pluginfakes.FakeMetricFetcher
+		metricsFetcher    *pluginfakes.FakeMetricsFetcher
 		metricsCalculator *pluginfakes.FakeMetricsCalculator
 		metricsRenderer   *pluginfakes.FakeMetricsRenderer
 
@@ -28,10 +28,10 @@ var _ = Describe("Runner", func() {
 
 	BeforeEach(func() {
 		infoGetter = new(pluginfakes.FakeCFAppInfoGetter)
-		metricFetcher = new(pluginfakes.FakeMetricFetcher)
+		metricsFetcher = new(pluginfakes.FakeMetricsFetcher)
 		metricsCalculator = new(pluginfakes.FakeMetricsCalculator)
 		metricsRenderer = new(pluginfakes.FakeMetricsRenderer)
-		runner = plugin.NewRunner(infoGetter, metricFetcher, metricsCalculator, metricsRenderer)
+		runner = plugin.NewRunner(infoGetter, metricsFetcher, metricsCalculator, metricsRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
 			App: models.GetAppModel{
@@ -41,7 +41,7 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricFetcher.FetchLatestReturns([]metrics.Usage{
+		metricsFetcher.FetchLatestReturns([]metrics.InstanceData{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,
@@ -62,7 +62,7 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricsCalculator.CalculateInstanceInfosReturns([]calculator.InstanceInfo{
+		metricsCalculator.CalculateInstanceReportsReturns([]calculator.InstanceReport{
 			{
 				InstanceId:       0,
 				EntitlementUsage: 0.5,
@@ -89,14 +89,14 @@ var _ = Describe("Runner", func() {
 		appName := infoGetter.GetCFAppInfoArgsForCall(0)
 		Expect(appName).To(Equal("app-name"))
 
-		Expect(metricFetcher.FetchLatestCallCount()).To(Equal(1))
-		guid, instanceCount := metricFetcher.FetchLatestArgsForCall(0)
+		Expect(metricsFetcher.FetchLatestCallCount()).To(Equal(1))
+		guid, instanceCount := metricsFetcher.FetchLatestArgsForCall(0)
 		Expect(guid).To(Equal("123"))
 		Expect(instanceCount).To(Equal(3))
 
-		Expect(metricsCalculator.CalculateInstanceInfosCallCount()).To(Equal(1))
-		usageMetrics := metricsCalculator.CalculateInstanceInfosArgsForCall(0)
-		Expect(usageMetrics).To(Equal([]metrics.Usage{
+		Expect(metricsCalculator.CalculateInstanceReportsCallCount()).To(Equal(1))
+		usageMetrics := metricsCalculator.CalculateInstanceReportsArgsForCall(0)
+		Expect(usageMetrics).To(Equal([]metrics.InstanceData{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,
@@ -117,8 +117,8 @@ var _ = Describe("Runner", func() {
 			},
 		}))
 
-		Expect(metricsRenderer.ShowInfosCallCount()).To(Equal(1))
-		info, instanceInfos := metricsRenderer.ShowInfosArgsForCall(0)
+		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
+		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)
 		Expect(info).To(Equal(metadata.CFAppInfo{
 			App: models.GetAppModel{
 				Guid:          "123",
@@ -126,7 +126,7 @@ var _ = Describe("Runner", func() {
 				InstanceCount: 3,
 			},
 		}))
-		Expect(instanceInfos).To(Equal([]calculator.InstanceInfo{
+		Expect(instanceReports).To(Equal([]calculator.InstanceReport{
 			{
 				InstanceId:       0,
 				EntitlementUsage: 0.5,
@@ -155,7 +155,7 @@ var _ = Describe("Runner", func() {
 
 	When("fetching the app metrics fails", func() {
 		BeforeEach(func() {
-			metricFetcher.FetchLatestReturns(nil, errors.New("metrics error"))
+			metricsFetcher.FetchLatestReturns(nil, errors.New("metrics error"))
 		})
 
 		It("returns a failure", func() {
@@ -166,7 +166,7 @@ var _ = Describe("Runner", func() {
 
 	When("rendering the app metrics fails", func() {
 		BeforeEach(func() {
-			metricsRenderer.ShowInfosReturns(errors.New("render error"))
+			metricsRenderer.ShowInstanceReportsReturns(errors.New("render error"))
 		})
 
 		It("returns a failure", func() {

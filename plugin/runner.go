@@ -15,35 +15,35 @@ type CFAppInfoGetter interface {
 	GetCFAppInfo(appName string) (metadata.CFAppInfo, error)
 }
 
-//go:generate counterfeiter . MetricFetcher
+//go:generate counterfeiter . MetricsFetcher
 
-type MetricFetcher interface {
-	FetchLatest(appGUID string, instanceCount int) ([]metrics.Usage, error)
+type MetricsFetcher interface {
+	FetchLatest(appGUID string, instanceCount int) ([]metrics.InstanceData, error)
 }
 
 //go:generate counterfeiter . MetricsRenderer
 
 type MetricsRenderer interface {
-	ShowInfos(metadata.CFAppInfo, []calculator.InstanceInfo) error
+	ShowInstanceReports(metadata.CFAppInfo, []calculator.InstanceReport) error
 }
 
 //go:generate counterfeiter . MetricsCalculator
 
 type MetricsCalculator interface {
-	CalculateInstanceInfos(usages []metrics.Usage) []calculator.InstanceInfo
+	CalculateInstanceReports(usages []metrics.InstanceData) []calculator.InstanceReport
 }
 
 type Runner struct {
 	infoGetter        CFAppInfoGetter
-	metricFetcher     MetricFetcher
+	metricsFetcher    MetricsFetcher
 	metricsCalculator MetricsCalculator
 	metricsRenderer   MetricsRenderer
 }
 
-func NewRunner(infoGetter CFAppInfoGetter, metricFetcher MetricFetcher, metricsCalculator MetricsCalculator, metricsRenderer MetricsRenderer) Runner {
+func NewRunner(infoGetter CFAppInfoGetter, metricsFetcher MetricsFetcher, metricsCalculator MetricsCalculator, metricsRenderer MetricsRenderer) Runner {
 	return Runner{
 		infoGetter:        infoGetter,
-		metricFetcher:     metricFetcher,
+		metricsFetcher:    metricsFetcher,
 		metricsCalculator: metricsCalculator,
 		metricsRenderer:   metricsRenderer,
 	}
@@ -55,14 +55,14 @@ func (r Runner) Run(appName string) result.Result {
 		return result.FailureFromError(err)
 	}
 
-	usageMetrics, err := r.metricFetcher.FetchLatest(info.App.Guid, info.App.InstanceCount)
+	usageMetrics, err := r.metricsFetcher.FetchLatest(info.App.Guid, info.App.InstanceCount)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
 
-	instanceInfos := r.metricsCalculator.CalculateInstanceInfos(usageMetrics)
+	instanceReports := r.metricsCalculator.CalculateInstanceReports(usageMetrics)
 
-	err = r.metricsRenderer.ShowInfos(info, instanceInfos)
+	err = r.metricsRenderer.ShowInstanceReports(info, instanceReports)
 	if err != nil {
 		return result.FailureFromError(err)
 	}

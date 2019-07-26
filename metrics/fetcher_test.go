@@ -18,7 +18,7 @@ var _ = Describe("Logstreamer", func() {
 		logCacheClient *metricsfakes.FakeLogCacheClient
 		metricsFetcher metrics.LogCacheFetcher
 		appGuid        string
-		usageMetrics   []metrics.Usage
+		usageMetrics   []metrics.InstanceData
 		metricsErr     error
 	)
 
@@ -54,7 +54,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns the correct metrics", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(usageMetrics).To(Equal([]metrics.Usage{
+			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,
@@ -114,7 +114,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns a partial result", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(usageMetrics).To(Equal([]metrics.Usage{
+			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,
@@ -136,7 +136,7 @@ var _ = Describe("Logstreamer", func() {
 		})
 
 		It("ignores the data from old instances", func() {
-			Expect(usageMetrics).To(Equal([]metrics.Usage{
+			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
 				{
 					InstanceId:          0,
 					AbsoluteUsage:       1000,

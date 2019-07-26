@@ -8,36 +8,36 @@ import (
 
 type gaugeMetric map[string]*loggregator_v2.GaugeValue
 
-type Usage struct {
+type InstanceData struct {
 	InstanceId          int
 	AbsoluteUsage       float64
 	AbsoluteEntitlement float64
 	ContainerAge        float64
 }
 
-func UsageFromGauge(instanceId string, metric gaugeMetric) (Usage, bool) {
+func InstanceDataFromGauge(instanceId string, metric gaugeMetric) (InstanceData, bool) {
 	absoluteUsage := metric["absolute_usage"]
 	absoluteEntitlement := metric["absolute_entitlement"]
 	containerAge := metric["container_age"]
 
 	if absoluteUsage == nil {
-		return Usage{}, false
+		return InstanceData{}, false
 	}
 
 	if absoluteEntitlement == nil {
-		return Usage{}, false
+		return InstanceData{}, false
 	}
 
 	if containerAge == nil {
-		return Usage{}, false
+		return InstanceData{}, false
 	}
 
 	instanceIndex, err := strconv.Atoi(instanceId)
 	if err != nil {
-		return Usage{}, false
+		return InstanceData{}, false
 	}
 
-	return Usage{
+	return InstanceData{
 		InstanceId:          instanceIndex,
 		AbsoluteUsage:       absoluteUsage.Value,
 		AbsoluteEntitlement: absoluteEntitlement.Value,

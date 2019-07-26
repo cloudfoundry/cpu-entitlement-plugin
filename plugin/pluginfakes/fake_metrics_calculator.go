@@ -10,91 +10,91 @@ import (
 )
 
 type FakeMetricsCalculator struct {
-	CalculateInstanceInfosStub        func([]metrics.Usage) []calculator.InstanceInfo
-	calculateInstanceInfosMutex       sync.RWMutex
-	calculateInstanceInfosArgsForCall []struct {
-		arg1 []metrics.Usage
+	CalculateInstanceReportsStub        func([]metrics.InstanceData) []calculator.InstanceReport
+	calculateInstanceReportsMutex       sync.RWMutex
+	calculateInstanceReportsArgsForCall []struct {
+		arg1 []metrics.InstanceData
 	}
-	calculateInstanceInfosReturns struct {
-		result1 []calculator.InstanceInfo
+	calculateInstanceReportsReturns struct {
+		result1 []calculator.InstanceReport
 	}
-	calculateInstanceInfosReturnsOnCall map[int]struct {
-		result1 []calculator.InstanceInfo
+	calculateInstanceReportsReturnsOnCall map[int]struct {
+		result1 []calculator.InstanceReport
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfos(arg1 []metrics.Usage) []calculator.InstanceInfo {
-	var arg1Copy []metrics.Usage
+func (fake *FakeMetricsCalculator) CalculateInstanceReports(arg1 []metrics.InstanceData) []calculator.InstanceReport {
+	var arg1Copy []metrics.InstanceData
 	if arg1 != nil {
-		arg1Copy = make([]metrics.Usage, len(arg1))
+		arg1Copy = make([]metrics.InstanceData, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.calculateInstanceInfosMutex.Lock()
-	ret, specificReturn := fake.calculateInstanceInfosReturnsOnCall[len(fake.calculateInstanceInfosArgsForCall)]
-	fake.calculateInstanceInfosArgsForCall = append(fake.calculateInstanceInfosArgsForCall, struct {
-		arg1 []metrics.Usage
+	fake.calculateInstanceReportsMutex.Lock()
+	ret, specificReturn := fake.calculateInstanceReportsReturnsOnCall[len(fake.calculateInstanceReportsArgsForCall)]
+	fake.calculateInstanceReportsArgsForCall = append(fake.calculateInstanceReportsArgsForCall, struct {
+		arg1 []metrics.InstanceData
 	}{arg1Copy})
-	fake.recordInvocation("CalculateInstanceInfos", []interface{}{arg1Copy})
-	fake.calculateInstanceInfosMutex.Unlock()
-	if fake.CalculateInstanceInfosStub != nil {
-		return fake.CalculateInstanceInfosStub(arg1)
+	fake.recordInvocation("CalculateInstanceReports", []interface{}{arg1Copy})
+	fake.calculateInstanceReportsMutex.Unlock()
+	if fake.CalculateInstanceReportsStub != nil {
+		return fake.CalculateInstanceReportsStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.calculateInstanceInfosReturns
+	fakeReturns := fake.calculateInstanceReportsReturns
 	return fakeReturns.result1
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfosCallCount() int {
-	fake.calculateInstanceInfosMutex.RLock()
-	defer fake.calculateInstanceInfosMutex.RUnlock()
-	return len(fake.calculateInstanceInfosArgsForCall)
+func (fake *FakeMetricsCalculator) CalculateInstanceReportsCallCount() int {
+	fake.calculateInstanceReportsMutex.RLock()
+	defer fake.calculateInstanceReportsMutex.RUnlock()
+	return len(fake.calculateInstanceReportsArgsForCall)
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfosCalls(stub func([]metrics.Usage) []calculator.InstanceInfo) {
-	fake.calculateInstanceInfosMutex.Lock()
-	defer fake.calculateInstanceInfosMutex.Unlock()
-	fake.CalculateInstanceInfosStub = stub
+func (fake *FakeMetricsCalculator) CalculateInstanceReportsCalls(stub func([]metrics.InstanceData) []calculator.InstanceReport) {
+	fake.calculateInstanceReportsMutex.Lock()
+	defer fake.calculateInstanceReportsMutex.Unlock()
+	fake.CalculateInstanceReportsStub = stub
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfosArgsForCall(i int) []metrics.Usage {
-	fake.calculateInstanceInfosMutex.RLock()
-	defer fake.calculateInstanceInfosMutex.RUnlock()
-	argsForCall := fake.calculateInstanceInfosArgsForCall[i]
+func (fake *FakeMetricsCalculator) CalculateInstanceReportsArgsForCall(i int) []metrics.InstanceData {
+	fake.calculateInstanceReportsMutex.RLock()
+	defer fake.calculateInstanceReportsMutex.RUnlock()
+	argsForCall := fake.calculateInstanceReportsArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfosReturns(result1 []calculator.InstanceInfo) {
-	fake.calculateInstanceInfosMutex.Lock()
-	defer fake.calculateInstanceInfosMutex.Unlock()
-	fake.CalculateInstanceInfosStub = nil
-	fake.calculateInstanceInfosReturns = struct {
-		result1 []calculator.InstanceInfo
+func (fake *FakeMetricsCalculator) CalculateInstanceReportsReturns(result1 []calculator.InstanceReport) {
+	fake.calculateInstanceReportsMutex.Lock()
+	defer fake.calculateInstanceReportsMutex.Unlock()
+	fake.CalculateInstanceReportsStub = nil
+	fake.calculateInstanceReportsReturns = struct {
+		result1 []calculator.InstanceReport
 	}{result1}
 }
 
-func (fake *FakeMetricsCalculator) CalculateInstanceInfosReturnsOnCall(i int, result1 []calculator.InstanceInfo) {
-	fake.calculateInstanceInfosMutex.Lock()
-	defer fake.calculateInstanceInfosMutex.Unlock()
-	fake.CalculateInstanceInfosStub = nil
-	if fake.calculateInstanceInfosReturnsOnCall == nil {
-		fake.calculateInstanceInfosReturnsOnCall = make(map[int]struct {
-			result1 []calculator.InstanceInfo
+func (fake *FakeMetricsCalculator) CalculateInstanceReportsReturnsOnCall(i int, result1 []calculator.InstanceReport) {
+	fake.calculateInstanceReportsMutex.Lock()
+	defer fake.calculateInstanceReportsMutex.Unlock()
+	fake.CalculateInstanceReportsStub = nil
+	if fake.calculateInstanceReportsReturnsOnCall == nil {
+		fake.calculateInstanceReportsReturnsOnCall = make(map[int]struct {
+			result1 []calculator.InstanceReport
 		})
 	}
-	fake.calculateInstanceInfosReturnsOnCall[i] = struct {
-		result1 []calculator.InstanceInfo
+	fake.calculateInstanceReportsReturnsOnCall[i] = struct {
+		result1 []calculator.InstanceReport
 	}{result1}
 }
 
 func (fake *FakeMetricsCalculator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.calculateInstanceInfosMutex.RLock()
-	defer fake.calculateInstanceInfosMutex.RUnlock()
+	fake.calculateInstanceReportsMutex.RLock()
+	defer fake.calculateInstanceReportsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

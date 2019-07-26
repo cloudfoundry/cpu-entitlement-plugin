@@ -10,13 +10,13 @@ import (
 
 var _ = Describe("Calculator", func() {
 	var (
-		usages []metrics.Usage
+		usages []metrics.InstanceData
 		calc   calculator.Calculator
-		infos  []calculator.InstanceInfo
+		infos  []calculator.InstanceReport
 	)
 
 	BeforeEach(func() {
-		usages = []metrics.Usage{
+		usages = []metrics.InstanceData{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,
@@ -34,8 +34,8 @@ var _ = Describe("Calculator", func() {
 	})
 
 	It("calculates entitlement ratio", func() {
-		infos = calc.CalculateInstanceInfos(usages)
-		Expect(infos).To(Equal([]calculator.InstanceInfo{
+		infos = calc.CalculateInstanceReports(usages)
+		Expect(infos).To(Equal([]calculator.InstanceReport{
 			{InstanceId: 0, EntitlementUsage: 0.5},
 			{InstanceId: 1, EntitlementUsage: 0.8},
 		}))

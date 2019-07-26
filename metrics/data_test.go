@@ -13,7 +13,7 @@ var _ = Describe("Usagemetric", func() {
 		var (
 			gaugeValues map[string]*loggregator_v2.GaugeValue
 			ok          bool
-			usageMetric metrics.Usage
+			usageMetric metrics.InstanceData
 		)
 
 		BeforeEach(func() {
@@ -25,12 +25,12 @@ var _ = Describe("Usagemetric", func() {
 		})
 
 		JustBeforeEach(func() {
-			usageMetric, ok = metrics.UsageFromGauge("0", gaugeValues)
+			usageMetric, ok = metrics.InstanceDataFromGauge("0", gaugeValues)
 		})
 
-		It("builds an Usage metric from a gauge metric message map", func() {
+		It("builds an InstanceData metric from a gauge metric message map", func() {
 			Expect(ok).To(BeTrue())
-			Expect(usageMetric).To(Equal(metrics.Usage{
+			Expect(usageMetric).To(Equal(metrics.InstanceData{
 				InstanceId:          0,
 				AbsoluteUsage:       1,
 				AbsoluteEntitlement: 2,
@@ -45,7 +45,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.Usage{}))
+				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
 			})
 		})
 
@@ -56,7 +56,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.Usage{}))
+				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
 			})
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.Usage{}))
+				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
 			})
 		})
 	})
