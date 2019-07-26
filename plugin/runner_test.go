@@ -41,7 +41,7 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricsFetcher.FetchLatestReturns([]metrics.InstanceData{
+		metricsFetcher.FetchAllReturns([]metrics.InstanceData{
 			{
 				InstanceId:          0,
 				AbsoluteUsage:       1.0,
@@ -49,16 +49,16 @@ var _ = Describe("Runner", func() {
 				ContainerAge:        3.0,
 			},
 			{
-				InstanceId:          1,
-				AbsoluteUsage:       4.0,
-				AbsoluteEntitlement: 5.0,
-				ContainerAge:        6.0,
-			},
-			{
 				InstanceId:          2,
 				AbsoluteUsage:       7.0,
 				AbsoluteEntitlement: 8.0,
 				ContainerAge:        9.0,
+			},
+			{
+				InstanceId:          1,
+				AbsoluteUsage:       4.0,
+				AbsoluteEntitlement: 5.0,
+				ContainerAge:        6.0,
 			},
 		}, nil)
 
@@ -89,8 +89,8 @@ var _ = Describe("Runner", func() {
 		appName := infoGetter.GetCFAppInfoArgsForCall(0)
 		Expect(appName).To(Equal("app-name"))
 
-		Expect(metricsFetcher.FetchLatestCallCount()).To(Equal(1))
-		guid, instanceCount := metricsFetcher.FetchLatestArgsForCall(0)
+		Expect(metricsFetcher.FetchAllCallCount()).To(Equal(1))
+		guid, instanceCount := metricsFetcher.FetchAllArgsForCall(0)
 		Expect(guid).To(Equal("123"))
 		Expect(instanceCount).To(Equal(3))
 
@@ -104,16 +104,16 @@ var _ = Describe("Runner", func() {
 				ContainerAge:        3.0,
 			},
 			{
-				InstanceId:          1,
-				AbsoluteUsage:       4.0,
-				AbsoluteEntitlement: 5.0,
-				ContainerAge:        6.0,
-			},
-			{
 				InstanceId:          2,
 				AbsoluteUsage:       7.0,
 				AbsoluteEntitlement: 8.0,
 				ContainerAge:        9.0,
+			},
+			{
+				InstanceId:          1,
+				AbsoluteUsage:       4.0,
+				AbsoluteEntitlement: 5.0,
+				ContainerAge:        6.0,
 			},
 		}))
 
@@ -155,7 +155,7 @@ var _ = Describe("Runner", func() {
 
 	When("fetching the app metrics fails", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchLatestReturns(nil, errors.New("metrics error"))
+			metricsFetcher.FetchAllReturns(nil, errors.New("metrics error"))
 		})
 
 		It("returns a failure", func() {

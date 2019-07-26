@@ -33,49 +33,30 @@ func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
 	return LogCacheFetcher{client: client}
 }
 
-func (f LogCacheFetcher) FetchLatest(appGuid string, instanceCount int) ([]InstanceData, error) {
+func (f LogCacheFetcher) FetchAll(appGuid string, instanceCount int) ([]InstanceData, error) {
 	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-5*time.Minute), logcache.WithDescending())
 	if err != nil {
 		return nil, fmt.Errorf("log-cache read failed: %s", err.Error())
 	}
 
-	latestMetrics := extractLatestMetrics(envelopes, instanceCount)
-	if len(latestMetrics) == 0 {
+	instancesData := parseEnvelopes(envelopes, instanceCount)
+	if len(instancesData) == 0 {
 		return nil, fmt.Errorf("No CPU metrics found for '%s'", appGuid)
 	}
 
-	return latestMetrics, nil
+	return instancesData, nil
 }
 
-func extractLatestMetrics(envelopes []*loggregator_v2.Envelope, instanceCount int) []InstanceData {
-	latestMetrics := make(map[int]InstanceData, instanceCount)
+func parseEnvelopes(envelopes []*loggregator_v2.Envelope, instanceCount int) []InstanceData {
+	var instancesData []InstanceData
 	for _, envelope := range envelopes {
 		instanceData, ok := InstanceDataFromGauge(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
 		if ok && instanceData.InstanceId < instanceCount {
-			_, exists := latestMetrics[instanceData.InstanceId]
-			if !exists {
-				latestMetrics[instanceData.InstanceId] = instanceData
-			}
-
-			if len(latestMetrics) == instanceCount {
-				break
-			}
+			instancesData = append(instancesData, instanceData)
 		}
 	}
 
-	return buildMetricsSlice(latestMetrics, instanceCount)
-}
-
-func buildMetricsSlice(metricsMap map[int]InstanceData, instanceCount int) []InstanceData {
-	var metrics []InstanceData
-	for i := 0; i < instanceCount; i++ {
-		metric, ok := metricsMap[i]
-		if ok {
-			metrics = append(metrics, metric)
-		}
-	}
-
-	return metrics
+	return instancesData
 }
 
 func authenticatedBy(tokenGetter *token.Getter) *authClient {

@@ -30,7 +30,7 @@ var _ = Describe("Logstreamer", func() {
 	})
 
 	JustBeforeEach(func() {
-		usageMetrics, metricsErr = metricsFetcher.FetchLatest(appGuid, 3)
+		usageMetrics, metricsErr = metricsFetcher.FetchAll(appGuid, 3)
 	})
 
 	When("reading from log-cache succeeds", func() {
@@ -68,6 +68,12 @@ var _ = Describe("Logstreamer", func() {
 					ContainerAge:        11000,
 				},
 				{
+					InstanceId:          0,
+					AbsoluteUsage:       3000,
+					AbsoluteEntitlement: 7000,
+					ContainerAge:        12000,
+				},
+				{
 					InstanceId:          2,
 					AbsoluteUsage:       4000,
 					AbsoluteEntitlement: 8000,
@@ -103,28 +109,6 @@ var _ = Describe("Logstreamer", func() {
 		})
 	})
 
-	When("not enough usage metrics envelopes are returned", func() {
-		BeforeEach(func() {
-			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
-				OtherEnvelope(appGuid),
-				MetricEnvelope(appGuid, "0", Metric{Usage: 1000, Entitlement: 5000, Age: 10000}),
-				OtherEnvelope(appGuid),
-			}, nil)
-		})
-
-		It("returns a partial result", func() {
-			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
-				{
-					InstanceId:          0,
-					AbsoluteUsage:       1000,
-					AbsoluteEntitlement: 5000,
-					ContainerAge:        10000,
-				},
-			}))
-		})
-	})
-
 	When("getting stale data from old instances after a scale down", func() {
 		BeforeEach(func() {
 			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
@@ -138,10 +122,10 @@ var _ = Describe("Logstreamer", func() {
 		It("ignores the data from old instances", func() {
 			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
 				{
-					InstanceId:          0,
-					AbsoluteUsage:       1000,
-					AbsoluteEntitlement: 5000,
-					ContainerAge:        10000,
+					InstanceId:          2,
+					AbsoluteUsage:       4000,
+					AbsoluteEntitlement: 8000,
+					ContainerAge:        13000,
 				},
 				{
 					InstanceId:          1,
@@ -150,10 +134,10 @@ var _ = Describe("Logstreamer", func() {
 					ContainerAge:        11000,
 				},
 				{
-					InstanceId:          2,
-					AbsoluteUsage:       4000,
-					AbsoluteEntitlement: 8000,
-					ContainerAge:        13000,
+					InstanceId:          0,
+					AbsoluteUsage:       1000,
+					AbsoluteEntitlement: 5000,
+					ContainerAge:        10000,
 				},
 			}))
 		})

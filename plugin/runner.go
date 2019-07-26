@@ -18,7 +18,7 @@ type CFAppInfoGetter interface {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchLatest(appGUID string, instanceCount int) ([]metrics.InstanceData, error)
+	FetchAll(appGUID string, instanceCount int) ([]metrics.InstanceData, error)
 }
 
 //go:generate counterfeiter . MetricsRenderer
@@ -55,7 +55,7 @@ func (r Runner) Run(appName string) result.Result {
 		return result.FailureFromError(err)
 	}
 
-	usageMetrics, err := r.metricsFetcher.FetchLatest(info.App.Guid, info.App.InstanceCount)
+	usageMetrics, err := r.metricsFetcher.FetchAll(info.App.Guid, info.App.InstanceCount)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}

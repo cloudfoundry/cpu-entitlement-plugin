@@ -9,17 +9,17 @@ import (
 )
 
 type FakeMetricsFetcher struct {
-	FetchLatestStub        func(string, int) ([]metrics.InstanceData, error)
-	fetchLatestMutex       sync.RWMutex
-	fetchLatestArgsForCall []struct {
+	FetchAllStub        func(string, int) ([]metrics.InstanceData, error)
+	fetchAllMutex       sync.RWMutex
+	fetchAllArgsForCall []struct {
 		arg1 string
 		arg2 int
 	}
-	fetchLatestReturns struct {
+	fetchAllReturns struct {
 		result1 []metrics.InstanceData
 		result2 error
 	}
-	fetchLatestReturnsOnCall map[int]struct {
+	fetchAllReturnsOnCall map[int]struct {
 		result1 []metrics.InstanceData
 		result2 error
 	}
@@ -27,65 +27,65 @@ type FakeMetricsFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsFetcher) FetchLatest(arg1 string, arg2 int) ([]metrics.InstanceData, error) {
-	fake.fetchLatestMutex.Lock()
-	ret, specificReturn := fake.fetchLatestReturnsOnCall[len(fake.fetchLatestArgsForCall)]
-	fake.fetchLatestArgsForCall = append(fake.fetchLatestArgsForCall, struct {
+func (fake *FakeMetricsFetcher) FetchAll(arg1 string, arg2 int) ([]metrics.InstanceData, error) {
+	fake.fetchAllMutex.Lock()
+	ret, specificReturn := fake.fetchAllReturnsOnCall[len(fake.fetchAllArgsForCall)]
+	fake.fetchAllArgsForCall = append(fake.fetchAllArgsForCall, struct {
 		arg1 string
 		arg2 int
 	}{arg1, arg2})
-	fake.recordInvocation("FetchLatest", []interface{}{arg1, arg2})
-	fake.fetchLatestMutex.Unlock()
-	if fake.FetchLatestStub != nil {
-		return fake.FetchLatestStub(arg1, arg2)
+	fake.recordInvocation("FetchAll", []interface{}{arg1, arg2})
+	fake.fetchAllMutex.Unlock()
+	if fake.FetchAllStub != nil {
+		return fake.FetchAllStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.fetchLatestReturns
+	fakeReturns := fake.fetchAllReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeMetricsFetcher) FetchLatestCallCount() int {
-	fake.fetchLatestMutex.RLock()
-	defer fake.fetchLatestMutex.RUnlock()
-	return len(fake.fetchLatestArgsForCall)
+func (fake *FakeMetricsFetcher) FetchAllCallCount() int {
+	fake.fetchAllMutex.RLock()
+	defer fake.fetchAllMutex.RUnlock()
+	return len(fake.fetchAllArgsForCall)
 }
 
-func (fake *FakeMetricsFetcher) FetchLatestCalls(stub func(string, int) ([]metrics.InstanceData, error)) {
-	fake.fetchLatestMutex.Lock()
-	defer fake.fetchLatestMutex.Unlock()
-	fake.FetchLatestStub = stub
+func (fake *FakeMetricsFetcher) FetchAllCalls(stub func(string, int) ([]metrics.InstanceData, error)) {
+	fake.fetchAllMutex.Lock()
+	defer fake.fetchAllMutex.Unlock()
+	fake.FetchAllStub = stub
 }
 
-func (fake *FakeMetricsFetcher) FetchLatestArgsForCall(i int) (string, int) {
-	fake.fetchLatestMutex.RLock()
-	defer fake.fetchLatestMutex.RUnlock()
-	argsForCall := fake.fetchLatestArgsForCall[i]
+func (fake *FakeMetricsFetcher) FetchAllArgsForCall(i int) (string, int) {
+	fake.fetchAllMutex.RLock()
+	defer fake.fetchAllMutex.RUnlock()
+	argsForCall := fake.fetchAllArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeMetricsFetcher) FetchLatestReturns(result1 []metrics.InstanceData, result2 error) {
-	fake.fetchLatestMutex.Lock()
-	defer fake.fetchLatestMutex.Unlock()
-	fake.FetchLatestStub = nil
-	fake.fetchLatestReturns = struct {
+func (fake *FakeMetricsFetcher) FetchAllReturns(result1 []metrics.InstanceData, result2 error) {
+	fake.fetchAllMutex.Lock()
+	defer fake.fetchAllMutex.Unlock()
+	fake.FetchAllStub = nil
+	fake.fetchAllReturns = struct {
 		result1 []metrics.InstanceData
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsFetcher) FetchLatestReturnsOnCall(i int, result1 []metrics.InstanceData, result2 error) {
-	fake.fetchLatestMutex.Lock()
-	defer fake.fetchLatestMutex.Unlock()
-	fake.FetchLatestStub = nil
-	if fake.fetchLatestReturnsOnCall == nil {
-		fake.fetchLatestReturnsOnCall = make(map[int]struct {
+func (fake *FakeMetricsFetcher) FetchAllReturnsOnCall(i int, result1 []metrics.InstanceData, result2 error) {
+	fake.fetchAllMutex.Lock()
+	defer fake.fetchAllMutex.Unlock()
+	fake.FetchAllStub = nil
+	if fake.fetchAllReturnsOnCall == nil {
+		fake.fetchAllReturnsOnCall = make(map[int]struct {
 			result1 []metrics.InstanceData
 			result2 error
 		})
 	}
-	fake.fetchLatestReturnsOnCall[i] = struct {
+	fake.fetchAllReturnsOnCall[i] = struct {
 		result1 []metrics.InstanceData
 		result2 error
 	}{result1, result2}
@@ -94,8 +94,8 @@ func (fake *FakeMetricsFetcher) FetchLatestReturnsOnCall(i int, result1 []metric
 func (fake *FakeMetricsFetcher) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.fetchLatestMutex.RLock()
-	defer fake.fetchLatestMutex.RUnlock()
+	fake.fetchAllMutex.RLock()
+	defer fake.fetchAllMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
