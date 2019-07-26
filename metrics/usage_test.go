@@ -71,10 +71,4 @@ var _ = Describe("Usagemetric", func() {
 			})
 		})
 	})
-
-	Describe("EntitlementRatio", func() {
-		It("calculates the CPU usage", func() {
-			Expect(metrics.Usage{AbsoluteUsage: 5, AbsoluteEntitlement: 10}.EntitlementRatio()).To(Equal(0.5))
-		})
-	})
 })

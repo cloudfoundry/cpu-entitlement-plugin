@@ -4,90 +4,90 @@ package pluginfakes
 import (
 	"sync"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 )
 
 type FakeMetricsRenderer struct {
-	ShowMetricsStub        func(metadata.CFAppInfo, []metrics.Usage) error
-	showMetricsMutex       sync.RWMutex
-	showMetricsArgsForCall []struct {
+	ShowInfosStub        func(metadata.CFAppInfo, []calculator.InstanceInfo) error
+	showInfosMutex       sync.RWMutex
+	showInfosArgsForCall []struct {
 		arg1 metadata.CFAppInfo
-		arg2 []metrics.Usage
+		arg2 []calculator.InstanceInfo
 	}
-	showMetricsReturns struct {
+	showInfosReturns struct {
 		result1 error
 	}
-	showMetricsReturnsOnCall map[int]struct {
+	showInfosReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsRenderer) ShowMetrics(arg1 metadata.CFAppInfo, arg2 []metrics.Usage) error {
-	var arg2Copy []metrics.Usage
+func (fake *FakeMetricsRenderer) ShowInfos(arg1 metadata.CFAppInfo, arg2 []calculator.InstanceInfo) error {
+	var arg2Copy []calculator.InstanceInfo
 	if arg2 != nil {
-		arg2Copy = make([]metrics.Usage, len(arg2))
+		arg2Copy = make([]calculator.InstanceInfo, len(arg2))
 		copy(arg2Copy, arg2)
 	}
-	fake.showMetricsMutex.Lock()
-	ret, specificReturn := fake.showMetricsReturnsOnCall[len(fake.showMetricsArgsForCall)]
-	fake.showMetricsArgsForCall = append(fake.showMetricsArgsForCall, struct {
+	fake.showInfosMutex.Lock()
+	ret, specificReturn := fake.showInfosReturnsOnCall[len(fake.showInfosArgsForCall)]
+	fake.showInfosArgsForCall = append(fake.showInfosArgsForCall, struct {
 		arg1 metadata.CFAppInfo
-		arg2 []metrics.Usage
+		arg2 []calculator.InstanceInfo
 	}{arg1, arg2Copy})
-	fake.recordInvocation("ShowMetrics", []interface{}{arg1, arg2Copy})
-	fake.showMetricsMutex.Unlock()
-	if fake.ShowMetricsStub != nil {
-		return fake.ShowMetricsStub(arg1, arg2)
+	fake.recordInvocation("ShowInfos", []interface{}{arg1, arg2Copy})
+	fake.showInfosMutex.Unlock()
+	if fake.ShowInfosStub != nil {
+		return fake.ShowInfosStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.showMetricsReturns
+	fakeReturns := fake.showInfosReturns
 	return fakeReturns.result1
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsCallCount() int {
-	fake.showMetricsMutex.RLock()
-	defer fake.showMetricsMutex.RUnlock()
-	return len(fake.showMetricsArgsForCall)
+func (fake *FakeMetricsRenderer) ShowInfosCallCount() int {
+	fake.showInfosMutex.RLock()
+	defer fake.showInfosMutex.RUnlock()
+	return len(fake.showInfosArgsForCall)
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsCalls(stub func(metadata.CFAppInfo, []metrics.Usage) error) {
-	fake.showMetricsMutex.Lock()
-	defer fake.showMetricsMutex.Unlock()
-	fake.ShowMetricsStub = stub
+func (fake *FakeMetricsRenderer) ShowInfosCalls(stub func(metadata.CFAppInfo, []calculator.InstanceInfo) error) {
+	fake.showInfosMutex.Lock()
+	defer fake.showInfosMutex.Unlock()
+	fake.ShowInfosStub = stub
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsArgsForCall(i int) (metadata.CFAppInfo, []metrics.Usage) {
-	fake.showMetricsMutex.RLock()
-	defer fake.showMetricsMutex.RUnlock()
-	argsForCall := fake.showMetricsArgsForCall[i]
+func (fake *FakeMetricsRenderer) ShowInfosArgsForCall(i int) (metadata.CFAppInfo, []calculator.InstanceInfo) {
+	fake.showInfosMutex.RLock()
+	defer fake.showInfosMutex.RUnlock()
+	argsForCall := fake.showInfosArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsReturns(result1 error) {
-	fake.showMetricsMutex.Lock()
-	defer fake.showMetricsMutex.Unlock()
-	fake.ShowMetricsStub = nil
-	fake.showMetricsReturns = struct {
+func (fake *FakeMetricsRenderer) ShowInfosReturns(result1 error) {
+	fake.showInfosMutex.Lock()
+	defer fake.showInfosMutex.Unlock()
+	fake.ShowInfosStub = nil
+	fake.showInfosReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeMetricsRenderer) ShowMetricsReturnsOnCall(i int, result1 error) {
-	fake.showMetricsMutex.Lock()
-	defer fake.showMetricsMutex.Unlock()
-	fake.ShowMetricsStub = nil
-	if fake.showMetricsReturnsOnCall == nil {
-		fake.showMetricsReturnsOnCall = make(map[int]struct {
+func (fake *FakeMetricsRenderer) ShowInfosReturnsOnCall(i int, result1 error) {
+	fake.showInfosMutex.Lock()
+	defer fake.showInfosMutex.Unlock()
+	fake.ShowInfosStub = nil
+	if fake.showInfosReturnsOnCall == nil {
+		fake.showInfosReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.showMetricsReturnsOnCall[i] = struct {
+	fake.showInfosReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -95,8 +95,8 @@ func (fake *FakeMetricsRenderer) ShowMetricsReturnsOnCall(i int, result1 error) 
 func (fake *FakeMetricsRenderer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.showMetricsMutex.RLock()
-	defer fake.showMetricsMutex.RUnlock()
+	fake.showInfosMutex.RLock()
+	defer fake.showInfosMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

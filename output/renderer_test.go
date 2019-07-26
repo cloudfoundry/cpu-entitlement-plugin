@@ -7,18 +7,18 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	models "code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
 )
 
 var _ = Describe("Renderer", func() {
 	var (
-		appInfo      metadata.CFAppInfo
-		usageMetrics []metrics.Usage
-		display      *outputfakes.FakeDisplay
-		renderer     output.Renderer
+		appInfo       metadata.CFAppInfo
+		instanceInfos []calculator.InstanceInfo
+		display       *outputfakes.FakeDisplay
+		renderer      output.Renderer
 	)
 
 	BeforeEach(func() {
@@ -28,18 +28,14 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		usageMetrics = []metrics.Usage{
+		instanceInfos = []calculator.InstanceInfo{
 			{
-				InstanceId:          123,
-				AbsoluteUsage:       1.0,
-				AbsoluteEntitlement: 2.0,
-				ContainerAge:        3.0,
+				InstanceId:       123,
+				EntitlementUsage: 0.5,
 			},
 			{
-				InstanceId:          432,
-				AbsoluteUsage:       1.5,
-				AbsoluteEntitlement: 2.0,
-				ContainerAge:        3.0,
+				InstanceId:       432,
+				EntitlementUsage: 0.75,
 			},
 		}
 
@@ -49,7 +45,7 @@ var _ = Describe("Renderer", func() {
 
 	Describe("ShowMetrics", func() {
 		JustBeforeEach(func() {
-			renderer.ShowMetrics(appInfo, usageMetrics)
+			renderer.ShowInfos(appInfo, instanceInfos)
 		})
 
 		It("shows a message with the application info", func() {
@@ -76,7 +72,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more of the instances is above entitlement", func() {
 			BeforeEach(func() {
-				usageMetrics[1].AbsoluteUsage = 3.0
+				instanceInfos[1].EntitlementUsage = 1.5
 			})
 
 			It("highlights the overentitled row", func() {
@@ -97,7 +93,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement", func() {
 			BeforeEach(func() {
-				usageMetrics[1].AbsoluteUsage = 1.92
+				instanceInfos[1].EntitlementUsage = 0.96
 			})
 
 			It("highlights the near overentitled row", func() {
@@ -118,9 +114,9 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement, and one is over 100%", func() {
 			BeforeEach(func() {
-				usageMetrics[0].AbsoluteUsage = 1.92
-				usageMetrics[1].AbsoluteUsage = 3.0
-				usageMetrics = append(usageMetrics, usageMetrics[0])
+				instanceInfos[0].EntitlementUsage = 0.96
+				instanceInfos[1].EntitlementUsage = 1.5
+				instanceInfos = append(instanceInfos, instanceInfos[0])
 			})
 
 			It("highlights both rows in various colours", func() {

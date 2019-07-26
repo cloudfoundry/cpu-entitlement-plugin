@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"github.com/fatih/color"
 )
 
@@ -24,7 +24,7 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []metrics.Usage) error {
+func (r Renderer) ShowInfos(info metadata.CFAppInfo, infos []calculator.InstanceInfo) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(info.App.Name),
 		terminal.EntityNameColor(info.Org),
@@ -35,14 +35,14 @@ func (r Renderer) ShowMetrics(info metadata.CFAppInfo, metrics []metrics.Usage) 
 	var rows [][]string
 
 	var status string
-	for _, metric := range metrics {
-		instanceId := fmt.Sprintf("#%d", metric.InstanceId)
-		entitlementRatio := fmt.Sprintf("%.2f%%", metric.EntitlementRatio()*100)
-		if metric.EntitlementRatio() > 1 {
+	for _, i := range infos {
+		instanceId := fmt.Sprintf("#%d", i.InstanceId)
+		entitlementRatio := fmt.Sprintf("%.2f%%", i.EntitlementUsage*100)
+		if i.EntitlementUsage > 1 {
 			status = "over"
 			instanceId = terminal.Colorize(instanceId, color.FgRed)
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
-		} else if metric.EntitlementRatio() > 0.95 {
+		} else if i.EntitlementUsage > 0.95 {
 			if status == "" {
 				status = "near"
 			}

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	models "code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
@@ -16,9 +17,10 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		infoGetter      *pluginfakes.FakeCFAppInfoGetter
-		metricFetcher   *pluginfakes.FakeMetricFetcher
-		metricsRenderer *pluginfakes.FakeMetricsRenderer
+		infoGetter        *pluginfakes.FakeCFAppInfoGetter
+		metricFetcher     *pluginfakes.FakeMetricFetcher
+		metricsCalculator *pluginfakes.FakeMetricsCalculator
+		metricsRenderer   *pluginfakes.FakeMetricsRenderer
 
 		runner    plugin.Runner
 		runResult result.Result
@@ -27,8 +29,9 @@ var _ = Describe("Runner", func() {
 	BeforeEach(func() {
 		infoGetter = new(pluginfakes.FakeCFAppInfoGetter)
 		metricFetcher = new(pluginfakes.FakeMetricFetcher)
+		metricsCalculator = new(pluginfakes.FakeMetricsCalculator)
 		metricsRenderer = new(pluginfakes.FakeMetricsRenderer)
-		runner = plugin.NewRunner(infoGetter, metricFetcher, metricsRenderer)
+		runner = plugin.NewRunner(infoGetter, metricFetcher, metricsCalculator, metricsRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
 			App: models.GetAppModel{
@@ -58,6 +61,21 @@ var _ = Describe("Runner", func() {
 				ContainerAge:        9.0,
 			},
 		}, nil)
+
+		metricsCalculator.CalculateInstanceInfosReturns([]calculator.InstanceInfo{
+			{
+				InstanceId:       0,
+				EntitlementUsage: 0.5,
+			},
+			{
+				InstanceId:       1,
+				EntitlementUsage: 0.8,
+			},
+			{
+				InstanceId:       2,
+				EntitlementUsage: 0.875,
+			},
+		})
 	})
 
 	JustBeforeEach(func() {
@@ -76,15 +94,8 @@ var _ = Describe("Runner", func() {
 		Expect(guid).To(Equal("123"))
 		Expect(instanceCount).To(Equal(3))
 
-		Expect(metricsRenderer.ShowMetricsCallCount()).To(Equal(1))
-		info, usageMetrics := metricsRenderer.ShowMetricsArgsForCall(0)
-		Expect(info).To(Equal(metadata.CFAppInfo{
-			App: models.GetAppModel{
-				Guid:          "123",
-				Name:          "app-name",
-				InstanceCount: 3,
-			},
-		}))
+		Expect(metricsCalculator.CalculateInstanceInfosCallCount()).To(Equal(1))
+		usageMetrics := metricsCalculator.CalculateInstanceInfosArgsForCall(0)
 		Expect(usageMetrics).To(Equal([]metrics.Usage{
 			{
 				InstanceId:          0,
@@ -103,6 +114,30 @@ var _ = Describe("Runner", func() {
 				AbsoluteUsage:       7.0,
 				AbsoluteEntitlement: 8.0,
 				ContainerAge:        9.0,
+			},
+		}))
+
+		Expect(metricsRenderer.ShowInfosCallCount()).To(Equal(1))
+		info, instanceInfos := metricsRenderer.ShowInfosArgsForCall(0)
+		Expect(info).To(Equal(metadata.CFAppInfo{
+			App: models.GetAppModel{
+				Guid:          "123",
+				Name:          "app-name",
+				InstanceCount: 3,
+			},
+		}))
+		Expect(instanceInfos).To(Equal([]calculator.InstanceInfo{
+			{
+				InstanceId:       0,
+				EntitlementUsage: 0.5,
+			},
+			{
+				InstanceId:       1,
+				EntitlementUsage: 0.8,
+			},
+			{
+				InstanceId:       2,
+				EntitlementUsage: 0.875,
 			},
 		}))
 	})
@@ -131,7 +166,7 @@ var _ = Describe("Runner", func() {
 
 	When("rendering the app metrics fails", func() {
 		BeforeEach(func() {
-			metricsRenderer.ShowMetricsReturns(errors.New("render error"))
+			metricsRenderer.ShowInfosReturns(errors.New("render error"))
 		})
 
 		It("returns a failure", func() {

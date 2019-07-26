@@ -44,7 +44,3 @@ func UsageFromGauge(instanceId string, metric gaugeMetric) (Usage, bool) {
 		ContainerAge:        containerAge.Value,
 	}, true
 }
-
-func (m Usage) EntitlementRatio() float64 {
-	return m.AbsoluteUsage / m.AbsoluteEntitlement
-}
