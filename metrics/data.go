@@ -2,6 +2,7 @@ package metrics // import "code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 
 import (
 	"strconv"
+	"time"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 )
@@ -9,6 +10,7 @@ import (
 type gaugeMetric map[string]*loggregator_v2.GaugeValue
 
 type InstanceData struct {
+	Time                time.Time
 	InstanceId          int
 	AbsoluteUsage       float64
 	AbsoluteEntitlement float64
