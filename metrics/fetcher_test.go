@@ -49,7 +49,7 @@ var _ = Describe("Logstreamer", func() {
 			ctx, sourceID, startTime, _ := logCacheClient.ReadArgsForCall(0)
 			Expect(ctx).To(Equal(context.Background()))
 			Expect(sourceID).To(Equal(appGuid))
-			Expect(startTime).To(BeTemporally("~", time.Now().Add(-5*time.Minute)))
+			Expect(startTime).To(BeTemporally("~", time.Now().Add(-metrics.Month)))
 		})
 
 		It("returns the correct metrics", func() {

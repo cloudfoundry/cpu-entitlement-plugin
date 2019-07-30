@@ -11,6 +11,8 @@ import (
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
+const Month = 730 * time.Hour
+
 type LogCacheFetcher struct {
 	client LogCacheClient
 }
@@ -34,7 +36,7 @@ func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
 }
 
 func (f LogCacheFetcher) FetchAll(appGuid string, instanceCount int) ([]InstanceData, error) {
-	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-5*time.Minute), logcache.WithDescending())
+	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-Month), logcache.WithDescending())
 	if err != nil {
 		return nil, fmt.Errorf("log-cache read failed: %s", err.Error())
 	}
