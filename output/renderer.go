@@ -59,7 +59,7 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	}
 
 	if status != "" {
-		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("\nTIP: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", status), color.FgCyan))
+		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("TIP: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", status), color.FgCyan))
 	}
 
 	return nil

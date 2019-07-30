@@ -19,5 +19,13 @@ func (d TerminalDisplay) ShowTable(headers []string, rows [][]string) error {
 	for _, row := range rows {
 		table.Add(row...)
 	}
-	return table.Print()
+
+	err := table.Print()
+	if err != nil {
+		return err
+	}
+
+	d.ui.Say("")
+
+	return nil
 }
