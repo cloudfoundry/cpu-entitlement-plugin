@@ -10,13 +10,13 @@ import (
 
 var _ = Describe("Calculator", func() {
 	var (
-		usages  []metrics.InstanceData
+		data    []metrics.InstanceData
 		calc    calculator.Calculator
 		reports []calculator.InstanceReport
 	)
 
 	BeforeEach(func() {
-		usages = []metrics.InstanceData{
+		data = []metrics.InstanceData{
 			{
 				InstanceId:          1,
 				AbsoluteUsage:       7.0,
@@ -40,7 +40,7 @@ var _ = Describe("Calculator", func() {
 	})
 
 	JustBeforeEach(func() {
-		reports = calc.CalculateInstanceReports(usages)
+		reports = calc.CalculateInstanceReports(data)
 	})
 
 	It("calculates entitlement ratio", func() {
@@ -52,7 +52,7 @@ var _ = Describe("Calculator", func() {
 
 	When("an instance is missing from the data", func() {
 		BeforeEach(func() {
-			usages = []metrics.InstanceData{
+			data = []metrics.InstanceData{
 				{
 					InstanceId:          2,
 					AbsoluteUsage:       4.0,

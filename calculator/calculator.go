@@ -29,10 +29,10 @@ func (c Calculator) CalculateInstanceReports(instancesData []metrics.InstanceDat
 	return buildReportsSlice(latestReports)
 }
 
-func (c Calculator) calculateInstanceReport(usage metrics.InstanceData) InstanceReport {
+func (c Calculator) calculateInstanceReport(data metrics.InstanceData) InstanceReport {
 	return InstanceReport{
-		InstanceId:       usage.InstanceId,
-		EntitlementUsage: usage.AbsoluteUsage / usage.AbsoluteEntitlement,
+		InstanceId:       data.InstanceId,
+		EntitlementUsage: data.AbsoluteUsage / data.AbsoluteEntitlement,
 	}
 }
 
