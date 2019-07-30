@@ -36,7 +36,11 @@ func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
 }
 
 func (f LogCacheFetcher) FetchAll(appGuid string, instanceCount int) ([]InstanceData, error) {
-	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-Month), logcache.WithDescending())
+	envelopes, err := f.client.Read(context.Background(), appGuid, time.Now().Add(-Month),
+		logcache.WithDescending(),
+		logcache.WithLimit(1000),
+		logcache.WithNameFilter("absolute_usage|absolute_entitlement|container_age"),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("log-cache read failed: %s", err.Error())
 	}
