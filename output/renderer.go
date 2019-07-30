@@ -9,6 +9,8 @@ import (
 	"github.com/fatih/color"
 )
 
+const DateFmt = "2006-01-02 15:04:05"
+
 type Renderer struct {
 	display Display
 }
@@ -35,6 +37,7 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	var rows [][]string
 
 	var status string
+	var reportsWithSpikes []calculator.InstanceReport
 	for _, report := range instanceReports {
 		instanceId := fmt.Sprintf("#%d", report.InstanceId)
 		entitlementRatio := fmt.Sprintf("%.2f%%", report.EntitlementUsage*100)
@@ -50,6 +53,10 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgYellow)
 		}
 
+		if report.HasRecordedSpike() && report.EntitlementUsage <= 1 {
+			reportsWithSpikes = append(reportsWithSpikes, report)
+		}
+
 		rows = append(rows, []string{instanceId, entitlementRatio})
 	}
 
@@ -60,6 +67,14 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 
 	if status != "" {
 		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("TIP: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", status), color.FgCyan))
+	}
+
+	for _, reportWithSpike := range reportsWithSpikes {
+		if reportWithSpike.LastSpikeFrom.Equal(reportWithSpike.LastSpikeTo) {
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceId, reportWithSpike.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
+		} else {
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceId, reportWithSpike.LastSpikeFrom.Format(DateFmt), reportWithSpike.LastSpikeTo.Format(DateFmt)), color.FgYellow))
+		}
 	}
 
 	return nil

@@ -1,6 +1,9 @@
 package output_test
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/fatih/color"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -133,6 +136,62 @@ var _ = Describe("Renderer", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
 				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+			})
+		})
+
+		When("one or more instances have been over entitlement", func() {
+			BeforeEach(func() {
+				instanceReports = append(instanceReports, calculator.InstanceReport{
+					InstanceId:       234,
+					EntitlementUsage: 0.5,
+					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+				}, calculator.InstanceReport{
+					InstanceId:       345,
+					EntitlementUsage: 0.5,
+					LastSpikeFrom:    time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
+					LastSpikeTo:      time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
+				})
+			})
+
+			It("prints warnings about instances having been over entitlement", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(3))
+				firstWarning, _ := display.ShowMessageArgsForCall(1)
+				Expect(firstWarning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #234 was over entitlement from 2019-07-30 09:00:00 to 2019-07-31 12:00:00"), color.FgYellow)))
+				secondWarning, _ := display.ShowMessageArgsForCall(2)
+				Expect(secondWarning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #345 was over entitlement from 2019-06-15 10:00:00 to 2019-06-21 05:00:00"), color.FgYellow)))
+			})
+		})
+
+		When("an instance is currently over entitlement with a 'current' spike", func() {
+			BeforeEach(func() {
+				instanceReports = append(instanceReports, calculator.InstanceReport{
+					InstanceId:       234,
+					EntitlementUsage: 1.5,
+					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+				})
+			})
+
+			It("suppresses warning about instance having been over entitlement", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+			})
+		})
+
+		When("spike was instantaneous", func() {
+			BeforeEach(func() {
+				instanceReports = append(instanceReports, calculator.InstanceReport{
+					InstanceId:       234,
+					EntitlementUsage: 0.5,
+					LastSpikeFrom:    time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+				})
+			})
+
+			It("says 'at', not 'from'...'to' in the warning message", func() {
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+				warning, _ := display.ShowMessageArgsForCall(1)
+				Expect(warning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #234 was over entitlement at 2019-07-31 12:00:00"), color.FgYellow)))
 			})
 		})
 	})

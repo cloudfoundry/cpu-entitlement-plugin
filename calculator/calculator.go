@@ -18,12 +18,12 @@ type InstanceReport struct {
 	isComplete bool
 }
 
-func (r InstanceReport) hasRecordedSpike() bool {
+func (r InstanceReport) HasRecordedSpike() bool {
 	return !r.LastSpikeTo.IsZero()
 }
 
 func (r InstanceReport) hasNotRecordedSpikeYet() bool {
-	return !r.hasRecordedSpike()
+	return !r.HasRecordedSpike()
 }
 
 func New() Calculator {
@@ -51,7 +51,7 @@ func (c Calculator) CalculateInstanceReports(instancesData []metrics.InstanceDat
 			report.LastSpikeFrom = instanceData.Time
 		}
 
-		if !isSpiking(instanceData) && report.hasRecordedSpike() {
+		if !isSpiking(instanceData) && report.HasRecordedSpike() {
 			report.isComplete = true
 		}
 	}
