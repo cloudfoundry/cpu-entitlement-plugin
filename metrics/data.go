@@ -17,7 +17,8 @@ type InstanceData struct {
 	ContainerAge        float64
 }
 
-func InstanceDataFromGauge(instanceId string, metric gaugeMetric) (InstanceData, bool) {
+func InstanceDataFromEnvelope(envelope loggregator_v2.Envelope) (InstanceData, bool) {
+	metric := envelope.GetGauge().GetMetrics()
 	absoluteUsage := metric["absolute_usage"]
 	absoluteEntitlement := metric["absolute_entitlement"]
 	containerAge := metric["container_age"]
@@ -34,12 +35,13 @@ func InstanceDataFromGauge(instanceId string, metric gaugeMetric) (InstanceData,
 		return InstanceData{}, false
 	}
 
-	instanceIndex, err := strconv.Atoi(instanceId)
+	instanceIndex, err := strconv.Atoi(envelope.GetInstanceId())
 	if err != nil {
 		return InstanceData{}, false
 	}
 
 	return InstanceData{
+		Time:                time.Unix(0, envelope.Timestamp),
 		InstanceId:          instanceIndex,
 		AbsoluteUsage:       absoluteUsage.Value,
 		AbsoluteEntitlement: absoluteEntitlement.Value,

@@ -1,6 +1,8 @@
 package metrics_test
 
 import (
+	"time"
+
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -8,12 +10,13 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 )
 
-var _ = Describe("Usagemetric", func() {
-	Describe("FromGaugeMetric", func() {
+var _ = Describe("InstanceData", func() {
+	Describe("FromEnvelope", func() {
 		var (
+			envelope    loggregator_v2.Envelope
 			gaugeValues map[string]*loggregator_v2.GaugeValue
 			ok          bool
-			usageMetric metrics.InstanceData
+			data        metrics.InstanceData
 		)
 
 		BeforeEach(func() {
@@ -25,12 +28,22 @@ var _ = Describe("Usagemetric", func() {
 		})
 
 		JustBeforeEach(func() {
-			usageMetric, ok = metrics.InstanceDataFromGauge("0", gaugeValues)
+			envelope = loggregator_v2.Envelope{
+				Timestamp:  123,
+				InstanceId: "0",
+				Message: &loggregator_v2.Envelope_Gauge{
+					Gauge: &loggregator_v2.Gauge{
+						Metrics: gaugeValues,
+					},
+				},
+			}
+			data, ok = metrics.InstanceDataFromEnvelope(envelope)
 		})
 
 		It("builds an InstanceData metric from a gauge metric message map", func() {
 			Expect(ok).To(BeTrue())
-			Expect(usageMetric).To(Equal(metrics.InstanceData{
+			Expect(data).To(Equal(metrics.InstanceData{
+				Time:                time.Unix(0, 123),
 				InstanceId:          0,
 				AbsoluteUsage:       1,
 				AbsoluteEntitlement: 2,
@@ -45,7 +58,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
+				Expect(data).To(Equal(metrics.InstanceData{}))
 			})
 		})
 
@@ -56,7 +69,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
+				Expect(data).To(Equal(metrics.InstanceData{}))
 			})
 		})
 
@@ -67,7 +80,7 @@ var _ = Describe("Usagemetric", func() {
 
 			It("returns !ok", func() {
 				Expect(ok).To(BeFalse())
-				Expect(usageMetric).To(Equal(metrics.InstanceData{}))
+				Expect(data).To(Equal(metrics.InstanceData{}))
 			})
 		})
 	})

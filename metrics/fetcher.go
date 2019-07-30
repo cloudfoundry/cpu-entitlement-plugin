@@ -52,7 +52,7 @@ func (f LogCacheFetcher) FetchAll(appGuid string, instanceCount int) ([]Instance
 func parseEnvelopes(envelopes []*loggregator_v2.Envelope, instanceCount int) []InstanceData {
 	var instancesData []InstanceData
 	for _, envelope := range envelopes {
-		instanceData, ok := InstanceDataFromGauge(envelope.GetInstanceId(), envelope.GetGauge().GetMetrics())
+		instanceData, ok := InstanceDataFromEnvelope(*envelope)
 		if ok && instanceData.InstanceId < instanceCount {
 			instancesData = append(instancesData, instanceData)
 		}
