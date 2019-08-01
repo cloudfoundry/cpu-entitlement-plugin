@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/cli v0.0.0-20181126222710-7168de1051d4
 	code.cloudfoundry.org/go-loggregator v7.2.0+incompatible
 	code.cloudfoundry.org/gofileutils v0.0.0-20170111115228-4d0c80011a0f // indirect
-	code.cloudfoundry.org/log-cache v2.1.0+incompatible
+	code.cloudfoundry.org/log-cache v2.3.1+incompatible
 	code.cloudfoundry.org/rfc5424 v0.0.0-20180905210152-236a6d29298a // indirect
 	code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d // indirect
 	github.com/SermoDigital/jose v0.0.0-20161205224733-f6df55f235c2 // indirect
