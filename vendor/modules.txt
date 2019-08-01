@@ -31,10 +31,10 @@ code.cloudfoundry.org/cli/api/uaa/constant
 code.cloudfoundry.org/cli/api/uaa/internal
 # code.cloudfoundry.org/go-loggregator v7.2.0+incompatible
 code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2
-# code.cloudfoundry.org/log-cache v2.1.0+incompatible
+# code.cloudfoundry.org/log-cache v2.3.1+incompatible
 code.cloudfoundry.org/log-cache/pkg/client
-code.cloudfoundry.org/log-cache/pkg/marshaler
 code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1
+code.cloudfoundry.org/log-cache/pkg/marshaler
 # code.cloudfoundry.org/rfc5424 v0.0.0-20180905210152-236a6d29298a
 code.cloudfoundry.org/rfc5424
 # github.com/SermoDigital/jose v0.0.0-20161205224733-f6df55f235c2
@@ -67,8 +67,8 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 github.com/golang/protobuf/ptypes/wrappers
-github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/protoc-gen-go/descriptor
+github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/protoc-gen-go/generator/internal/remap
 github.com/golang/protobuf/protoc-gen-go/plugin
 # github.com/grpc-ecosystem/grpc-gateway v1.7.0
@@ -169,14 +169,15 @@ google.golang.org/genproto/protobuf/field_mask
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.16.0
 google.golang.org/grpc
+google.golang.org/grpc/codes
+google.golang.org/grpc/grpclog
+google.golang.org/grpc/status
 google.golang.org/grpc/balancer
 google.golang.org/grpc/balancer/roundrobin
-google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
 google.golang.org/grpc/credentials
 google.golang.org/grpc/encoding
 google.golang.org/grpc/encoding/proto
-google.golang.org/grpc/grpclog
 google.golang.org/grpc/internal
 google.golang.org/grpc/internal/backoff
 google.golang.org/grpc/internal/channelz
@@ -191,7 +192,6 @@ google.golang.org/grpc/resolver
 google.golang.org/grpc/resolver/dns
 google.golang.org/grpc/resolver/passthrough
 google.golang.org/grpc/stats
-google.golang.org/grpc/status
 google.golang.org/grpc/tap
 google.golang.org/grpc/balancer/base
 # gopkg.in/cheggaaa/pb.v1 v1.0.26

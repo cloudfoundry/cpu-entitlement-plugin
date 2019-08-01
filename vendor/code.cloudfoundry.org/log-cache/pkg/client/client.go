@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -342,6 +343,51 @@ func (c *Client) LogCacheVersion(ctx context.Context) (semver.Version, error) {
 	}
 
 	return semver.Parse(info.Version)
+}
+
+func (c *Client) LogCacheVMUptime(ctx context.Context) (int64, error) {
+	u, err := url.Parse(c.addr)
+	if err != nil {
+		return -1, err
+	}
+
+	u.Path = "/api/v1/info"
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return -1, err
+	}
+	req = req.WithContext(ctx)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return -1, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var info struct {
+		VMUptime string `json:"vm_uptime"`
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	if err != nil {
+		return -1, err
+	}
+
+	if info.VMUptime == "" {
+		return -1, errors.New("This version of log cache does not support vm_uptime info")
+	}
+
+	uptime, err := strconv.ParseInt(info.VMUptime, 10, 64)
+	if err != nil {
+		return -1, err
+	}
+
+	return uptime, nil
 }
 
 // PromQLOption configures the URL that is used to submit the query. The
