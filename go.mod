@@ -5,7 +5,7 @@ go 1.12
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20180906201452-2aa6f33b730c // indirect
 	code.cloudfoundry.org/cli v0.0.0-20181126222710-7168de1051d4
-	code.cloudfoundry.org/go-loggregator v7.2.0+incompatible
+	code.cloudfoundry.org/go-loggregator v7.4.0+incompatible
 	code.cloudfoundry.org/gofileutils v0.0.0-20170111115228-4d0c80011a0f // indirect
 	code.cloudfoundry.org/log-cache v2.3.1+incompatible
 	code.cloudfoundry.org/rfc5424 v0.0.0-20180905210152-236a6d29298a // indirect
