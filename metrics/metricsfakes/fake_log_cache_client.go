@@ -9,9 +9,40 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/log-cache/pkg/client"
+	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
 type FakeLogCacheClient struct {
+	PromQLStub        func(context.Context, string, ...client.PromQLOption) (*logcache_v1.PromQL_InstantQueryResult, error)
+	promQLMutex       sync.RWMutex
+	promQLArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []client.PromQLOption
+	}
+	promQLReturns struct {
+		result1 *logcache_v1.PromQL_InstantQueryResult
+		result2 error
+	}
+	promQLReturnsOnCall map[int]struct {
+		result1 *logcache_v1.PromQL_InstantQueryResult
+		result2 error
+	}
+	PromQLRangeStub        func(context.Context, string, ...client.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)
+	promQLRangeMutex       sync.RWMutex
+	promQLRangeArgsForCall []struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []client.PromQLOption
+	}
+	promQLRangeReturns struct {
+		result1 *logcache_v1.PromQL_RangeQueryResult
+		result2 error
+	}
+	promQLRangeReturnsOnCall map[int]struct {
+		result1 *logcache_v1.PromQL_RangeQueryResult
+		result2 error
+	}
 	ReadStub        func(context.Context, string, time.Time, ...client.ReadOption) ([]*loggregator_v2.Envelope, error)
 	readMutex       sync.RWMutex
 	readArgsForCall []struct {
@@ -30,6 +61,136 @@ type FakeLogCacheClient struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeLogCacheClient) PromQL(arg1 context.Context, arg2 string, arg3 ...client.PromQLOption) (*logcache_v1.PromQL_InstantQueryResult, error) {
+	fake.promQLMutex.Lock()
+	ret, specificReturn := fake.promQLReturnsOnCall[len(fake.promQLArgsForCall)]
+	fake.promQLArgsForCall = append(fake.promQLArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []client.PromQLOption
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("PromQL", []interface{}{arg1, arg2, arg3})
+	fake.promQLMutex.Unlock()
+	if fake.PromQLStub != nil {
+		return fake.PromQLStub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.promQLReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeLogCacheClient) PromQLCallCount() int {
+	fake.promQLMutex.RLock()
+	defer fake.promQLMutex.RUnlock()
+	return len(fake.promQLArgsForCall)
+}
+
+func (fake *FakeLogCacheClient) PromQLCalls(stub func(context.Context, string, ...client.PromQLOption) (*logcache_v1.PromQL_InstantQueryResult, error)) {
+	fake.promQLMutex.Lock()
+	defer fake.promQLMutex.Unlock()
+	fake.PromQLStub = stub
+}
+
+func (fake *FakeLogCacheClient) PromQLArgsForCall(i int) (context.Context, string, []client.PromQLOption) {
+	fake.promQLMutex.RLock()
+	defer fake.promQLMutex.RUnlock()
+	argsForCall := fake.promQLArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeLogCacheClient) PromQLReturns(result1 *logcache_v1.PromQL_InstantQueryResult, result2 error) {
+	fake.promQLMutex.Lock()
+	defer fake.promQLMutex.Unlock()
+	fake.PromQLStub = nil
+	fake.promQLReturns = struct {
+		result1 *logcache_v1.PromQL_InstantQueryResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeLogCacheClient) PromQLReturnsOnCall(i int, result1 *logcache_v1.PromQL_InstantQueryResult, result2 error) {
+	fake.promQLMutex.Lock()
+	defer fake.promQLMutex.Unlock()
+	fake.PromQLStub = nil
+	if fake.promQLReturnsOnCall == nil {
+		fake.promQLReturnsOnCall = make(map[int]struct {
+			result1 *logcache_v1.PromQL_InstantQueryResult
+			result2 error
+		})
+	}
+	fake.promQLReturnsOnCall[i] = struct {
+		result1 *logcache_v1.PromQL_InstantQueryResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeLogCacheClient) PromQLRange(arg1 context.Context, arg2 string, arg3 ...client.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error) {
+	fake.promQLRangeMutex.Lock()
+	ret, specificReturn := fake.promQLRangeReturnsOnCall[len(fake.promQLRangeArgsForCall)]
+	fake.promQLRangeArgsForCall = append(fake.promQLRangeArgsForCall, struct {
+		arg1 context.Context
+		arg2 string
+		arg3 []client.PromQLOption
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("PromQLRange", []interface{}{arg1, arg2, arg3})
+	fake.promQLRangeMutex.Unlock()
+	if fake.PromQLRangeStub != nil {
+		return fake.PromQLRangeStub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.promQLRangeReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeLogCacheClient) PromQLRangeCallCount() int {
+	fake.promQLRangeMutex.RLock()
+	defer fake.promQLRangeMutex.RUnlock()
+	return len(fake.promQLRangeArgsForCall)
+}
+
+func (fake *FakeLogCacheClient) PromQLRangeCalls(stub func(context.Context, string, ...client.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)) {
+	fake.promQLRangeMutex.Lock()
+	defer fake.promQLRangeMutex.Unlock()
+	fake.PromQLRangeStub = stub
+}
+
+func (fake *FakeLogCacheClient) PromQLRangeArgsForCall(i int) (context.Context, string, []client.PromQLOption) {
+	fake.promQLRangeMutex.RLock()
+	defer fake.promQLRangeMutex.RUnlock()
+	argsForCall := fake.promQLRangeArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeLogCacheClient) PromQLRangeReturns(result1 *logcache_v1.PromQL_RangeQueryResult, result2 error) {
+	fake.promQLRangeMutex.Lock()
+	defer fake.promQLRangeMutex.Unlock()
+	fake.PromQLRangeStub = nil
+	fake.promQLRangeReturns = struct {
+		result1 *logcache_v1.PromQL_RangeQueryResult
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeLogCacheClient) PromQLRangeReturnsOnCall(i int, result1 *logcache_v1.PromQL_RangeQueryResult, result2 error) {
+	fake.promQLRangeMutex.Lock()
+	defer fake.promQLRangeMutex.Unlock()
+	fake.PromQLRangeStub = nil
+	if fake.promQLRangeReturnsOnCall == nil {
+		fake.promQLRangeReturnsOnCall = make(map[int]struct {
+			result1 *logcache_v1.PromQL_RangeQueryResult
+			result2 error
+		})
+	}
+	fake.promQLRangeReturnsOnCall[i] = struct {
+		result1 *logcache_v1.PromQL_RangeQueryResult
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeLogCacheClient) Read(arg1 context.Context, arg2 string, arg3 time.Time, arg4 ...client.ReadOption) ([]*loggregator_v2.Envelope, error) {
@@ -101,6 +262,10 @@ func (fake *FakeLogCacheClient) ReadReturnsOnCall(i int, result1 []*loggregator_
 func (fake *FakeLogCacheClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.promQLMutex.RLock()
+	defer fake.promQLMutex.RUnlock()
+	fake.promQLRangeMutex.RLock()
+	defer fake.promQLRangeMutex.RUnlock()
 	fake.readMutex.RLock()
 	defer fake.readMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

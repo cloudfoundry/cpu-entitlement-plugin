@@ -3,90 +3,93 @@ package pluginfakes
 
 import (
 	"sync"
+	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 )
 
 type FakeMetricsFetcher struct {
-	FetchAllStub        func(string, int) ([]metrics.InstanceData, error)
-	fetchAllMutex       sync.RWMutex
-	fetchAllArgsForCall []struct {
+	FetchInstanceDataStub        func(string, time.Time, time.Time) (map[int][]metrics.InstanceData, error)
+	fetchInstanceDataMutex       sync.RWMutex
+	fetchInstanceDataArgsForCall []struct {
 		arg1 string
-		arg2 int
+		arg2 time.Time
+		arg3 time.Time
 	}
-	fetchAllReturns struct {
-		result1 []metrics.InstanceData
+	fetchInstanceDataReturns struct {
+		result1 map[int][]metrics.InstanceData
 		result2 error
 	}
-	fetchAllReturnsOnCall map[int]struct {
-		result1 []metrics.InstanceData
+	fetchInstanceDataReturnsOnCall map[int]struct {
+		result1 map[int][]metrics.InstanceData
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsFetcher) FetchAll(arg1 string, arg2 int) ([]metrics.InstanceData, error) {
-	fake.fetchAllMutex.Lock()
-	ret, specificReturn := fake.fetchAllReturnsOnCall[len(fake.fetchAllArgsForCall)]
-	fake.fetchAllArgsForCall = append(fake.fetchAllArgsForCall, struct {
+func (fake *FakeMetricsFetcher) FetchInstanceData(arg1 string, arg2 time.Time, arg3 time.Time) (map[int][]metrics.InstanceData, error) {
+	fake.fetchInstanceDataMutex.Lock()
+	ret, specificReturn := fake.fetchInstanceDataReturnsOnCall[len(fake.fetchInstanceDataArgsForCall)]
+	fake.fetchInstanceDataArgsForCall = append(fake.fetchInstanceDataArgsForCall, struct {
 		arg1 string
-		arg2 int
-	}{arg1, arg2})
-	fake.recordInvocation("FetchAll", []interface{}{arg1, arg2})
-	fake.fetchAllMutex.Unlock()
-	if fake.FetchAllStub != nil {
-		return fake.FetchAllStub(arg1, arg2)
+		arg2 time.Time
+		arg3 time.Time
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("FetchInstanceData", []interface{}{arg1, arg2, arg3})
+	fake.fetchInstanceDataMutex.Unlock()
+	if fake.FetchInstanceDataStub != nil {
+		return fake.FetchInstanceDataStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.fetchAllReturns
+	fakeReturns := fake.fetchInstanceDataReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeMetricsFetcher) FetchAllCallCount() int {
-	fake.fetchAllMutex.RLock()
-	defer fake.fetchAllMutex.RUnlock()
-	return len(fake.fetchAllArgsForCall)
+func (fake *FakeMetricsFetcher) FetchInstanceDataCallCount() int {
+	fake.fetchInstanceDataMutex.RLock()
+	defer fake.fetchInstanceDataMutex.RUnlock()
+	return len(fake.fetchInstanceDataArgsForCall)
 }
 
-func (fake *FakeMetricsFetcher) FetchAllCalls(stub func(string, int) ([]metrics.InstanceData, error)) {
-	fake.fetchAllMutex.Lock()
-	defer fake.fetchAllMutex.Unlock()
-	fake.FetchAllStub = stub
+func (fake *FakeMetricsFetcher) FetchInstanceDataCalls(stub func(string, time.Time, time.Time) (map[int][]metrics.InstanceData, error)) {
+	fake.fetchInstanceDataMutex.Lock()
+	defer fake.fetchInstanceDataMutex.Unlock()
+	fake.FetchInstanceDataStub = stub
 }
 
-func (fake *FakeMetricsFetcher) FetchAllArgsForCall(i int) (string, int) {
-	fake.fetchAllMutex.RLock()
-	defer fake.fetchAllMutex.RUnlock()
-	argsForCall := fake.fetchAllArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+func (fake *FakeMetricsFetcher) FetchInstanceDataArgsForCall(i int) (string, time.Time, time.Time) {
+	fake.fetchInstanceDataMutex.RLock()
+	defer fake.fetchInstanceDataMutex.RUnlock()
+	argsForCall := fake.fetchInstanceDataArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *FakeMetricsFetcher) FetchAllReturns(result1 []metrics.InstanceData, result2 error) {
-	fake.fetchAllMutex.Lock()
-	defer fake.fetchAllMutex.Unlock()
-	fake.FetchAllStub = nil
-	fake.fetchAllReturns = struct {
-		result1 []metrics.InstanceData
+func (fake *FakeMetricsFetcher) FetchInstanceDataReturns(result1 map[int][]metrics.InstanceData, result2 error) {
+	fake.fetchInstanceDataMutex.Lock()
+	defer fake.fetchInstanceDataMutex.Unlock()
+	fake.FetchInstanceDataStub = nil
+	fake.fetchInstanceDataReturns = struct {
+		result1 map[int][]metrics.InstanceData
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsFetcher) FetchAllReturnsOnCall(i int, result1 []metrics.InstanceData, result2 error) {
-	fake.fetchAllMutex.Lock()
-	defer fake.fetchAllMutex.Unlock()
-	fake.FetchAllStub = nil
-	if fake.fetchAllReturnsOnCall == nil {
-		fake.fetchAllReturnsOnCall = make(map[int]struct {
-			result1 []metrics.InstanceData
+func (fake *FakeMetricsFetcher) FetchInstanceDataReturnsOnCall(i int, result1 map[int][]metrics.InstanceData, result2 error) {
+	fake.fetchInstanceDataMutex.Lock()
+	defer fake.fetchInstanceDataMutex.Unlock()
+	fake.FetchInstanceDataStub = nil
+	if fake.fetchInstanceDataReturnsOnCall == nil {
+		fake.fetchInstanceDataReturnsOnCall = make(map[int]struct {
+			result1 map[int][]metrics.InstanceData
 			result2 error
 		})
 	}
-	fake.fetchAllReturnsOnCall[i] = struct {
-		result1 []metrics.InstanceData
+	fake.fetchInstanceDataReturnsOnCall[i] = struct {
+		result1 map[int][]metrics.InstanceData
 		result2 error
 	}{result1, result2}
 }
@@ -94,8 +97,8 @@ func (fake *FakeMetricsFetcher) FetchAllReturnsOnCall(i int, result1 []metrics.I
 func (fake *FakeMetricsFetcher) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.fetchAllMutex.RLock()
-	defer fake.fetchAllMutex.RUnlock()
+	fake.fetchInstanceDataMutex.RLock()
+	defer fake.fetchInstanceDataMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

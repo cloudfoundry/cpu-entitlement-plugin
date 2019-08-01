@@ -12,30 +12,28 @@ import (
 
 var _ = Describe("Calculator", func() {
 	var (
-		data    []metrics.InstanceData
+		data    map[int][]metrics.InstanceData
 		calc    calculator.Calculator
 		reports []calculator.InstanceReport
 	)
 
 	BeforeEach(func() {
-		data = []metrics.InstanceData{
-			{
-				InstanceId:          1,
-				AbsoluteUsage:       7.0,
-				AbsoluteEntitlement: 8.0,
-				ContainerAge:        9.0,
+		data = map[int][]metrics.InstanceData{
+			0: {
+				{
+					InstanceID:       0,
+					EntitlementUsage: 0.5,
+				},
 			},
-			{
-				InstanceId:          1,
-				AbsoluteUsage:       4.0,
-				AbsoluteEntitlement: 5.0,
-				ContainerAge:        6.0,
-			},
-			{
-				InstanceId:          0,
-				AbsoluteUsage:       1.0,
-				AbsoluteEntitlement: 2.0,
-				ContainerAge:        3.0,
+			1: {
+				{
+					InstanceID:       1,
+					EntitlementUsage: 0.6,
+				},
+				{
+					InstanceID:       1,
+					EntitlementUsage: 0.7,
+				},
 			},
 		}
 		calc = calculator.New()
@@ -47,46 +45,50 @@ var _ = Describe("Calculator", func() {
 
 	It("calculates entitlement ratio", func() {
 		Expect(reports).To(Equal([]calculator.InstanceReport{
-			{InstanceId: 0, EntitlementUsage: 0.5},
-			{InstanceId: 1, EntitlementUsage: 0.875},
+			{InstanceID: 0, EntitlementUsage: 0.5},
+			{InstanceID: 1, EntitlementUsage: 0.7},
 		}))
 	})
 
 	When("an instance is missing from the data", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{
-					InstanceId:          2,
-					AbsoluteUsage:       4.0,
-					AbsoluteEntitlement: 5.0,
-					ContainerAge:        6.0,
+			data = map[int][]metrics.InstanceData{
+				2: {
+					{
+						InstanceID:       2,
+						EntitlementUsage: 0.5,
+					},
 				},
-				{
-					InstanceId:          0,
-					AbsoluteUsage:       1.0,
-					AbsoluteEntitlement: 2.0,
-					ContainerAge:        3.0,
+				0: {
+					{
+						InstanceID:       0,
+						EntitlementUsage: 0.6,
+					},
 				},
 			}
 		})
 
 		It("still returns an (incomplete) result", func() {
 			Expect(reports).To(Equal([]calculator.InstanceReport{
-				{InstanceId: 0, EntitlementUsage: 0.5},
-				{InstanceId: 2, EntitlementUsage: 0.8},
+				{InstanceID: 0, EntitlementUsage: 0.6},
+				{InstanceID: 2, EntitlementUsage: 0.5},
 			}))
 		})
 	})
 
 	When("some instances have spiked", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(6, 0), AbsoluteUsage: 95.0, AbsoluteEntitlement: 100.0},
-				{InstanceId: 0, Time: time.Unix(5, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 30.0},
-				{InstanceId: 1, Time: time.Unix(4, 0), AbsoluteUsage: 20.0, AbsoluteEntitlement: 50.0},
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 50.0, AbsoluteEntitlement: 25.0},
-				{InstanceId: 1, Time: time.Unix(2, 0), AbsoluteUsage: 10.0, AbsoluteEntitlement: 15.0},
-				{InstanceId: 0, Time: time.Unix(1, 0), AbsoluteUsage: 10.0, AbsoluteEntitlement: 20.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
+					{InstanceID: 0, Time: time.Unix(5, 0), EntitlementUsage: 2.0},
+					{InstanceID: 0, Time: time.Unix(6, 0), EntitlementUsage: 0.9},
+				},
+				1: {
+					{InstanceID: 1, Time: time.Unix(2, 0), EntitlementUsage: 0.6},
+					{InstanceID: 1, Time: time.Unix(4, 0), EntitlementUsage: 0.4},
+				},
 			}
 		})
 
@@ -98,10 +100,12 @@ var _ = Describe("Calculator", func() {
 
 	When("latest spike starts at beginning of data and ends before end of data", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 95.0, AbsoluteEntitlement: 100.0},
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 40.0},
-				{InstanceId: 0, Time: time.Unix(1, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 30.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 2.5},
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 0.9},
+				},
 			}
 		})
 
@@ -113,9 +117,11 @@ var _ = Describe("Calculator", func() {
 
 	When("latest spike starts at beginning of data and is always spiking in range", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 40.0},
-				{InstanceId: 0, Time: time.Unix(1, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 30.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 1.5},
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 2.5},
+				},
 			}
 		})
 
@@ -127,10 +133,12 @@ var _ = Describe("Calculator", func() {
 
 	When("latest spike is spiking at end of data", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 90.0, AbsoluteEntitlement: 50.0},
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 50.0, AbsoluteEntitlement: 40.0},
-				{InstanceId: 0, Time: time.Unix(1, 0), AbsoluteUsage: 20.0, AbsoluteEntitlement: 30.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 2.5},
+				},
 			}
 		})
 
@@ -142,13 +150,15 @@ var _ = Describe("Calculator", func() {
 
 	When("multiple spikes exist", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(7, 0), AbsoluteUsage: 95.0, AbsoluteEntitlement: 90.0},
-				{InstanceId: 0, Time: time.Unix(6, 0), AbsoluteUsage: 85.0, AbsoluteEntitlement: 80.0},
-				{InstanceId: 0, Time: time.Unix(5, 0), AbsoluteUsage: 65.0, AbsoluteEntitlement: 70.0},
-				{InstanceId: 0, Time: time.Unix(4, 0), AbsoluteUsage: 65.0, AbsoluteEntitlement: 60.0},
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 55.0, AbsoluteEntitlement: 50.0},
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 30.0, AbsoluteEntitlement: 40.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 0.7},
+					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.9},
+					{InstanceID: 0, Time: time.Unix(5, 0), EntitlementUsage: 0.8},
+					{InstanceID: 0, Time: time.Unix(6, 0), EntitlementUsage: 1.2},
+					{InstanceID: 0, Time: time.Unix(7, 0), EntitlementUsage: 1.5},
+				},
 			}
 		})
 
@@ -160,10 +170,12 @@ var _ = Describe("Calculator", func() {
 
 	When("a spike consists of a single data point", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(4, 0), AbsoluteUsage: 60.0, AbsoluteEntitlement: 70.0},
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 55.0, AbsoluteEntitlement: 50.0},
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 30.0, AbsoluteEntitlement: 40.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.8},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
+					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.5},
+				},
 			}
 		})
 
@@ -175,10 +187,12 @@ var _ = Describe("Calculator", func() {
 
 	When("an instance reaches 100% entitlement usage but doesn't go above", func() {
 		BeforeEach(func() {
-			data = []metrics.InstanceData{
-				{InstanceId: 0, Time: time.Unix(4, 0), AbsoluteUsage: 60.0, AbsoluteEntitlement: 70.0},
-				{InstanceId: 0, Time: time.Unix(3, 0), AbsoluteUsage: 50.0, AbsoluteEntitlement: 50.0},
-				{InstanceId: 0, Time: time.Unix(2, 0), AbsoluteUsage: 30.0, AbsoluteEntitlement: 40.0},
+			data = map[int][]metrics.InstanceData{
+				0: {
+					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
+					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.0},
+					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.8},
+				},
 			}
 		})
 

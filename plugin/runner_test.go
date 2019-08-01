@@ -2,6 +2,7 @@ package plugin_test
 
 import (
 	"errors"
+	"time"
 
 	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
@@ -41,45 +42,48 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricsFetcher.FetchAllReturns([]metrics.InstanceData{
-			{
-				InstanceId:          0,
-				AbsoluteUsage:       1.0,
-				AbsoluteEntitlement: 2.0,
-				ContainerAge:        3.0,
+		metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			0: {
+				{
+					Time:             time.Unix(1, 0),
+					InstanceID:       0,
+					EntitlementUsage: 0.5,
+				},
 			},
-			{
-				InstanceId:          2,
-				AbsoluteUsage:       7.0,
-				AbsoluteEntitlement: 8.0,
-				ContainerAge:        9.0,
+			2: {
+				{
+					Time:             time.Unix(2, 0),
+					InstanceID:       2,
+					EntitlementUsage: 0.6,
+				},
 			},
-			{
-				InstanceId:          1,
-				AbsoluteUsage:       4.0,
-				AbsoluteEntitlement: 5.0,
-				ContainerAge:        6.0,
+			1: {
+				{
+					Time:             time.Unix(3, 0),
+					InstanceID:       1,
+					EntitlementUsage: 0.7,
+				},
 			},
 		}, nil)
 
 		metricsCalculator.CalculateInstanceReportsReturns([]calculator.InstanceReport{
 			{
-				InstanceId:       0,
+				InstanceID:       0,
 				EntitlementUsage: 0.5,
 			},
 			{
-				InstanceId:       1,
+				InstanceID:       1,
 				EntitlementUsage: 0.8,
 			},
 			{
-				InstanceId:       2,
+				InstanceID:       2,
 				EntitlementUsage: 0.875,
 			},
 		})
 	})
 
 	JustBeforeEach(func() {
-		runResult = runner.Run("app-name")
+		runResult = runner.Run("app-name", time.Unix(123, 0), time.Unix(456, 0))
 	})
 
 	It("prints the app CPU metrics", func() {
@@ -89,31 +93,35 @@ var _ = Describe("Runner", func() {
 		appName := infoGetter.GetCFAppInfoArgsForCall(0)
 		Expect(appName).To(Equal("app-name"))
 
-		Expect(metricsFetcher.FetchAllCallCount()).To(Equal(1))
-		guid, instanceCount := metricsFetcher.FetchAllArgsForCall(0)
+		Expect(metricsFetcher.FetchInstanceDataCallCount()).To(Equal(1))
+		guid, from, to := metricsFetcher.FetchInstanceDataArgsForCall(0)
 		Expect(guid).To(Equal("123"))
-		Expect(instanceCount).To(Equal(3))
+		Expect(from).To(Equal(time.Unix(123, 0)))
+		Expect(to).To(Equal(time.Unix(456, 0)))
 
 		Expect(metricsCalculator.CalculateInstanceReportsCallCount()).To(Equal(1))
 		usageMetrics := metricsCalculator.CalculateInstanceReportsArgsForCall(0)
-		Expect(usageMetrics).To(Equal([]metrics.InstanceData{
-			{
-				InstanceId:          0,
-				AbsoluteUsage:       1.0,
-				AbsoluteEntitlement: 2.0,
-				ContainerAge:        3.0,
+		Expect(usageMetrics).To(Equal(map[int][]metrics.InstanceData{
+			0: {
+				{
+					Time:             time.Unix(1, 0),
+					InstanceID:       0,
+					EntitlementUsage: 0.5,
+				},
 			},
-			{
-				InstanceId:          2,
-				AbsoluteUsage:       7.0,
-				AbsoluteEntitlement: 8.0,
-				ContainerAge:        9.0,
+			2: {
+				{
+					Time:             time.Unix(2, 0),
+					InstanceID:       2,
+					EntitlementUsage: 0.6,
+				},
 			},
-			{
-				InstanceId:          1,
-				AbsoluteUsage:       4.0,
-				AbsoluteEntitlement: 5.0,
-				ContainerAge:        6.0,
+			1: {
+				{
+					Time:             time.Unix(3, 0),
+					InstanceID:       1,
+					EntitlementUsage: 0.7,
+				},
 			},
 		}))
 
@@ -128,15 +136,15 @@ var _ = Describe("Runner", func() {
 		}))
 		Expect(instanceReports).To(Equal([]calculator.InstanceReport{
 			{
-				InstanceId:       0,
+				InstanceID:       0,
 				EntitlementUsage: 0.5,
 			},
 			{
-				InstanceId:       1,
+				InstanceID:       1,
 				EntitlementUsage: 0.8,
 			},
 			{
-				InstanceId:       2,
+				InstanceID:       2,
 				EntitlementUsage: 0.875,
 			},
 		}))
@@ -155,7 +163,7 @@ var _ = Describe("Runner", func() {
 
 	When("fetching the app metrics fails", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchAllReturns(nil, errors.New("metrics error"))
+			metricsFetcher.FetchInstanceDataReturns(nil, errors.New("metrics error"))
 		})
 
 		It("returns a failure", func() {

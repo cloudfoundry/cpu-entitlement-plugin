@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
@@ -58,7 +59,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	appName := args[1]
 	runner := NewRunner(infoGetter, metricsFetcher, metricsCalculator, metricsRenderer)
-	res := runner.Run(appName)
+	res := runner.Run(appName, time.Now().Add(-Month), time.Now())
 	if res.IsFailure {
 		if res.ErrorMessage != "" {
 			ui.Failed(res.ErrorMessage)

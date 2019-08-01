@@ -3,9 +3,10 @@ package metrics_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -15,11 +16,12 @@ import (
 
 var _ = Describe("Logstreamer", func() {
 	var (
-		logCacheClient *metricsfakes.FakeLogCacheClient
-		metricsFetcher metrics.LogCacheFetcher
-		appGuid        string
-		usageMetrics   []metrics.InstanceData
-		metricsErr     error
+		logCacheClient     *metricsfakes.FakeLogCacheClient
+		metricsFetcher     metrics.LogCacheFetcher
+		appGuid            string
+		instanceDataPoints map[int][]metrics.InstanceData
+		metricsErr         error
+		from, to           time.Time
 	)
 
 	BeforeEach(func() {
@@ -27,124 +29,143 @@ var _ = Describe("Logstreamer", func() {
 		metricsFetcher = metrics.NewFetcherWithLogCacheClient(logCacheClient)
 
 		appGuid = "foo"
+		from = time.Now().Add(-time.Hour)
+		to = time.Now()
+
+		logCacheClient.PromQLReturns(instantQueryResult(
+			sample("abc"),
+			sample("def"),
+			sample("ghi"),
+		), nil)
 	})
 
 	JustBeforeEach(func() {
-		usageMetrics, metricsErr = metricsFetcher.FetchAll(appGuid, 3)
+		instanceDataPoints, metricsErr = metricsFetcher.FetchInstanceData(appGuid, from, to)
 	})
 
 	When("reading from log-cache succeeds", func() {
 		BeforeEach(func() {
-			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
-				OtherEnvelope(appGuid),
-				MetricEnvelope(1, appGuid, "0", Metric{Usage: 1000, Entitlement: 5000, Age: 10000}),
-				MetricEnvelope(2, appGuid, "1", Metric{Usage: 2000, Entitlement: 6000, Age: 11000}),
-				MetricEnvelope(3, appGuid, "0", Metric{Usage: 3000, Entitlement: 7000, Age: 12000}),
-				MetricEnvelope(4, appGuid, "2", Metric{Usage: 4000, Entitlement: 8000, Age: 13000}),
-			}, nil)
+			logCacheClient.PromQLRangeReturns(rangeQueryResult(
+				series("0", "abc",
+					point("1", 0.2),
+					point("3", 0.5),
+				),
+				series("1", "def",
+					point("2", 0.4),
+				),
+				series("2", "ghi",
+					point("4", 0.5),
+				),
+			), nil)
 		})
 
 		It("gets the metrics from the log-cache client", func() {
-			Expect(logCacheClient.ReadCallCount()).To(Equal(1))
-			ctx, sourceID, startTime, _ := logCacheClient.ReadArgsForCall(0)
+			Expect(logCacheClient.PromQLCallCount()).To(Equal(1))
+			ctx, query, _ := logCacheClient.PromQLArgsForCall(0)
 			Expect(ctx).To(Equal(context.Background()))
-			Expect(sourceID).To(Equal(appGuid))
-			Expect(startTime).To(BeTemporally("~", time.Now().Add(-metrics.Month)))
+			Expect(query).To(Equal(fmt.Sprintf(`absolute_usage{source_id="%s"}`, appGuid)))
+
+			Expect(logCacheClient.PromQLRangeCallCount()).To(Equal(1))
+			ctx, query, _ = logCacheClient.PromQLRangeArgsForCall(0)
+			Expect(ctx).To(Equal(context.Background()))
+			Expect(query).To(Equal(fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid)))
 		})
 
 		It("returns the correct metrics", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
-				{
-					Time:                time.Unix(0, 1),
-					InstanceId:          0,
-					AbsoluteUsage:       1000,
-					AbsoluteEntitlement: 5000,
-					ContainerAge:        10000,
+			Expect(instanceDataPoints).To(Equal(map[int][]metrics.InstanceData{
+				0: {
+					{
+						Time:             time.Unix(1, 0),
+						InstanceID:       0,
+						EntitlementUsage: 0.2,
+					},
+					{
+						Time:             time.Unix(3, 0),
+						InstanceID:       0,
+						EntitlementUsage: 0.5,
+					},
 				},
-				{
-					Time:                time.Unix(0, 2),
-					InstanceId:          1,
-					AbsoluteUsage:       2000,
-					AbsoluteEntitlement: 6000,
-					ContainerAge:        11000,
+				1: {
+					{
+						Time:             time.Unix(2, 0),
+						InstanceID:       1,
+						EntitlementUsage: 0.4,
+					},
 				},
-				{
-					Time:                time.Unix(0, 3),
-					InstanceId:          0,
-					AbsoluteUsage:       3000,
-					AbsoluteEntitlement: 7000,
-					ContainerAge:        12000,
-				},
-				{
-					Time:                time.Unix(0, 4),
-					InstanceId:          2,
-					AbsoluteUsage:       4000,
-					AbsoluteEntitlement: 8000,
-					ContainerAge:        13000,
+				2: {
+					{
+						Time:             time.Unix(4, 0),
+						InstanceID:       2,
+						EntitlementUsage: 0.5,
+					},
 				},
 			}))
 		})
 	})
 
-	When("reading from log-cache fails", func() {
+	When("fetching the list of active instances from log-cache fails", func() {
 		BeforeEach(func() {
-			logCacheClient.ReadReturns(nil, errors.New("boo"))
+			logCacheClient.PromQLReturns(nil, errors.New("boo"))
 		})
 
 		It("returns an error", func() {
-			Expect(metricsErr).To(MatchError("log-cache read failed: boo"))
-			Expect(usageMetrics).To(BeNil())
+			Expect(metricsErr).To(MatchError("boo"))
+			Expect(instanceDataPoints).To(BeNil())
 		})
 	})
 
-	When("no usage metrics envelopes are returned", func() {
+	When("fetching the list of data points from log-cache fails", func() {
 		BeforeEach(func() {
-			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
-				OtherEnvelope(appGuid),
-				OtherEnvelope(appGuid),
-				OtherEnvelope(appGuid),
-			}, nil)
+			logCacheClient.PromQLRangeReturns(nil, errors.New("boo"))
 		})
 
 		It("returns an error", func() {
-			Expect(metricsErr).To(MatchError("No CPU metrics found for '" + appGuid + "'"))
-			Expect(usageMetrics).To(BeNil())
+			Expect(metricsErr).To(MatchError("boo"))
+			Expect(instanceDataPoints).To(BeNil())
 		})
 	})
 
 	When("getting stale data from old instances after a scale down", func() {
 		BeforeEach(func() {
-			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
-				MetricEnvelope(1, appGuid, "3", Metric{Usage: 5000, Entitlement: 9000, Age: 14000}),
-				MetricEnvelope(2, appGuid, "2", Metric{Usage: 4000, Entitlement: 8000, Age: 13000}),
-				MetricEnvelope(3, appGuid, "1", Metric{Usage: 2000, Entitlement: 6000, Age: 11000}),
-				MetricEnvelope(4, appGuid, "0", Metric{Usage: 1000, Entitlement: 5000, Age: 10000}),
-			}, nil)
+			logCacheClient.PromQLRangeReturns(rangeQueryResult(
+				series("0", "abc",
+					point("1", 0.5),
+				),
+				series("1", "def",
+					point("2", 0.5),
+				),
+				series("2", "ghi",
+					point("3", 0.5),
+				),
+				series("3", "jkl",
+					point("4", 0.5),
+				),
+			), nil)
 		})
 
 		It("ignores the data from old instances", func() {
-			Expect(usageMetrics).To(Equal([]metrics.InstanceData{
-				{
-					Time:                time.Unix(0, 2),
-					InstanceId:          2,
-					AbsoluteUsage:       4000,
-					AbsoluteEntitlement: 8000,
-					ContainerAge:        13000,
+			Expect(instanceDataPoints).To(Equal(map[int][]metrics.InstanceData{
+				0: {
+					{
+						Time:             time.Unix(1, 0),
+						InstanceID:       0,
+						EntitlementUsage: 0.5,
+					},
 				},
-				{
-					Time:                time.Unix(0, 3),
-					InstanceId:          1,
-					AbsoluteUsage:       2000,
-					AbsoluteEntitlement: 6000,
-					ContainerAge:        11000,
+				1: {
+					{
+						Time:             time.Unix(2, 0),
+						InstanceID:       1,
+						EntitlementUsage: 0.5,
+					},
 				},
-				{
-					Time:                time.Unix(0, 4),
-					InstanceId:          0,
-					AbsoluteUsage:       1000,
-					AbsoluteEntitlement: 5000,
-					ContainerAge:        10000,
+				2: {
+					{
+						Time:             time.Unix(3, 0),
+						InstanceID:       2,
+						EntitlementUsage: 0.5,
+					},
 				},
 			}))
 		})
@@ -157,32 +178,44 @@ type Metric struct {
 	Age         float64
 }
 
-func MetricEnvelope(timestamp int64, appGuid, instanceId string, metric Metric) *loggregator_v2.Envelope {
-	return &loggregator_v2.Envelope{
-		Timestamp:  timestamp,
-		SourceId:   appGuid,
-		InstanceId: instanceId,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"absolute_usage":       &loggregator_v2.GaugeValue{Value: metric.Usage},
-					"absolute_entitlement": &loggregator_v2.GaugeValue{Value: metric.Entitlement},
-					"container_age":        &loggregator_v2.GaugeValue{Value: metric.Age},
-				},
+func instantQueryResult(samples ...*logcache_v1.PromQL_Sample) *logcache_v1.PromQL_InstantQueryResult {
+	return &logcache_v1.PromQL_InstantQueryResult{
+		Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
+			Vector: &logcache_v1.PromQL_Vector{
+				Samples: samples,
 			},
 		},
 	}
 }
 
-func OtherEnvelope(appGuid string) *loggregator_v2.Envelope {
-	return &loggregator_v2.Envelope{
-		SourceId: appGuid,
-		Message: &loggregator_v2.Envelope_Gauge{
-			Gauge: &loggregator_v2.Gauge{
-				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"foo": &loggregator_v2.GaugeValue{Value: 42},
-				},
+func sample(procInstanceID string) *logcache_v1.PromQL_Sample {
+	return &logcache_v1.PromQL_Sample{
+		Metric: map[string]string{
+			"process_instance_id": procInstanceID,
+		},
+	}
+}
+
+func rangeQueryResult(series ...*logcache_v1.PromQL_Series) *logcache_v1.PromQL_RangeQueryResult {
+	return &logcache_v1.PromQL_RangeQueryResult{
+		Result: &logcache_v1.PromQL_RangeQueryResult_Matrix{
+			Matrix: &logcache_v1.PromQL_Matrix{
+				Series: series,
 			},
 		},
 	}
+}
+
+func series(instanceID, procInstanceID string, points ...*logcache_v1.PromQL_Point) *logcache_v1.PromQL_Series {
+	return &logcache_v1.PromQL_Series{
+		Metric: map[string]string{
+			"instance_id":         instanceID,
+			"process_instance_id": procInstanceID,
+		},
+		Points: points,
+	}
+}
+
+func point(time string, value float64) *logcache_v1.PromQL_Point {
+	return &logcache_v1.PromQL_Point{Time: time, Value: value}
 }

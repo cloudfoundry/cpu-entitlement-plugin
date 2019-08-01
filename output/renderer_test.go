@@ -33,11 +33,11 @@ var _ = Describe("Renderer", func() {
 		}
 		instanceReports = []calculator.InstanceReport{
 			{
-				InstanceId:       123,
+				InstanceID:       123,
 				EntitlementUsage: 0.5,
 			},
 			{
-				InstanceId:       432,
+				InstanceID:       432,
 				EntitlementUsage: 0.75,
 			},
 		}
@@ -142,12 +142,12 @@ var _ = Describe("Renderer", func() {
 		When("one or more instances have been over entitlement", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, calculator.InstanceReport{
-					InstanceId:       234,
+					InstanceID:       234,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 				}, calculator.InstanceReport{
-					InstanceId:       345,
+					InstanceID:       345,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
 					LastSpikeTo:      time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
@@ -166,7 +166,7 @@ var _ = Describe("Renderer", func() {
 		When("an instance is currently over entitlement with a 'current' spike", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, calculator.InstanceReport{
-					InstanceId:       234,
+					InstanceID:       234,
 					EntitlementUsage: 1.5,
 					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
@@ -181,7 +181,7 @@ var _ = Describe("Renderer", func() {
 		When("spike was instantaneous", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, calculator.InstanceReport{
-					InstanceId:       234,
+					InstanceID:       234,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),

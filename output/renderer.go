@@ -39,17 +39,17 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	var status string
 	var reportsWithSpikes []calculator.InstanceReport
 	for _, report := range instanceReports {
-		instanceId := fmt.Sprintf("#%d", report.InstanceId)
+		instanceID := fmt.Sprintf("#%d", report.InstanceID)
 		entitlementRatio := fmt.Sprintf("%.2f%%", report.EntitlementUsage*100)
 		if report.EntitlementUsage > 1 {
 			status = "over"
-			instanceId = terminal.Colorize(instanceId, color.FgRed)
+			instanceID = terminal.Colorize(instanceID, color.FgRed)
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
 		} else if report.EntitlementUsage > 0.95 {
 			if status == "" {
 				status = "near"
 			}
-			instanceId = terminal.Colorize(instanceId, color.FgYellow)
+			instanceID = terminal.Colorize(instanceID, color.FgYellow)
 			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgYellow)
 		}
 
@@ -57,10 +57,10 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 			reportsWithSpikes = append(reportsWithSpikes, report)
 		}
 
-		rows = append(rows, []string{instanceId, entitlementRatio})
+		rows = append(rows, []string{instanceID, entitlementRatio})
 	}
 
-	err := r.display.ShowTable([]string{"", bold("usage")}, rows)
+	err := r.display.ShowTable([]string{"", terminal.Colorize("usage", color.Bold)}, rows)
 	if err != nil {
 		return err
 	}
@@ -71,15 +71,11 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 
 	for _, reportWithSpike := range reportsWithSpikes {
 		if reportWithSpike.LastSpikeFrom.Equal(reportWithSpike.LastSpikeTo) {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceId, reportWithSpike.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceID, reportWithSpike.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
 		} else {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceId, reportWithSpike.LastSpikeFrom.Format(DateFmt), reportWithSpike.LastSpikeTo.Format(DateFmt)), color.FgYellow))
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, reportWithSpike.LastSpikeFrom.Format(DateFmt), reportWithSpike.LastSpikeTo.Format(DateFmt)), color.FgYellow))
 		}
 	}
 
 	return nil
-}
-
-func bold(message string) string {
-	return terminal.Colorize(message, color.Bold)
 }

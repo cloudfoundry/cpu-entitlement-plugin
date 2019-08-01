@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"time"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
@@ -18,7 +20,7 @@ type CFAppInfoGetter interface {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchAll(appGUID string, instanceCount int) ([]metrics.InstanceData, error)
+	FetchInstanceData(appGUID string, from, to time.Time) (map[int][]metrics.InstanceData, error)
 }
 
 //go:generate counterfeiter . MetricsRenderer
@@ -30,8 +32,10 @@ type MetricsRenderer interface {
 //go:generate counterfeiter . MetricsCalculator
 
 type MetricsCalculator interface {
-	CalculateInstanceReports(usages []metrics.InstanceData) []calculator.InstanceReport
+	CalculateInstanceReports(usages map[int][]metrics.InstanceData) []calculator.InstanceReport
 }
+
+const Month = 30 * 24 * time.Hour
 
 type Runner struct {
 	infoGetter        CFAppInfoGetter
@@ -49,13 +53,13 @@ func NewRunner(infoGetter CFAppInfoGetter, metricsFetcher MetricsFetcher, metric
 	}
 }
 
-func (r Runner) Run(appName string) result.Result {
+func (r Runner) Run(appName string, from, to time.Time) result.Result {
 	info, err := r.infoGetter.GetCFAppInfo(appName)
 	if err != nil {
 		return result.FailureFromError(err)
 	}
 
-	usageMetrics, err := r.metricsFetcher.FetchAll(info.App.Guid, info.App.InstanceCount)
+	usageMetrics, err := r.metricsFetcher.FetchInstanceData(info.App.Guid, from, to)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
