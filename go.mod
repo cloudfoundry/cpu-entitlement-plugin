@@ -44,7 +44,7 @@ require (
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-runewidth v0.0.0-20181117163326-c88d7e5f2e24 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
-	github.com/onsi/ginkgo v1.7.0
+	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v0.0.0-20181126164539-1136bd4f6ec1
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/poy/eachers v0.0.0-20181020210610-23942921fe77 // indirect
