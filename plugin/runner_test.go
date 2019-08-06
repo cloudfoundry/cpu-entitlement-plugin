@@ -5,11 +5,10 @@ import (
 	"time"
 
 	models "code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin/pluginfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 
 	. "github.com/onsi/ginkgo"
@@ -18,10 +17,9 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		infoGetter        *pluginfakes.FakeCFAppInfoGetter
-		metricsFetcher    *pluginfakes.FakeMetricsFetcher
-		metricsCalculator *pluginfakes.FakeMetricsCalculator
-		metricsRenderer   *pluginfakes.FakeMetricsRenderer
+		infoGetter       *pluginfakes.FakeCFAppInfoGetter
+		instanceReporter *pluginfakes.FakeReporter
+		metricsRenderer  *pluginfakes.FakeMetricsRenderer
 
 		runner    plugin.Runner
 		runResult result.Result
@@ -29,10 +27,9 @@ var _ = Describe("Runner", func() {
 
 	BeforeEach(func() {
 		infoGetter = new(pluginfakes.FakeCFAppInfoGetter)
-		metricsFetcher = new(pluginfakes.FakeMetricsFetcher)
-		metricsCalculator = new(pluginfakes.FakeMetricsCalculator)
+		instanceReporter = new(pluginfakes.FakeReporter)
 		metricsRenderer = new(pluginfakes.FakeMetricsRenderer)
-		runner = plugin.NewRunner(infoGetter, metricsFetcher, metricsCalculator, metricsRenderer)
+		runner = plugin.NewRunner(infoGetter, instanceReporter, metricsRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
 			App: models.GetAppModel{
@@ -42,31 +39,7 @@ var _ = Describe("Runner", func() {
 			},
 		}, nil)
 
-		metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
-			0: {
-				{
-					Time:             time.Unix(1, 0),
-					InstanceID:       0,
-					EntitlementUsage: 0.5,
-				},
-			},
-			2: {
-				{
-					Time:             time.Unix(2, 0),
-					InstanceID:       2,
-					EntitlementUsage: 0.6,
-				},
-			},
-			1: {
-				{
-					Time:             time.Unix(3, 0),
-					InstanceID:       1,
-					EntitlementUsage: 0.7,
-				},
-			},
-		}, nil)
-
-		metricsCalculator.CalculateInstanceReportsReturns([]calculator.InstanceReport{
+		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
 			{
 				InstanceID:       0,
 				EntitlementUsage: 0.5,
@@ -79,7 +52,7 @@ var _ = Describe("Runner", func() {
 				InstanceID:       2,
 				EntitlementUsage: 0.875,
 			},
-		})
+		}, nil)
 	})
 
 	JustBeforeEach(func() {
@@ -93,37 +66,11 @@ var _ = Describe("Runner", func() {
 		appName := infoGetter.GetCFAppInfoArgsForCall(0)
 		Expect(appName).To(Equal("app-name"))
 
-		Expect(metricsFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-		guid, from, to := metricsFetcher.FetchInstanceDataArgsForCall(0)
+		Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(1))
+		guid, from, to := instanceReporter.CreateInstanceReportsArgsForCall(0)
 		Expect(guid).To(Equal("123"))
 		Expect(from).To(Equal(time.Unix(123, 0)))
 		Expect(to).To(Equal(time.Unix(456, 0)))
-
-		Expect(metricsCalculator.CalculateInstanceReportsCallCount()).To(Equal(1))
-		usageMetrics := metricsCalculator.CalculateInstanceReportsArgsForCall(0)
-		Expect(usageMetrics).To(Equal(map[int][]metrics.InstanceData{
-			0: {
-				{
-					Time:             time.Unix(1, 0),
-					InstanceID:       0,
-					EntitlementUsage: 0.5,
-				},
-			},
-			2: {
-				{
-					Time:             time.Unix(2, 0),
-					InstanceID:       2,
-					EntitlementUsage: 0.6,
-				},
-			},
-			1: {
-				{
-					Time:             time.Unix(3, 0),
-					InstanceID:       1,
-					EntitlementUsage: 0.7,
-				},
-			},
-		}))
 
 		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
 		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)
@@ -134,7 +81,7 @@ var _ = Describe("Runner", func() {
 				InstanceCount: 3,
 			},
 		}))
-		Expect(instanceReports).To(Equal([]calculator.InstanceReport{
+		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
 			{
 				InstanceID:       0,
 				EntitlementUsage: 0.5,
@@ -155,20 +102,21 @@ var _ = Describe("Runner", func() {
 			infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{}, errors.New("info error"))
 		})
 
-		It("returns a failure", func() {
+		It("returns a failure with a warning", func() {
 			Expect(runResult.IsFailure).To(BeTrue())
 			Expect(runResult.ErrorMessage).To(Equal("info error"))
 		})
 	})
 
-	When("fetching the app metrics fails", func() {
+	When("creating the reports fails", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(nil, errors.New("metrics error"))
+			instanceReporter.CreateInstanceReportsReturns(nil, errors.New("reports error"))
 		})
 
 		It("returns a failure", func() {
 			Expect(runResult.IsFailure).To(BeTrue())
-			Expect(runResult.ErrorMessage).To(Equal("metrics error"))
+			Expect(runResult.ErrorMessage).To(Equal("reports error"))
+			Expect(runResult.WarningMessage).To(ContainSubstring("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 		})
 	})
 

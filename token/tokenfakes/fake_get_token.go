@@ -10,8 +10,9 @@ import (
 type FakeGetToken struct {
 	Stub        func() (string, error)
 	mutex       sync.RWMutex
-	argsForCall []struct{}
-	returns     struct {
+	argsForCall []struct {
+	}
+	returns struct {
 		result1 string
 		result2 error
 	}
@@ -26,7 +27,8 @@ type FakeGetToken struct {
 func (fake *FakeGetToken) Spy() (string, error) {
 	fake.mutex.Lock()
 	ret, specificReturn := fake.returnsOnCall[len(fake.argsForCall)]
-	fake.argsForCall = append(fake.argsForCall, struct{}{})
+	fake.argsForCall = append(fake.argsForCall, struct {
+	}{})
 	fake.recordInvocation("GetToken", []interface{}{})
 	fake.mutex.Unlock()
 	if fake.Stub != nil {
@@ -44,7 +46,15 @@ func (fake *FakeGetToken) CallCount() int {
 	return len(fake.argsForCall)
 }
 
+func (fake *FakeGetToken) Calls(stub func() (string, error)) {
+	fake.mutex.Lock()
+	defer fake.mutex.Unlock()
+	fake.Stub = stub
+}
+
 func (fake *FakeGetToken) Returns(result1 string, result2 error) {
+	fake.mutex.Lock()
+	defer fake.mutex.Unlock()
 	fake.Stub = nil
 	fake.returns = struct {
 		result1 string
@@ -53,6 +63,8 @@ func (fake *FakeGetToken) Returns(result1 string, result2 error) {
 }
 
 func (fake *FakeGetToken) ReturnsOnCall(i int, result1 string, result2 error) {
+	fake.mutex.Lock()
+	defer fake.mutex.Unlock()
 	fake.Stub = nil
 	if fake.returnsOnCall == nil {
 		fake.returnsOnCall = make(map[int]struct {

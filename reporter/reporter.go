@@ -1,4 +1,4 @@
-package calculator
+package reporter
 
 import (
 	"sort"
@@ -7,7 +7,15 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 )
 
-type Calculator struct{}
+type Reporter struct {
+	metricsFetcher MetricsFetcher
+}
+
+//go:generate counterfeiter . MetricsFetcher
+
+type MetricsFetcher interface {
+	FetchInstanceData(appGUID string, from, to time.Time) (map[int][]metrics.InstanceData, error)
+}
 
 type InstanceReport struct {
 	InstanceID       int
@@ -20,12 +28,19 @@ func (r InstanceReport) HasRecordedSpike() bool {
 	return !r.LastSpikeTo.IsZero()
 }
 
-func New() Calculator {
-	return Calculator{}
+func New(metricsFetcher MetricsFetcher) Reporter {
+	return Reporter{
+		metricsFetcher: metricsFetcher,
+	}
 }
 
-func (c Calculator) CalculateInstanceReports(dataPerInstance map[int][]metrics.InstanceData) []InstanceReport {
+func (r Reporter) CreateInstanceReports(appGUID string, from, to time.Time) ([]InstanceReport, error) {
 	latestReports := map[int]InstanceReport{}
+
+	dataPerInstance, err := r.metricsFetcher.FetchInstanceData(appGUID, from, to)
+	if err != nil {
+		return nil, err
+	}
 
 	for instanceID, instanceData := range dataPerInstance {
 		spikeFrom, spikeTo := findLatestSpike(instanceData)
@@ -37,7 +52,7 @@ func (c Calculator) CalculateInstanceReports(dataPerInstance map[int][]metrics.I
 		}
 	}
 
-	return buildReportsSlice(latestReports)
+	return buildReportsSlice(latestReports), nil
 }
 
 func findLatestSpike(instanceData []metrics.InstanceData) (time.Time, time.Time) {

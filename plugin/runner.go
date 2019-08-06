@@ -4,9 +4,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 	"github.com/fatih/color"
 )
@@ -17,39 +16,31 @@ type CFAppInfoGetter interface {
 	GetCFAppInfo(appName string) (metadata.CFAppInfo, error)
 }
 
-//go:generate counterfeiter . MetricsFetcher
-
-type MetricsFetcher interface {
-	FetchInstanceData(appGUID string, from, to time.Time) (map[int][]metrics.InstanceData, error)
-}
-
 //go:generate counterfeiter . MetricsRenderer
 
 type MetricsRenderer interface {
-	ShowInstanceReports(metadata.CFAppInfo, []calculator.InstanceReport) error
+	ShowInstanceReports(metadata.CFAppInfo, []reporter.InstanceReport) error
 }
 
-//go:generate counterfeiter . MetricsCalculator
+//go:generate counterfeiter . Reporter
 
-type MetricsCalculator interface {
-	CalculateInstanceReports(usages map[int][]metrics.InstanceData) []calculator.InstanceReport
+type Reporter interface {
+	CreateInstanceReports(appName string, from, to time.Time) ([]reporter.InstanceReport, error)
 }
 
 const Month = 30 * 24 * time.Hour
 
 type Runner struct {
-	infoGetter        CFAppInfoGetter
-	metricsFetcher    MetricsFetcher
-	metricsCalculator MetricsCalculator
-	metricsRenderer   MetricsRenderer
+	infoGetter      CFAppInfoGetter
+	reporter        Reporter
+	metricsRenderer MetricsRenderer
 }
 
-func NewRunner(infoGetter CFAppInfoGetter, metricsFetcher MetricsFetcher, metricsCalculator MetricsCalculator, metricsRenderer MetricsRenderer) Runner {
+func NewRunner(infoGetter CFAppInfoGetter, reporter Reporter, metricsRenderer MetricsRenderer) Runner {
 	return Runner{
-		infoGetter:        infoGetter,
-		metricsFetcher:    metricsFetcher,
-		metricsCalculator: metricsCalculator,
-		metricsRenderer:   metricsRenderer,
+		infoGetter:      infoGetter,
+		reporter:        reporter,
+		metricsRenderer: metricsRenderer,
 	}
 }
 
@@ -59,12 +50,10 @@ func (r Runner) Run(appName string, from, to time.Time) result.Result {
 		return result.FailureFromError(err)
 	}
 
-	usageMetrics, err := r.metricsFetcher.FetchInstanceData(info.App.Guid, from, to)
+	instanceReports, err := r.reporter.CreateInstanceReports(info.App.Guid, from, to)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
-
-	instanceReports := r.metricsCalculator.CalculateInstanceReports(usageMetrics)
 
 	err = r.metricsRenderer.ShowInstanceReports(info, instanceReports)
 	if err != nil {

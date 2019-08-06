@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"github.com/fatih/color"
 )
 
@@ -26,7 +26,7 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []calculator.InstanceReport) error {
+func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []reporter.InstanceReport) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(info.App.Name),
 		terminal.EntityNameColor(info.Org),
@@ -37,7 +37,7 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	var rows [][]string
 
 	var status string
-	var reportsWithSpikes []calculator.InstanceReport
+	var reportsWithSpikes []reporter.InstanceReport
 	for _, report := range instanceReports {
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)
 		entitlementRatio := fmt.Sprintf("%.2f%%", report.EntitlementUsage*100)

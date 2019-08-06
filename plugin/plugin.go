@@ -10,10 +10,10 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 )
 
@@ -53,12 +53,12 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	infoGetter := metadata.NewInfoGetter(cli)
 	tokenGetter := token.NewGetter(cli.AccessToken)
 	metricsFetcher := metrics.NewFetcher(logCacheURL, tokenGetter)
-	metricsCalculator := calculator.New()
+	metricsReporter := reporter.New(metricsFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
 
 	appName := args[1]
-	runner := NewRunner(infoGetter, metricsFetcher, metricsCalculator, metricsRenderer)
+	runner := NewRunner(infoGetter, metricsReporter, metricsRenderer)
 	res := runner.Run(appName, time.Now().Add(-Month), time.Now())
 	if res.IsFailure {
 		if res.ErrorMessage != "" {

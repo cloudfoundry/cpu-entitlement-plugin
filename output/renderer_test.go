@@ -10,16 +10,16 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	models "code.cloudfoundry.org/cli/plugin/models"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 var _ = Describe("Renderer", func() {
 	var (
 		appInfo         metadata.CFAppInfo
-		instanceReports []calculator.InstanceReport
+		instanceReports []reporter.InstanceReport
 		display         *outputfakes.FakeDisplay
 		renderer        output.Renderer
 	)
@@ -31,7 +31,7 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		instanceReports = []calculator.InstanceReport{
+		instanceReports = []reporter.InstanceReport{
 			{
 				InstanceID:       123,
 				EntitlementUsage: 0.5,
@@ -141,12 +141,12 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more instances have been over entitlement", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, calculator.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID:       234,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
-				}, calculator.InstanceReport{
+				}, reporter.InstanceReport{
 					InstanceID:       345,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
@@ -165,7 +165,7 @@ var _ = Describe("Renderer", func() {
 
 		When("an instance is currently over entitlement with a 'current' spike", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, calculator.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID:       234,
 					EntitlementUsage: 1.5,
 					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
@@ -180,7 +180,7 @@ var _ = Describe("Renderer", func() {
 
 		When("spike was instantaneous", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, calculator.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID:       234,
 					EntitlementUsage: 0.5,
 					LastSpikeFrom:    time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),

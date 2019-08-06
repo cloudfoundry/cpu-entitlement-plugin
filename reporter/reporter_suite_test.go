@@ -1,4 +1,4 @@
-package calculator_test
+package reporter_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCalculator(t *testing.T) {
+func TestReporter(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Calculator Suite")
+	RunSpecs(t, "Reporter Suite")
 }

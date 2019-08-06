@@ -4,17 +4,17 @@ package pluginfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/calculator"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeMetricsRenderer struct {
-	ShowInstanceReportsStub        func(metadata.CFAppInfo, []calculator.InstanceReport) error
+	ShowInstanceReportsStub        func(metadata.CFAppInfo, []reporter.InstanceReport) error
 	showInstanceReportsMutex       sync.RWMutex
 	showInstanceReportsArgsForCall []struct {
 		arg1 metadata.CFAppInfo
-		arg2 []calculator.InstanceReport
+		arg2 []reporter.InstanceReport
 	}
 	showInstanceReportsReturns struct {
 		result1 error
@@ -26,17 +26,17 @@ type FakeMetricsRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg2 []calculator.InstanceReport) error {
-	var arg2Copy []calculator.InstanceReport
+func (fake *FakeMetricsRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg2 []reporter.InstanceReport) error {
+	var arg2Copy []reporter.InstanceReport
 	if arg2 != nil {
-		arg2Copy = make([]calculator.InstanceReport, len(arg2))
+		arg2Copy = make([]reporter.InstanceReport, len(arg2))
 		copy(arg2Copy, arg2)
 	}
 	fake.showInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.showInstanceReportsReturnsOnCall[len(fake.showInstanceReportsArgsForCall)]
 	fake.showInstanceReportsArgsForCall = append(fake.showInstanceReportsArgsForCall, struct {
 		arg1 metadata.CFAppInfo
-		arg2 []calculator.InstanceReport
+		arg2 []reporter.InstanceReport
 	}{arg1, arg2Copy})
 	fake.recordInvocation("ShowInstanceReports", []interface{}{arg1, arg2Copy})
 	fake.showInstanceReportsMutex.Unlock()
@@ -56,13 +56,13 @@ func (fake *FakeMetricsRenderer) ShowInstanceReportsCallCount() int {
 	return len(fake.showInstanceReportsArgsForCall)
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsCalls(stub func(metadata.CFAppInfo, []calculator.InstanceReport) error) {
+func (fake *FakeMetricsRenderer) ShowInstanceReportsCalls(stub func(metadata.CFAppInfo, []reporter.InstanceReport) error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = stub
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsArgsForCall(i int) (metadata.CFAppInfo, []calculator.InstanceReport) {
+func (fake *FakeMetricsRenderer) ShowInstanceReportsArgsForCall(i int) (metadata.CFAppInfo, []reporter.InstanceReport) {
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
 	argsForCall := fake.showInstanceReportsArgsForCall[i]
