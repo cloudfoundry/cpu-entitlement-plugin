@@ -1,8 +1,6 @@
 package plugin
 
 import (
-	"time"
-
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
@@ -25,10 +23,8 @@ type MetricsRenderer interface {
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	CreateInstanceReports(appName string, from, to time.Time) ([]reporter.InstanceReport, error)
+	CreateInstanceReports(appName string) ([]reporter.InstanceReport, error)
 }
-
-const Month = 30 * 24 * time.Hour
 
 type Runner struct {
 	infoGetter      CFAppInfoGetter
@@ -44,13 +40,13 @@ func NewRunner(infoGetter CFAppInfoGetter, reporter Reporter, metricsRenderer Me
 	}
 }
 
-func (r Runner) Run(appName string, from, to time.Time) result.Result {
+func (r Runner) Run(appName string) result.Result {
 	info, err := r.infoGetter.GetCFAppInfo(appName)
 	if err != nil {
 		return result.FailureFromError(err)
 	}
 
-	instanceReports, err := r.reporter.CreateInstanceReports(info.App.Guid, from, to)
+	instanceReports, err := r.reporter.CreateInstanceReports(info.App.Guid)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}

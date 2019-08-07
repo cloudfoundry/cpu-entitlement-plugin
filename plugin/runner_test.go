@@ -2,7 +2,6 @@ package plugin_test
 
 import (
 	"errors"
-	"time"
 
 	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
@@ -41,22 +40,28 @@ var _ = Describe("Runner", func() {
 
 		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
 			{
-				InstanceID:       0,
-				EntitlementUsage: 0.5,
+				InstanceID: 0,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.5,
+				},
 			},
 			{
-				InstanceID:       1,
-				EntitlementUsage: 0.8,
+				InstanceID: 1,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.8,
+				},
 			},
 			{
-				InstanceID:       2,
-				EntitlementUsage: 0.875,
+				InstanceID: 2,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.875,
+				},
 			},
 		}, nil)
 	})
 
 	JustBeforeEach(func() {
-		runResult = runner.Run("app-name", time.Unix(123, 0), time.Unix(456, 0))
+		runResult = runner.Run("app-name")
 	})
 
 	It("prints the app CPU metrics", func() {
@@ -67,10 +72,7 @@ var _ = Describe("Runner", func() {
 		Expect(appName).To(Equal("app-name"))
 
 		Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(1))
-		guid, from, to := instanceReporter.CreateInstanceReportsArgsForCall(0)
-		Expect(guid).To(Equal("123"))
-		Expect(from).To(Equal(time.Unix(123, 0)))
-		Expect(to).To(Equal(time.Unix(456, 0)))
+		Expect(instanceReporter.CreateInstanceReportsArgsForCall(0)).To(Equal("123"))
 
 		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
 		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)
@@ -83,16 +85,22 @@ var _ = Describe("Runner", func() {
 		}))
 		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
 			{
-				InstanceID:       0,
-				EntitlementUsage: 0.5,
+				InstanceID: 0,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.5,
+				},
 			},
 			{
-				InstanceID:       1,
-				EntitlementUsage: 0.8,
+				InstanceID: 1,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.8,
+				},
 			},
 			{
-				InstanceID:       2,
-				EntitlementUsage: 0.875,
+				InstanceID: 2,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.875,
+				},
 			},
 		}))
 	})

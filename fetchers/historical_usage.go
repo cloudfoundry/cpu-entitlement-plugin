@@ -1,4 +1,4 @@
-package fetchers // import "code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+package fetchers
 
 import (
 	"context"
@@ -15,13 +15,15 @@ import (
 const QueryStep = 15 * time.Second
 
 type InstanceData struct {
-	Time             time.Time
-	InstanceID       int
-	EntitlementUsage float64
+	Time       time.Time
+	InstanceID int
+	Value      float64
 }
 
 type HistoricalUsageFetcher struct {
 	client LogCacheClient
+	from   time.Time
+	to     time.Time
 }
 
 //go:generate counterfeiter . LogCacheClient
@@ -32,17 +34,17 @@ type LogCacheClient interface {
 	PromQLRange(ctx context.Context, query string, opts ...logcache.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)
 }
 
-func NewHistoricalUsageFetcher(client LogCacheClient) *HistoricalUsageFetcher {
-	return &HistoricalUsageFetcher{client: client}
+func NewHistoricalUsageFetcher(client LogCacheClient, from, to time.Time) *HistoricalUsageFetcher {
+	return &HistoricalUsageFetcher{client: client, from: from, to: to}
 }
 
-func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, from, to time.Time) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string) (map[int][]InstanceData, error) {
 	procInstanceIDs, err := f.getActiveProcInstanceIDs(appGUID)
 	if err != nil {
 		return nil, err
 	}
 
-	return f.fetchLastMonth(appGUID, procInstanceIDs, from, to)
+	return f.fetchPeriod(appGUID, procInstanceIDs)
 }
 
 func (f HistoricalUsageFetcher) getActiveProcInstanceIDs(appGUID string) (map[string]bool, error) {
@@ -60,12 +62,12 @@ func (f HistoricalUsageFetcher) getActiveProcInstanceIDs(appGUID string) (map[st
 	return procInstanceIDs, nil
 }
 
-func (f HistoricalUsageFetcher) fetchLastMonth(appGUID string, procInstanceIDs map[string]bool, from, to time.Time) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) fetchPeriod(appGUID string, procInstanceIDs map[string]bool) (map[int][]InstanceData, error) {
 	res, err := f.client.PromQLRange(
 		context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGUID, appGUID),
-		logcache.WithPromQLStart(from),
-		logcache.WithPromQLEnd(to),
+		logcache.WithPromQLStart(f.from),
+		logcache.WithPromQLEnd(f.to),
 		logcache.WithPromQLStep(QueryStep.String()),
 	)
 	if err != nil {
@@ -94,9 +96,9 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, procInstanceIDs map[s
 				continue
 			}
 			instanceData := InstanceData{
-				InstanceID:       instanceID,
-				Time:             time.Unix(int64(timestamp), 0),
-				EntitlementUsage: point.Value,
+				InstanceID: instanceID,
+				Time:       time.Unix(int64(timestamp), 0),
+				Value:      point.Value,
 			}
 			instanceDataRow = append(instanceDataRow, instanceData)
 		}

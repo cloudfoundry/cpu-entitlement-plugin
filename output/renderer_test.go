@@ -33,12 +33,22 @@ var _ = Describe("Renderer", func() {
 		}
 		instanceReports = []reporter.InstanceReport{
 			{
-				InstanceID:       123,
-				EntitlementUsage: 0.5,
+				InstanceID: 123,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.5,
+				},
+				CurrentUsage: reporter.CurrentUsage{
+					Value: 1.5,
+				},
 			},
 			{
-				InstanceID:       432,
-				EntitlementUsage: 0.75,
+				InstanceID: 432,
+				HistoricalUsage: reporter.HistoricalUsage{
+					Value: 0.75,
+				},
+				CurrentUsage: reporter.CurrentUsage{
+					Value: 1.75,
+				},
 			},
 		}
 
@@ -66,59 +76,59 @@ var _ = Describe("Renderer", func() {
 		It("shows the instances table", func() {
 			Expect(display.ShowTableCallCount()).To(Equal(1))
 			headers, rows := display.ShowTableArgsForCall(0)
-			Expect(headers).To(Equal([]string{"", terminal.Colorize("usage", color.Bold)}))
+			Expect(headers).To(Equal([]string{"", bold("avg usage"), bold("curr usage")}))
 			Expect(rows).To(Equal([][]string{
-				{"#123", "50.00%"},
-				{"#432", "75.00%"},
+				{"#123", "50.00%", "150.00%"},
+				{"#432", "75.00%", "175.00%"},
 			}))
 		})
 
 		When("one or more of the instances is above entitlement", func() {
 			BeforeEach(func() {
-				instanceReports[1].EntitlementUsage = 1.5
+				instanceReports[1].HistoricalUsage.Value = 1.5
 			})
 
 			It("highlights the overentitled row", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
 				_, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
-					{"#123", "50.00%"},
-					{terminal.Colorize("#432", color.FgRed), terminal.Colorize("150.00%", color.FgRed)},
+					{"#123", "50.00%", "150.00%"},
+					redRow("#432", "150.00%", "175.00%"),
 				}))
 			})
 
 			It("prints a tip about overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+				Expect(message).To(Equal(cyan("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
 			})
 		})
 
 		When("one of the instances is between 95% and 100% entitlement", func() {
 			BeforeEach(func() {
-				instanceReports[1].EntitlementUsage = 0.96
+				instanceReports[1].HistoricalUsage.Value = 0.96
 			})
 
 			It("highlights the near overentitled row", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
 				_, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
-					{"#123", "50.00%"},
-					{terminal.Colorize("#432", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
+					{"#123", "50.00%", "150.00%"},
+					yellowRow("#432", "96.00%", "175.00%"),
 				}))
 			})
 
 			It("prints a tip about near overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are near their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+				Expect(message).To(Equal(cyan("TIP: Some instances are near their CPU entitlement. Consider scaling your memory or instances.")))
 			})
 		})
 
 		When("one of the instances is between 95% and 100% entitlement, and one is over 100%", func() {
 			BeforeEach(func() {
-				instanceReports[0].EntitlementUsage = 0.96
-				instanceReports[1].EntitlementUsage = 1.5
+				instanceReports[0].HistoricalUsage.Value = 0.96
+				instanceReports[1].HistoricalUsage.Value = 1.5
 				instanceReports = append(instanceReports, instanceReports[0])
 			})
 
@@ -126,50 +136,57 @@ var _ = Describe("Renderer", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
 				_, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
-					{terminal.Colorize("#123", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
-					{terminal.Colorize("#432", color.FgRed), terminal.Colorize("150.00%", color.FgRed)},
-					{terminal.Colorize("#123", color.FgYellow), terminal.Colorize("96.00%", color.FgYellow)},
+					yellowRow("#123", "96.00%", "150.00%"),
+					redRow("#432", "150.00%", "175.00%"),
+					yellowRow("#123", "96.00%", "150.00%"),
 				}))
 			})
 
 			It("prints a tip about over overentitlement and not about near overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(terminal.Colorize("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.", color.FgCyan)))
+				Expect(message).To(Equal(cyan("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
 			})
 		})
 
 		When("one or more instances have been over entitlement", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, reporter.InstanceReport{
-					InstanceID:       234,
-					EntitlementUsage: 0.5,
-					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
-					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
-				}, reporter.InstanceReport{
-					InstanceID:       345,
-					EntitlementUsage: 0.5,
-					LastSpikeFrom:    time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
-					LastSpikeTo:      time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
-				})
+					InstanceID: 234,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value:         0.5,
+						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					},
+				},
+					reporter.InstanceReport{
+						InstanceID: 345,
+						HistoricalUsage: reporter.HistoricalUsage{
+							Value:         0.5,
+							LastSpikeFrom: time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
+							LastSpikeTo:   time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
+						},
+					})
 			})
 
 			It("prints warnings about instances having been over entitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(3))
 				firstWarning, _ := display.ShowMessageArgsForCall(1)
-				Expect(firstWarning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #234 was over entitlement from 2019-07-30 09:00:00 to 2019-07-31 12:00:00"), color.FgYellow)))
+				Expect(firstWarning).To(Equal(yellow(fmt.Sprintf("WARNING: Instance #234 was over entitlement from 2019-07-30 09:00:00 to 2019-07-31 12:00:00"))))
 				secondWarning, _ := display.ShowMessageArgsForCall(2)
-				Expect(secondWarning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #345 was over entitlement from 2019-06-15 10:00:00 to 2019-06-21 05:00:00"), color.FgYellow)))
+				Expect(secondWarning).To(Equal(yellow(fmt.Sprintf("WARNING: Instance #345 was over entitlement from 2019-06-15 10:00:00 to 2019-06-21 05:00:00"))))
 			})
 		})
 
 		When("an instance is currently over entitlement with a 'current' spike", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, reporter.InstanceReport{
-					InstanceID:       234,
-					EntitlementUsage: 1.5,
-					LastSpikeFrom:    time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
-					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					InstanceID: 234,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value:         1.5,
+						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					},
 				})
 			})
 
@@ -181,18 +198,53 @@ var _ = Describe("Renderer", func() {
 		When("spike was instantaneous", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, reporter.InstanceReport{
-					InstanceID:       234,
-					EntitlementUsage: 0.5,
-					LastSpikeFrom:    time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
-					LastSpikeTo:      time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					InstanceID: 234,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value:         0.5,
+						LastSpikeFrom: time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					},
 				})
 			})
 
 			It("says 'at', not 'from'...'to' in the warning message", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				warning, _ := display.ShowMessageArgsForCall(1)
-				Expect(warning).To(Equal(terminal.Colorize(fmt.Sprintf("WARNING: Instance #234 was over entitlement at 2019-07-31 12:00:00"), color.FgYellow)))
+				Expect(warning).To(Equal(yellow(fmt.Sprintf("WARNING: Instance #234 was over entitlement at 2019-07-31 12:00:00"))))
 			})
 		})
 	})
 })
+
+func red(s string) string {
+	return terminal.Colorize(s, color.FgRed)
+}
+
+func yellow(s string) string {
+	return terminal.Colorize(s, color.FgYellow)
+}
+
+func cyan(s string) string {
+	return terminal.Colorize(s, color.FgCyan)
+}
+
+func bold(s string) string {
+	return terminal.Colorize(s, color.Bold)
+}
+
+func colorizeRow(row []string, rowColor color.Attribute) []string {
+	colorizedRow := []string{}
+	for _, col := range row {
+		colorizedRow = append(colorizedRow, terminal.Colorize(col, rowColor))
+	}
+
+	return colorizedRow
+}
+
+func yellowRow(r ...string) []string {
+	return colorizeRow(r, color.FgYellow)
+}
+
+func redRow(r ...string) []string {
+	return colorizeRow(r, color.FgRed)
+}

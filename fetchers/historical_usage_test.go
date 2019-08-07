@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -16,31 +15,30 @@ import (
 
 var _ = Describe("HistoricalUsageFetcher", func() {
 	var (
-		logCacheClient     *fetchersfakes.FakeLogCacheClient
-		metricsFetcher     *fetchers.HistoricalUsageFetcher
-		appGuid            string
-		instanceDataPoints map[int][]fetchers.InstanceData
-		metricsErr         error
-		from, to           time.Time
+		logCacheClient  *fetchersfakes.FakeLogCacheClient
+		fetcher         *fetchers.HistoricalUsageFetcher
+		appGuid         string
+		historicalUsage map[int][]fetchers.InstanceData
+		fetchErr        error
+		from, to        time.Time
 	)
 
 	BeforeEach(func() {
-		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
-		metricsFetcher = fetchers.NewHistoricalUsageFetcher(logCacheClient)
-
 		appGuid = "foo"
 		from = time.Now().Add(-time.Hour)
 		to = time.Now()
+		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
+		fetcher = fetchers.NewHistoricalUsageFetcher(logCacheClient, from, to)
 
 		logCacheClient.PromQLReturns(instantQueryResult(
-			sample("abc"),
-			sample("def"),
-			sample("ghi"),
+			sample("0", "abc", nil),
+			sample("1", "def", nil),
+			sample("2", "ghi", nil),
 		), nil)
 	})
 
 	JustBeforeEach(func() {
-		instanceDataPoints, metricsErr = metricsFetcher.FetchInstanceData(appGuid, from, to)
+		historicalUsage, fetchErr = fetcher.FetchInstanceData(appGuid)
 	})
 
 	When("reading from log-cache succeeds", func() {
@@ -59,7 +57,7 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 			), nil)
 		})
 
-		It("gets the metrics from the log-cache client", func() {
+		It("gets the historical usage from the log-cache client", func() {
 			Expect(logCacheClient.PromQLCallCount()).To(Equal(1))
 			ctx, query, _ := logCacheClient.PromQLArgsForCall(0)
 			Expect(ctx).To(Equal(context.Background()))
@@ -71,33 +69,33 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 			Expect(query).To(Equal(fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid)))
 		})
 
-		It("returns the correct metrics", func() {
-			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(instanceDataPoints).To(Equal(map[int][]fetchers.InstanceData{
+		It("returns the correct historical usage", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(historicalUsage).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
-						Time:             time.Unix(1, 0),
-						InstanceID:       0,
-						EntitlementUsage: 0.2,
+						Time:       time.Unix(1, 0),
+						InstanceID: 0,
+						Value:      0.2,
 					},
 					{
-						Time:             time.Unix(3, 0),
-						InstanceID:       0,
-						EntitlementUsage: 0.5,
+						Time:       time.Unix(3, 0),
+						InstanceID: 0,
+						Value:      0.5,
 					},
 				},
 				1: {
 					{
-						Time:             time.Unix(2, 0),
-						InstanceID:       1,
-						EntitlementUsage: 0.4,
+						Time:       time.Unix(2, 0),
+						InstanceID: 1,
+						Value:      0.4,
 					},
 				},
 				2: {
 					{
-						Time:             time.Unix(4, 0),
-						InstanceID:       2,
-						EntitlementUsage: 0.5,
+						Time:       time.Unix(4, 0),
+						InstanceID: 2,
+						Value:      0.5,
 					},
 				},
 			}))
@@ -110,8 +108,8 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		})
 
 		It("returns an error", func() {
-			Expect(metricsErr).To(MatchError("boo"))
-			Expect(instanceDataPoints).To(BeNil())
+			Expect(fetchErr).To(MatchError("boo"))
+			Expect(historicalUsage).To(BeNil())
 		})
 	})
 
@@ -121,8 +119,8 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		})
 
 		It("returns an error", func() {
-			Expect(metricsErr).To(MatchError("boo"))
-			Expect(instanceDataPoints).To(BeNil())
+			Expect(fetchErr).To(MatchError("boo"))
+			Expect(historicalUsage).To(BeNil())
 		})
 	})
 
@@ -145,77 +143,29 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		})
 
 		It("ignores the data from old instances", func() {
-			Expect(instanceDataPoints).To(Equal(map[int][]fetchers.InstanceData{
+			Expect(historicalUsage).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
-						Time:             time.Unix(1, 0),
-						InstanceID:       0,
-						EntitlementUsage: 0.5,
+						Time:       time.Unix(1, 0),
+						InstanceID: 0,
+						Value:      0.5,
 					},
 				},
 				1: {
 					{
-						Time:             time.Unix(2, 0),
-						InstanceID:       1,
-						EntitlementUsage: 0.5,
+						Time:       time.Unix(2, 0),
+						InstanceID: 1,
+						Value:      0.5,
 					},
 				},
 				2: {
 					{
-						Time:             time.Unix(3, 0),
-						InstanceID:       2,
-						EntitlementUsage: 0.5,
+						Time:       time.Unix(3, 0),
+						InstanceID: 2,
+						Value:      0.5,
 					},
 				},
 			}))
 		})
 	})
 })
-
-type Metric struct {
-	Usage       float64
-	Entitlement float64
-	Age         float64
-}
-
-func instantQueryResult(samples ...*logcache_v1.PromQL_Sample) *logcache_v1.PromQL_InstantQueryResult {
-	return &logcache_v1.PromQL_InstantQueryResult{
-		Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
-			Vector: &logcache_v1.PromQL_Vector{
-				Samples: samples,
-			},
-		},
-	}
-}
-
-func sample(procInstanceID string) *logcache_v1.PromQL_Sample {
-	return &logcache_v1.PromQL_Sample{
-		Metric: map[string]string{
-			"process_instance_id": procInstanceID,
-		},
-	}
-}
-
-func rangeQueryResult(series ...*logcache_v1.PromQL_Series) *logcache_v1.PromQL_RangeQueryResult {
-	return &logcache_v1.PromQL_RangeQueryResult{
-		Result: &logcache_v1.PromQL_RangeQueryResult_Matrix{
-			Matrix: &logcache_v1.PromQL_Matrix{
-				Series: series,
-			},
-		},
-	}
-}
-
-func series(instanceID, procInstanceID string, points ...*logcache_v1.PromQL_Point) *logcache_v1.PromQL_Series {
-	return &logcache_v1.PromQL_Series{
-		Metric: map[string]string{
-			"instance_id":         instanceID,
-			"process_instance_id": procInstanceID,
-		},
-		Points: points,
-	}
-}
-
-func point(time string, value float64) *logcache_v1.PromQL_Point {
-	return &logcache_v1.PromQL_Point{Time: time, Value: value}
-}

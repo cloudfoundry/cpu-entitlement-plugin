@@ -19,6 +19,8 @@ import (
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
+const month time.Duration = 31 * 24 * time.Hour
+
 type CPUEntitlementPlugin struct{}
 
 func New() CPUEntitlementPlugin {
@@ -47,14 +49,21 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	}
 
 	infoGetter := metadata.NewInfoGetter(cli)
-	metricsFetcher := fetchers.NewHistoricalUsageFetcher(createLogClient(logCacheURL, cli.AccessToken))
-	metricsReporter := reporter.New(metricsFetcher)
+	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken),
+		time.Now().Add(-month),
+		time.Now(),
+	)
+	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken),
+	)
+	metricsReporter := reporter.New(historicalUsageFetcher, currentUsageFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
 
 	appName := args[1]
 	runner := NewRunner(infoGetter, metricsReporter, metricsRenderer)
-	res := runner.Run(appName, time.Now().Add(-Month), time.Now())
+	res := runner.Run(appName)
 	if res.IsFailure {
 		if res.ErrorMessage != "" {
 			ui.Failed(res.ErrorMessage)

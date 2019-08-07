@@ -3,19 +3,16 @@ package pluginfakes
 
 import (
 	"sync"
-	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeReporter struct {
-	CreateInstanceReportsStub        func(string, time.Time, time.Time) ([]reporter.InstanceReport, error)
+	CreateInstanceReportsStub        func(string) ([]reporter.InstanceReport, error)
 	createInstanceReportsMutex       sync.RWMutex
 	createInstanceReportsArgsForCall []struct {
 		arg1 string
-		arg2 time.Time
-		arg3 time.Time
 	}
 	createInstanceReportsReturns struct {
 		result1 []reporter.InstanceReport
@@ -29,18 +26,16 @@ type FakeReporter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeReporter) CreateInstanceReports(arg1 string, arg2 time.Time, arg3 time.Time) ([]reporter.InstanceReport, error) {
+func (fake *FakeReporter) CreateInstanceReports(arg1 string) ([]reporter.InstanceReport, error) {
 	fake.createInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.createInstanceReportsReturnsOnCall[len(fake.createInstanceReportsArgsForCall)]
 	fake.createInstanceReportsArgsForCall = append(fake.createInstanceReportsArgsForCall, struct {
 		arg1 string
-		arg2 time.Time
-		arg3 time.Time
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("CreateInstanceReports", []interface{}{arg1, arg2, arg3})
+	}{arg1})
+	fake.recordInvocation("CreateInstanceReports", []interface{}{arg1})
 	fake.createInstanceReportsMutex.Unlock()
 	if fake.CreateInstanceReportsStub != nil {
-		return fake.CreateInstanceReportsStub(arg1, arg2, arg3)
+		return fake.CreateInstanceReportsStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -55,17 +50,17 @@ func (fake *FakeReporter) CreateInstanceReportsCallCount() int {
 	return len(fake.createInstanceReportsArgsForCall)
 }
 
-func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(string, time.Time, time.Time) ([]reporter.InstanceReport, error)) {
+func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(string) ([]reporter.InstanceReport, error)) {
 	fake.createInstanceReportsMutex.Lock()
 	defer fake.createInstanceReportsMutex.Unlock()
 	fake.CreateInstanceReportsStub = stub
 }
 
-func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) (string, time.Time, time.Time) {
+func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) string {
 	fake.createInstanceReportsMutex.RLock()
 	defer fake.createInstanceReportsMutex.RUnlock()
 	argsForCall := fake.createInstanceReportsArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1
 }
 
 func (fake *FakeReporter) CreateInstanceReportsReturns(result1 []reporter.InstanceReport, result2 error) {

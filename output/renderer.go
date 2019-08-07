@@ -10,6 +10,7 @@ import (
 )
 
 const DateFmt = "2006-01-02 15:04:05"
+const noColor color.Attribute = -1
 
 type Renderer struct {
 	display Display
@@ -39,28 +40,29 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	var status string
 	var reportsWithSpikes []reporter.InstanceReport
 	for _, report := range instanceReports {
+		rowColor := noColor
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)
-		entitlementRatio := fmt.Sprintf("%.2f%%", report.EntitlementUsage*100)
-		if report.EntitlementUsage > 1 {
+		avgEntitlementRatio := fmt.Sprintf("%.2f%%", report.HistoricalUsage.Value*100)
+		if report.HistoricalUsage.Value > 1 {
 			status = "over"
-			instanceID = terminal.Colorize(instanceID, color.FgRed)
-			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgRed)
-		} else if report.EntitlementUsage > 0.95 {
+			rowColor = color.FgRed
+		} else if report.HistoricalUsage.Value > 0.95 {
 			if status == "" {
 				status = "near"
 			}
-			instanceID = terminal.Colorize(instanceID, color.FgYellow)
-			entitlementRatio = terminal.Colorize(entitlementRatio, color.FgYellow)
+			rowColor = color.FgYellow
 		}
 
-		if report.HasRecordedSpike() && report.EntitlementUsage <= 1 {
+		if report.HasRecordedSpike() && report.HistoricalUsage.Value <= 1 {
 			reportsWithSpikes = append(reportsWithSpikes, report)
 		}
 
-		rows = append(rows, []string{instanceID, entitlementRatio})
+		currEntitlementRatio := fmt.Sprintf("%.2f%%", report.CurrentUsage.Value*100)
+
+		rows = append(rows, colorizeRow([]string{instanceID, avgEntitlementRatio, currEntitlementRatio}, rowColor))
 	}
 
-	err := r.display.ShowTable([]string{"", terminal.Colorize("usage", color.Bold)}, rows)
+	err := r.display.ShowTable([]string{"", terminal.Colorize("avg usage", color.Bold), terminal.Colorize("curr usage", color.Bold)}, rows)
 	if err != nil {
 		return err
 	}
@@ -70,12 +72,26 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	}
 
 	for _, reportWithSpike := range reportsWithSpikes {
-		if reportWithSpike.LastSpikeFrom.Equal(reportWithSpike.LastSpikeTo) {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceID, reportWithSpike.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
+		historicalUsage := reportWithSpike.HistoricalUsage
+		if historicalUsage.LastSpikeFrom.Equal(historicalUsage.LastSpikeTo) {
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceID, historicalUsage.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
 		} else {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, reportWithSpike.LastSpikeFrom.Format(DateFmt), reportWithSpike.LastSpikeTo.Format(DateFmt)), color.FgYellow))
+			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, historicalUsage.LastSpikeFrom.Format(DateFmt), historicalUsage.LastSpikeTo.Format(DateFmt)), color.FgYellow))
 		}
 	}
 
 	return nil
+}
+
+func colorizeRow(row []string, rowColor color.Attribute) []string {
+	if rowColor == noColor {
+		return row
+	}
+
+	colorizedRow := []string{}
+	for _, col := range row {
+		colorizedRow = append(colorizedRow, terminal.Colorize(col, rowColor))
+	}
+
+	return colorizedRow
 }

@@ -14,220 +14,331 @@ import (
 
 var _ = Describe("Reporter", func() {
 	var (
-		metricsFetcher   *reporterfakes.FakeMetricsFetcher
-		instanceReporter reporter.Reporter
-		reports          []reporter.InstanceReport
-		err              error
-		appGuid          string
-		from, to         time.Time
+		historicalUsageFetcher *reporterfakes.FakeInstanceDataFetcher
+		currentUsageFetcher    *reporterfakes.FakeInstanceDataFetcher
+		instanceReporter       reporter.Reporter
+		reports                []reporter.InstanceReport
+		err                    error
+		appGuid                string
 	)
 
 	BeforeEach(func() {
 		appGuid = "foo"
-		from = time.Now().Add(-time.Hour)
-		to = time.Now()
 
-		metricsFetcher = new(reporterfakes.FakeMetricsFetcher)
-		metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-			0: {
-				{
-					InstanceID:       0,
-					EntitlementUsage: 0.5,
-				},
-			},
-			1: {
-				{
-					InstanceID:       1,
-					EntitlementUsage: 0.6,
-				},
-				{
-					InstanceID:       1,
-					EntitlementUsage: 0.7,
-				},
-			},
-		}, nil)
-
-		instanceReporter = reporter.New(metricsFetcher)
+		historicalUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
+		currentUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
+		instanceReporter = reporter.New(historicalUsageFetcher, currentUsageFetcher)
 	})
 
 	JustBeforeEach(func() {
-		reports, err = instanceReporter.CreateInstanceReports(appGuid, from, to)
+		reports, err = instanceReporter.CreateInstanceReports(appGuid)
 	})
 
-	It("fetches the app metrics correctly", func() {
-		Expect(metricsFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-		actualAppGuid, actualFrom, actualTo := metricsFetcher.FetchInstanceDataArgsForCall(0)
-		Expect(actualAppGuid).To(Equal(appGuid))
-		Expect(actualFrom).To(Equal(from))
-		Expect(actualTo).To(Equal(to))
-	})
-
-	When("fetching the app metrics fails", func() {
+	Describe("Report", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(nil, errors.New("metrics-error"))
-		})
-
-		It("returns the error", func() {
-			Expect(err).To(MatchError("metrics-error"))
-		})
-	})
-
-	It("calculates entitlement ratio", func() {
-		Expect(reports).To(Equal([]reporter.InstanceReport{
-			{InstanceID: 0, EntitlementUsage: 0.5},
-			{InstanceID: 1, EntitlementUsage: 0.7},
-		}))
-	})
-
-	When("an instance is missing from the data", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				2: {
-					{
-						InstanceID:       2,
-						EntitlementUsage: 0.5,
-					},
-				},
+			historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{
-						InstanceID:       0,
-						EntitlementUsage: 0.6,
+						InstanceID: 0,
+						Value:      0.5,
+					},
+				},
+			}, nil)
+			currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				0: {
+					{
+						InstanceID: 0,
+						Value:      1.5,
 					},
 				},
 			}, nil)
 		})
 
-		It("still returns an (incomplete) result", func() {
-			Expect(reports).To(Equal([]reporter.InstanceReport{
-				{InstanceID: 0, EntitlementUsage: 0.6},
-				{InstanceID: 2, EntitlementUsage: 0.5},
-			}))
+		It("combines historical and current cpu usage data", func() {
+			Expect(len(reports)).To(Equal(1))
+
+			Expect(reports[0].InstanceID).To(Equal(0))
+			Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
+			Expect(reports[0].CurrentUsage.Value).To(Equal(1.5))
+		})
+
+		When("current usage data and historical usage data cannot be matched by instance id", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{
+							InstanceID: 0,
+							Value:      0.5,
+						},
+					},
+				}, nil)
+				currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					1: {
+						{
+							InstanceID: 1,
+							Value:      1.5,
+						},
+					},
+				}, nil)
+			})
+
+			It("combines historical and current cpu usage data", func() {
+				Expect(len(reports)).To(Equal(2))
+
+				Expect(reports[0].InstanceID).To(Equal(0))
+				Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
+				Expect(reports[0].CurrentUsage.Value).To(BeZero())
+
+				Expect(reports[1].InstanceID).To(Equal(1))
+				Expect(reports[1].HistoricalUsage.Value).To(BeZero())
+				Expect(reports[1].CurrentUsage.Value).To(Equal(1.5))
+			})
 		})
 	})
 
-	When("some instances have spiked", func() {
+	Describe("Historical CPU usage", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
-					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
-					{InstanceID: 0, Time: time.Unix(5, 0), EntitlementUsage: 2.0},
-					{InstanceID: 0, Time: time.Unix(6, 0), EntitlementUsage: 0.9},
+					{
+						InstanceID: 0,
+						Value:      0.5,
+					},
 				},
 				1: {
-					{InstanceID: 1, Time: time.Unix(2, 0), EntitlementUsage: 0.6},
-					{InstanceID: 1, Time: time.Unix(4, 0), EntitlementUsage: 0.4},
+					{
+						InstanceID: 1,
+						Value:      0.6,
+					},
+					{
+						InstanceID: 1,
+						Value:      0.7,
+					},
 				},
 			}, nil)
 		})
+		It("fetches the usage data correctly", func() {
+			Expect(historicalUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
+			Expect(historicalUsageFetcher.FetchInstanceDataArgsForCall(0)).To(Equal(appGuid))
+		})
 
-		It("adds the spike starting and ending times to the report", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(3, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(5, 0)))
+		When("fetching the historical usage fails", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-historical-error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("fetch-historical-error"))
+			})
+		})
+
+		It("calculates historical entitlement ratio", func() {
+			Expect(len(reports)).To(Equal(2))
+
+			Expect(reports[0].InstanceID).To(Equal(0))
+			Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
+
+			Expect(reports[1].InstanceID).To(Equal(1))
+			Expect(reports[1].HistoricalUsage.Value).To(Equal(0.7))
+		})
+
+		When("an instance is missing from the historical usage data", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					2: {
+						{
+							InstanceID: 2,
+							Value:      0.5,
+						},
+					},
+					0: {
+						{
+							InstanceID: 0,
+							Value:      0.6,
+						},
+					},
+				}, nil)
+				currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{}, nil)
+			})
+
+			It("still returns an (incomplete) result", func() {
+				Expect(len(reports)).To(Equal(2))
+
+				Expect(reports[0].InstanceID).To(Equal(0))
+				Expect(reports[0].HistoricalUsage.Value).To(Equal(0.6))
+
+				Expect(reports[1].InstanceID).To(Equal(2))
+				Expect(reports[1].HistoricalUsage.Value).To(Equal(0.5))
+			})
+		})
+		When("some instances have spiked", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(1, 0), Value: 0.5},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 1.5},
+						{InstanceID: 0, Time: time.Unix(5, 0), Value: 2.0},
+						{InstanceID: 0, Time: time.Unix(6, 0), Value: 0.9},
+					},
+					1: {
+						{InstanceID: 1, Time: time.Unix(2, 0), Value: 0.6},
+						{InstanceID: 1, Time: time.Unix(4, 0), Value: 0.4},
+					},
+				}, nil)
+			})
+
+			It("adds the spike starting and ending times to the report", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(5, 0)))
+			})
+		})
+
+		When("latest spike starts at beginning of data and ends before end of data", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(1, 0), Value: 2.5},
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 1.5},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 0.9},
+					},
+				}, nil)
+			})
+
+			It("reports spike from beginning of data to end of spike", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
+			})
+		})
+
+		When("latest spike starts at beginning of data and is always spiking in range", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(1, 0), Value: 1.5},
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 2.5},
+					},
+				}, nil)
+			})
+
+			It("reports spike from beginning of data to end of data", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
+			})
+		})
+
+		When("latest spike is spiking at end of data", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(1, 0), Value: 0.5},
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 1.5},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 2.5},
+					},
+				}, nil)
+			})
+
+			It("reports spike from beginning of spike to end of data", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(2, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
+			})
+		})
+
+		When("multiple spikes exist", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 0.5},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 0.7},
+						{InstanceID: 0, Time: time.Unix(4, 0), Value: 0.9},
+						{InstanceID: 0, Time: time.Unix(5, 0), Value: 0.8},
+						{InstanceID: 0, Time: time.Unix(6, 0), Value: 1.2},
+						{InstanceID: 0, Time: time.Unix(7, 0), Value: 1.5},
+					},
+				}, nil)
+			})
+
+			It("reports only the latest spike", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(6, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(7, 0)))
+			})
+		})
+
+		When("a spike consists of a single data point", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 0.8},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 1.5},
+						{InstanceID: 0, Time: time.Unix(4, 0), Value: 0.5},
+					},
+				}, nil)
+			})
+
+			It("reports an empty range", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
+				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
+			})
+		})
+
+		When("an instance reaches 100% entitlement usage but doesn't go above", func() {
+			BeforeEach(func() {
+				historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{InstanceID: 0, Time: time.Unix(2, 0), Value: 0.5},
+						{InstanceID: 0, Time: time.Unix(3, 0), Value: 1.0},
+						{InstanceID: 0, Time: time.Unix(4, 0), Value: 0.8},
+					},
+				}, nil)
+			})
+
+			It("does not report a spike", func() {
+				Expect(reports[0].HistoricalUsage.LastSpikeFrom.IsZero()).To(BeTrue())
+				Expect(reports[0].HistoricalUsage.LastSpikeTo.IsZero()).To(BeTrue())
+			})
 		})
 	})
 
-	When("latest spike starts at beginning of data and ends before end of data", func() {
+	Describe("Current CPU usage", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
-					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 2.5},
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 0.9},
+					{
+						InstanceID: 0,
+						Value:      1.5,
+					},
+				},
+				1: {
+					{
+						InstanceID: 1,
+						Value:      1.7,
+					},
 				},
 			}, nil)
 		})
 
-		It("reports spike from beginning of data to end of spike", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(1, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(2, 0)))
-		})
-	})
-
-	When("latest spike starts at beginning of data and is always spiking in range", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				0: {
-					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 1.5},
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 2.5},
-				},
-			}, nil)
+		It("fetches the usage data correctly", func() {
+			Expect(currentUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
+			Expect(currentUsageFetcher.FetchInstanceDataArgsForCall(0)).To(Equal(appGuid))
 		})
 
-		It("reports spike from beginning of data to end of data", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(1, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(2, 0)))
-		})
-	})
+		When("fetching the current usage fails", func() {
+			BeforeEach(func() {
+				currentUsageFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-current-error"))
+			})
 
-	When("latest spike is spiking at end of data", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				0: {
-					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 2.5},
-				},
-			}, nil)
+			It("returns the error", func() {
+				Expect(err).To(MatchError("fetch-current-error"))
+			})
 		})
 
-		It("reports spike from beginning of spike to end of data", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(2, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(3, 0)))
-		})
-	})
+		It("calculates current entitlement ratio", func() {
+			Expect(len(reports)).To(Equal(2))
 
-	When("multiple spikes exist", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				0: {
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 0.7},
-					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.9},
-					{InstanceID: 0, Time: time.Unix(5, 0), EntitlementUsage: 0.8},
-					{InstanceID: 0, Time: time.Unix(6, 0), EntitlementUsage: 1.2},
-					{InstanceID: 0, Time: time.Unix(7, 0), EntitlementUsage: 1.5},
-				},
-			}, nil)
-		})
+			Expect(reports[0].InstanceID).To(Equal(0))
+			Expect(reports[0].CurrentUsage.Value).To(Equal(1.5))
 
-		It("reports only the latest spike", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(6, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(7, 0)))
-		})
-	})
-
-	When("a spike consists of a single data point", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				0: {
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.8},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
-					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.5},
-				},
-			}, nil)
-		})
-
-		It("reports an empty range", func() {
-			Expect(reports[0].LastSpikeFrom).To(Equal(time.Unix(3, 0)))
-			Expect(reports[0].LastSpikeTo).To(Equal(time.Unix(3, 0)))
-		})
-	})
-
-	When("an instance reaches 100% entitlement usage but doesn't go above", func() {
-		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-				0: {
-					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
-					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.0},
-					{InstanceID: 0, Time: time.Unix(4, 0), EntitlementUsage: 0.8},
-				},
-			}, nil)
-		})
-
-		It("does not report a spike", func() {
-			Expect(reports[0].LastSpikeFrom.IsZero()).To(BeTrue())
-			Expect(reports[0].LastSpikeTo.IsZero()).To(BeTrue())
+			Expect(reports[1].InstanceID).To(Equal(1))
+			Expect(reports[1].CurrentUsage.Value).To(Equal(1.7))
 		})
 	})
 })
