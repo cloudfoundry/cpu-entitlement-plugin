@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 )
 
 type Reporter struct {
@@ -14,7 +14,7 @@ type Reporter struct {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchInstanceData(appGUID string, from, to time.Time) (map[int][]metrics.InstanceData, error)
+	FetchInstanceData(appGUID string, from, to time.Time) (map[int][]fetchers.InstanceData, error)
 }
 
 type InstanceReport struct {
@@ -55,7 +55,7 @@ func (r Reporter) CreateInstanceReports(appGUID string, from, to time.Time) ([]I
 	return buildReportsSlice(latestReports), nil
 }
 
-func findLatestSpike(instanceData []metrics.InstanceData) (time.Time, time.Time) {
+func findLatestSpike(instanceData []fetchers.InstanceData) (time.Time, time.Time) {
 	var from, to time.Time
 
 	for i := len(instanceData) - 1; i >= 0; i-- {
@@ -76,7 +76,7 @@ func findLatestSpike(instanceData []metrics.InstanceData) (time.Time, time.Time)
 	return from, to
 }
 
-func isSpiking(dataPoint metrics.InstanceData) bool {
+func isSpiking(dataPoint fetchers.InstanceData) bool {
 	return dataPoint.EntitlementUsage > 1
 }
 

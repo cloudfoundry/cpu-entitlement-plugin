@@ -1,4 +1,4 @@
-package metrics // import "code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
+package fetchers // import "code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type InstanceData struct {
 	EntitlementUsage float64
 }
 
-type LogCacheFetcher struct {
+type HistoricalUsageFetcher struct {
 	client LogCacheClient
 }
 
@@ -32,11 +32,11 @@ type LogCacheClient interface {
 	PromQLRange(ctx context.Context, query string, opts ...logcache.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)
 }
 
-func NewFetcher(client LogCacheClient) LogCacheFetcher {
-	return LogCacheFetcher{client: client}
+func NewHistoricalUsageFetcher(client LogCacheClient) *HistoricalUsageFetcher {
+	return &HistoricalUsageFetcher{client: client}
 }
 
-func (f LogCacheFetcher) FetchInstanceData(appGUID string, from, to time.Time) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, from, to time.Time) (map[int][]InstanceData, error) {
 	procInstanceIDs, err := f.getActiveProcInstanceIDs(appGUID)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (f LogCacheFetcher) FetchInstanceData(appGUID string, from, to time.Time) (
 	return f.fetchLastMonth(appGUID, procInstanceIDs, from, to)
 }
 
-func (f LogCacheFetcher) getActiveProcInstanceIDs(appGUID string) (map[string]bool, error) {
+func (f HistoricalUsageFetcher) getActiveProcInstanceIDs(appGUID string) (map[string]bool, error) {
 	appsSnapshot, err := f.client.PromQL(context.Background(), fmt.Sprintf(`absolute_usage{source_id="%s"}`, appGUID))
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (f LogCacheFetcher) getActiveProcInstanceIDs(appGUID string) (map[string]bo
 	return procInstanceIDs, nil
 }
 
-func (f LogCacheFetcher) fetchLastMonth(appGUID string, procInstanceIDs map[string]bool, from, to time.Time) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) fetchLastMonth(appGUID string, procInstanceIDs map[string]bool, from, to time.Time) (map[int][]InstanceData, error) {
 	res, err := f.client.PromQLRange(
 		context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGUID, appGUID),

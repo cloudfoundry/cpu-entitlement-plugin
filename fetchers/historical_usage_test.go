@@ -1,4 +1,4 @@
-package metrics_test
+package fetchers_test
 
 import (
 	"context"
@@ -10,23 +10,23 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics/metricsfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/fetchersfakes"
 )
 
-var _ = Describe("Logstreamer", func() {
+var _ = Describe("HistoricalUsageFetcher", func() {
 	var (
-		logCacheClient     *metricsfakes.FakeLogCacheClient
-		metricsFetcher     metrics.LogCacheFetcher
+		logCacheClient     *fetchersfakes.FakeLogCacheClient
+		metricsFetcher     *fetchers.HistoricalUsageFetcher
 		appGuid            string
-		instanceDataPoints map[int][]metrics.InstanceData
+		instanceDataPoints map[int][]fetchers.InstanceData
 		metricsErr         error
 		from, to           time.Time
 	)
 
 	BeforeEach(func() {
-		logCacheClient = new(metricsfakes.FakeLogCacheClient)
-		metricsFetcher = metrics.NewFetcher(logCacheClient)
+		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
+		metricsFetcher = fetchers.NewHistoricalUsageFetcher(logCacheClient)
 
 		appGuid = "foo"
 		from = time.Now().Add(-time.Hour)
@@ -73,7 +73,7 @@ var _ = Describe("Logstreamer", func() {
 
 		It("returns the correct metrics", func() {
 			Expect(metricsErr).NotTo(HaveOccurred())
-			Expect(instanceDataPoints).To(Equal(map[int][]metrics.InstanceData{
+			Expect(instanceDataPoints).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
 						Time:             time.Unix(1, 0),
@@ -145,7 +145,7 @@ var _ = Describe("Logstreamer", func() {
 		})
 
 		It("ignores the data from old instances", func() {
-			Expect(instanceDataPoints).To(Equal(map[int][]metrics.InstanceData{
+			Expect(instanceDataPoints).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
 						Time:             time.Unix(1, 0),

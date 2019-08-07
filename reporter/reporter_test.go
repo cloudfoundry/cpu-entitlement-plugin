@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
 )
@@ -28,7 +28,7 @@ var _ = Describe("Reporter", func() {
 		to = time.Now()
 
 		metricsFetcher = new(reporterfakes.FakeMetricsFetcher)
-		metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+		metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 			0: {
 				{
 					InstanceID:       0,
@@ -81,7 +81,7 @@ var _ = Describe("Reporter", func() {
 
 	When("an instance is missing from the data", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				2: {
 					{
 						InstanceID:       2,
@@ -107,7 +107,7 @@ var _ = Describe("Reporter", func() {
 
 	When("some instances have spiked", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
 					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
@@ -129,7 +129,7 @@ var _ = Describe("Reporter", func() {
 
 	When("latest spike starts at beginning of data and ends before end of data", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 2.5},
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
@@ -146,7 +146,7 @@ var _ = Describe("Reporter", func() {
 
 	When("latest spike starts at beginning of data and is always spiking in range", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 1.5},
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 2.5},
@@ -162,7 +162,7 @@ var _ = Describe("Reporter", func() {
 
 	When("latest spike is spiking at end of data", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(1, 0), EntitlementUsage: 0.5},
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 1.5},
@@ -179,7 +179,7 @@ var _ = Describe("Reporter", func() {
 
 	When("multiple spikes exist", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
 					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 0.7},
@@ -199,7 +199,7 @@ var _ = Describe("Reporter", func() {
 
 	When("a spike consists of a single data point", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.8},
 					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.5},
@@ -216,7 +216,7 @@ var _ = Describe("Reporter", func() {
 
 	When("an instance reaches 100% entitlement usage but doesn't go above", func() {
 		BeforeEach(func() {
-			metricsFetcher.FetchInstanceDataReturns(map[int][]metrics.InstanceData{
+			metricsFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{InstanceID: 0, Time: time.Unix(2, 0), EntitlementUsage: 0.5},
 					{InstanceID: 0, Time: time.Unix(3, 0), EntitlementUsage: 1.0},

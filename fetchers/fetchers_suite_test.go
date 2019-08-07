@@ -1,4 +1,4 @@
-package metrics_test
+package fetchers_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestMetrics(t *testing.T) {
+func TestFetchers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Metrics Suite")
+	RunSpecs(t, "Fetchers Suite")
 }
