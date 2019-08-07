@@ -3,12 +3,10 @@ package metrics // import "code.cloudfoundry.org/cpu-entitlement-plugin/metrics"
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"strconv"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
@@ -34,16 +32,7 @@ type LogCacheClient interface {
 	PromQLRange(ctx context.Context, query string, opts ...logcache.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)
 }
 
-func NewFetcher(logCacheURL string, tokenGetter *token.Getter) LogCacheFetcher {
-	return LogCacheFetcher{
-		client: logcache.NewClient(
-			logCacheURL,
-			logcache.WithHTTPClient(authenticatedBy(tokenGetter)),
-		),
-	}
-}
-
-func NewFetcherWithLogCacheClient(client LogCacheClient) LogCacheFetcher {
+func NewFetcher(client LogCacheClient) LogCacheFetcher {
 	return LogCacheFetcher{client: client}
 }
 
@@ -116,21 +105,4 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, procInstanceIDs map[s
 	}
 
 	return dataPerInstance
-}
-
-func authenticatedBy(tokenGetter *token.Getter) *authClient {
-	return &authClient{tokenGetter: tokenGetter}
-}
-
-type authClient struct {
-	tokenGetter *token.Getter
-}
-
-func (a *authClient) Do(req *http.Request) (*http.Response, error) {
-	t, err := a.tokenGetter.Token()
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", t)
-	return http.DefaultClient.Do(req)
 }

@@ -2,6 +2,7 @@ package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
 type CPUEntitlementPlugin struct{}
@@ -38,21 +40,14 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	ui.Warn("Note: This feature is experimental.")
 
-	dopplerURL, err := cli.DopplerEndpoint()
-	if err != nil {
-		ui.Failed(err.Error())
-		os.Exit(1)
-	}
-
-	logCacheURL, err := buildLogCacheURL(dopplerURL)
+	logCacheURL, err := getLogCacheURL(cli)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)
 	}
 
 	infoGetter := metadata.NewInfoGetter(cli)
-	tokenGetter := token.NewGetter(cli.AccessToken)
-	metricsFetcher := metrics.NewFetcher(logCacheURL, tokenGetter)
+	metricsFetcher := metrics.NewFetcher(createLogClient(logCacheURL, cli.AccessToken))
 	metricsReporter := reporter.New(metricsFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
@@ -94,6 +89,15 @@ func (p CPUEntitlementPlugin) GetMetadata() plugin.PluginMetadata {
 	}
 }
 
+func getLogCacheURL(cli plugin.CliConnection) (string, error) {
+	dopplerURL, err := cli.DopplerEndpoint()
+	if err != nil {
+		return "", err
+	}
+
+	return buildLogCacheURL(dopplerURL)
+}
+
 func buildLogCacheURL(dopplerURL string) (string, error) {
 	logStreamURL, err := url.Parse(dopplerURL)
 	if err != nil {
@@ -115,4 +119,28 @@ func buildLogCacheURL(dopplerURL string) (string, error) {
 	logStreamURL.Host = "log-cache" + match[1]
 
 	return logStreamURL.String(), nil
+}
+
+func createLogClient(logCacheURL string, accessTokenFunc func() (string, error)) *logcache.Client {
+	return logcache.NewClient(
+		logCacheURL,
+		logcache.WithHTTPClient(authenticatedBy(token.NewGetter(accessTokenFunc))),
+	)
+}
+
+func authenticatedBy(tokenGetter *token.Getter) *authClient {
+	return &authClient{tokenGetter: tokenGetter}
+}
+
+type authClient struct {
+	tokenGetter *token.Getter
+}
+
+func (a *authClient) Do(req *http.Request) (*http.Response, error) {
+	t, err := a.tokenGetter.Token()
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", t)
+	return http.DefaultClient.Do(req)
 }

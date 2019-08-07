@@ -26,7 +26,7 @@ var _ = Describe("Logstreamer", func() {
 
 	BeforeEach(func() {
 		logCacheClient = new(metricsfakes.FakeLogCacheClient)
-		metricsFetcher = metrics.NewFetcherWithLogCacheClient(logCacheClient)
+		metricsFetcher = metrics.NewFetcher(logCacheClient)
 
 		appGuid = "foo"
 		from = time.Now().Add(-time.Hour)
