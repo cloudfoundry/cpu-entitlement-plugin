@@ -12,7 +12,7 @@ type CFAppInfo struct {
 	Username  string
 	Org       string
 	Space     string
-	Instances []CFAppInstance
+	Instances map[int]CFAppInstance
 }
 
 type CFAppInstance struct {
@@ -49,9 +49,9 @@ func (g InfoGetter) GetCFAppInfo(appName string) (CFAppInfo, error) {
 		return CFAppInfo{}, err
 	}
 
-	var instances []CFAppInstance
+	instances := map[int]CFAppInstance{}
 	for id, instance := range app.Instances {
-		instances = append(instances, CFAppInstance{InstanceID: id, Since: instance.Since})
+		instances[id] = CFAppInstance{InstanceID: id, Since: instance.Since}
 	}
 
 	return CFAppInfo{

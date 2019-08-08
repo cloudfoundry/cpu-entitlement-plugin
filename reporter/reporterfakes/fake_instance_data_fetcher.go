@@ -5,14 +5,16 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeInstanceDataFetcher struct {
-	FetchInstanceDataStub        func(string) (map[int][]fetchers.InstanceData, error)
+	FetchInstanceDataStub        func(string, map[int]metadata.CFAppInstance) (map[int][]fetchers.InstanceData, error)
 	fetchInstanceDataMutex       sync.RWMutex
 	fetchInstanceDataArgsForCall []struct {
 		arg1 string
+		arg2 map[int]metadata.CFAppInstance
 	}
 	fetchInstanceDataReturns struct {
 		result1 map[int][]fetchers.InstanceData
@@ -26,16 +28,17 @@ type FakeInstanceDataFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 string) (map[int][]fetchers.InstanceData, error) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 string, arg2 map[int]metadata.CFAppInstance) (map[int][]fetchers.InstanceData, error) {
 	fake.fetchInstanceDataMutex.Lock()
 	ret, specificReturn := fake.fetchInstanceDataReturnsOnCall[len(fake.fetchInstanceDataArgsForCall)]
 	fake.fetchInstanceDataArgsForCall = append(fake.fetchInstanceDataArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("FetchInstanceData", []interface{}{arg1})
+		arg2 map[int]metadata.CFAppInstance
+	}{arg1, arg2})
+	fake.recordInvocation("FetchInstanceData", []interface{}{arg1, arg2})
 	fake.fetchInstanceDataMutex.Unlock()
 	if fake.FetchInstanceDataStub != nil {
-		return fake.FetchInstanceDataStub(arg1)
+		return fake.FetchInstanceDataStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -50,17 +53,17 @@ func (fake *FakeInstanceDataFetcher) FetchInstanceDataCallCount() int {
 	return len(fake.fetchInstanceDataArgsForCall)
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(string) (map[int][]fetchers.InstanceData, error)) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(string, map[int]metadata.CFAppInstance) (map[int][]fetchers.InstanceData, error)) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = stub
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataArgsForCall(i int) string {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataArgsForCall(i int) (string, map[int]metadata.CFAppInstance) {
 	fake.fetchInstanceDataMutex.RLock()
 	defer fake.fetchInstanceDataMutex.RUnlock()
 	argsForCall := fake.fetchInstanceDataArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturns(result1 map[int][]fetchers.InstanceData, result2 error) {

@@ -7,6 +7,8 @@ import (
 
 	"strconv"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
@@ -38,31 +40,7 @@ func NewHistoricalUsageFetcher(client LogCacheClient, from, to time.Time) *Histo
 	return &HistoricalUsageFetcher{client: client, from: from, to: to}
 }
 
-func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string) (map[int][]InstanceData, error) {
-	procInstanceIDs, err := f.getActiveProcInstanceIDs(appGUID)
-	if err != nil {
-		return nil, err
-	}
-
-	return f.fetchPeriod(appGUID, procInstanceIDs)
-}
-
-func (f HistoricalUsageFetcher) getActiveProcInstanceIDs(appGUID string) (map[string]bool, error) {
-	appsSnapshot, err := f.client.PromQL(context.Background(), fmt.Sprintf(`absolute_usage{source_id="%s"}`, appGUID))
-	if err != nil {
-		return nil, err
-	}
-
-	procInstanceIDs := map[string]bool{}
-	for _, sample := range appsSnapshot.GetVector().GetSamples() {
-		processInstanceID := sample.GetMetric()["process_instance_id"]
-		procInstanceIDs[processInstanceID] = true
-	}
-
-	return procInstanceIDs, nil
-}
-
-func (f HistoricalUsageFetcher) fetchPeriod(appGUID string, procInstanceIDs map[string]bool) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]metadata.CFAppInstance) (map[int][]InstanceData, error) {
 	res, err := f.client.PromQLRange(
 		context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGUID, appGUID),
@@ -74,18 +52,23 @@ func (f HistoricalUsageFetcher) fetchPeriod(appGUID string, procInstanceIDs map[
 		return nil, err
 	}
 
-	return parseResult(res, procInstanceIDs), nil
+	return parseResult(res, appInstances), nil
 }
 
-func parseResult(res *logcache_v1.PromQL_RangeQueryResult, procInstanceIDs map[string]bool) map[int][]InstanceData {
+func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]metadata.CFAppInstance) map[int][]InstanceData {
 	dataPerInstance := map[int][]InstanceData{}
 	for _, series := range res.GetMatrix().GetSeries() {
-		if !procInstanceIDs[series.GetMetric()["process_instance_id"]] {
+		instanceID, err := strconv.Atoi(series.GetMetric()["instance_id"])
+		if err != nil {
 			continue
 		}
 
-		instanceID, err := strconv.Atoi(series.GetMetric()["instance_id"])
-		if err != nil {
+		instance, instanceExists := appInstances[instanceID]
+		if !instanceExists {
+			continue
+		}
+
+		if !isCurrentSeries(series, instance) {
 			continue
 		}
 
@@ -107,4 +90,18 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, procInstanceIDs map[s
 	}
 
 	return dataPerInstance
+}
+
+func isCurrentSeries(series *logcache_v1.PromQL_Series, instance metadata.CFAppInstance) bool {
+	points := series.GetPoints()
+	if len(points) == 0 {
+		return false
+	}
+
+	timestamp, err := strconv.ParseFloat(points[0].GetTime(), 64)
+	if err != nil {
+		return false
+	}
+	pointTime := time.Unix(int64(timestamp), 0)
+	return pointTime.After(instance.Since) || pointTime.Equal(instance.Since)
 }
