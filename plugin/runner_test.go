@@ -3,7 +3,6 @@ package plugin_test
 import (
 	"errors"
 
-	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin/pluginfakes"
@@ -31,11 +30,8 @@ var _ = Describe("Runner", func() {
 		runner = plugin.NewRunner(infoGetter, instanceReporter, metricsRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
-			App: models.GetAppModel{
-				Guid:          "123",
-				Name:          "app-name",
-				InstanceCount: 3,
-			},
+			Guid: "123",
+			Name: "app-name",
 		}, nil)
 
 		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
@@ -77,11 +73,8 @@ var _ = Describe("Runner", func() {
 		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
 		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)
 		Expect(info).To(Equal(metadata.CFAppInfo{
-			App: models.GetAppModel{
-				Guid:          "123",
-				Name:          "app-name",
-				InstanceCount: 3,
-			},
+			Guid: "123",
+			Name: "app-name",
 		}))
 		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
 			{

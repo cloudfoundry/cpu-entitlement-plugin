@@ -29,7 +29,7 @@ func NewRenderer(display Display) Renderer {
 
 func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []reporter.InstanceReport) error {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
-		terminal.EntityNameColor(info.App.Name),
+		terminal.EntityNameColor(info.Name),
 		terminal.EntityNameColor(info.Org),
 		terminal.EntityNameColor(info.Space),
 		terminal.EntityNameColor(info.Username),

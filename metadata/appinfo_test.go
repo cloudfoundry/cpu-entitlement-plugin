@@ -2,6 +2,7 @@ package metadata_test
 
 import (
 	"errors"
+	"time"
 
 	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
@@ -26,7 +27,14 @@ var _ = Describe("CFAppInfo", func() {
 	BeforeEach(func() {
 		cli = new(pluginfakes.FakeCliConnection)
 
-		cli.GetAppReturns(plugin_models.GetAppModel{Guid: "qwerty"}, nil)
+		cli.GetAppReturns(plugin_models.GetAppModel{
+			Guid: "qwerty",
+			Name: "YTREWQ",
+			Instances: []plugin_models.GetApp_AppInstanceFields{
+				plugin_models.GetApp_AppInstanceFields{Since: time.Unix(123, 456)},
+				plugin_models.GetApp_AppInstanceFields{Since: time.Unix(789, 0)},
+			},
+		}, nil)
 		cli.UsernameReturns("infouser", nil)
 		cli.GetCurrentOrgReturns(plugin_models.Organization{OrganizationFields: plugin_models.OrganizationFields{Name: "currentorg"}}, nil)
 		cli.GetCurrentSpaceReturns(plugin_models.Space{SpaceFields: plugin_models.SpaceFields{Name: "currentspace"}}, nil)
@@ -41,10 +49,19 @@ var _ = Describe("CFAppInfo", func() {
 		actualAppName := cli.GetAppArgsForCall(0)
 		Expect(actualAppName).To(Equal("myapp"))
 
-		Expect(info.App.Guid).To(Equal("qwerty"))
+		Expect(info.Guid).To(Equal("qwerty"))
+		Expect(info.Name).To(Equal("YTREWQ"))
 		Expect(info.Username).To(Equal("infouser"))
 		Expect(info.Org).To(Equal("currentorg"))
 		Expect(info.Space).To(Equal("currentspace"))
+	})
+
+	It("gets the application instances", func() {
+		Expect(len(info.Instances)).To(Equal(2))
+		Expect(info.Instances[0].InstanceID).To(Equal(0))
+		Expect(info.Instances[0].Since).To(Equal(time.Unix(123, 456)))
+		Expect(info.Instances[1].InstanceID).To(Equal(1))
+		Expect(info.Instances[1].Since).To(Equal(time.Unix(789, 0)))
 	})
 
 	Context("get app errors", func() {

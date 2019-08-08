@@ -1,15 +1,23 @@
 package metadata
 
 import (
+	"time"
+
 	"code.cloudfoundry.org/cli/plugin"
-	models "code.cloudfoundry.org/cli/plugin/models"
 )
 
 type CFAppInfo struct {
-	App      models.GetAppModel
-	Username string
-	Org      string
-	Space    string
+	Name      string
+	Guid      string
+	Username  string
+	Org       string
+	Space     string
+	Instances []CFAppInstance
+}
+
+type CFAppInstance struct {
+	InstanceID int
+	Since      time.Time
 }
 
 type InfoGetter struct {
@@ -41,10 +49,17 @@ func (g InfoGetter) GetCFAppInfo(appName string) (CFAppInfo, error) {
 		return CFAppInfo{}, err
 	}
 
+	var instances []CFAppInstance
+	for id, instance := range app.Instances {
+		instances = append(instances, CFAppInstance{InstanceID: id, Since: instance.Since})
+	}
+
 	return CFAppInfo{
-		App:      app,
-		Username: user,
-		Org:      org.Name,
-		Space:    space.Name,
+		Name:      app.Name,
+		Guid:      app.Guid,
+		Username:  user,
+		Org:       org.Name,
+		Space:     space.Name,
+		Instances: instances,
 	}, nil
 }

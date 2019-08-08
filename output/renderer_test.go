@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
@@ -26,7 +25,7 @@ var _ = Describe("Renderer", func() {
 
 	BeforeEach(func() {
 		appInfo = metadata.CFAppInfo{
-			App:      models.GetAppModel{Name: "myapp"},
+			Name:     "myapp",
 			Username: "theuser",
 			Org:      "theorg",
 			Space:    "thespace",
