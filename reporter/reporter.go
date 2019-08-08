@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 )
 
 type Reporter struct {
@@ -45,10 +46,10 @@ func New(historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) Report
 	}
 }
 
-func (r Reporter) CreateInstanceReports(appGUID string) ([]InstanceReport, error) {
+func (r Reporter) CreateInstanceReports(appInfo metadata.CFAppInfo) ([]InstanceReport, error) {
 	latestReports := map[int]InstanceReport{}
 
-	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(appGUID)
+	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(appInfo.Guid)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (r Reporter) CreateInstanceReports(appGUID string) ([]InstanceReport, error
 		latestReports[instanceID] = currentReport
 	}
 
-	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(appGUID)
+	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(appInfo.Guid)
 	if err != nil {
 		return nil, err
 	}

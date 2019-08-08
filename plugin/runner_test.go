@@ -68,7 +68,8 @@ var _ = Describe("Runner", func() {
 		Expect(appName).To(Equal("app-name"))
 
 		Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(1))
-		Expect(instanceReporter.CreateInstanceReportsArgsForCall(0)).To(Equal("123"))
+		actualAppInfo := instanceReporter.CreateInstanceReportsArgsForCall(0)
+		Expect(actualAppInfo.Guid).To(Equal("123"))
 
 		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
 		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)

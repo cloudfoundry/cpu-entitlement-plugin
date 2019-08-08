@@ -23,7 +23,7 @@ type MetricsRenderer interface {
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	CreateInstanceReports(appName string) ([]reporter.InstanceReport, error)
+	CreateInstanceReports(appInfo metadata.CFAppInfo) ([]reporter.InstanceReport, error)
 }
 
 type Runner struct {
@@ -46,7 +46,7 @@ func (r Runner) Run(appName string) result.Result {
 		return result.FailureFromError(err)
 	}
 
-	instanceReports, err := r.reporter.CreateInstanceReports(info.Guid)
+	instanceReports, err := r.reporter.CreateInstanceReports(info)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
