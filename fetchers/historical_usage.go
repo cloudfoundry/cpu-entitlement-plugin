@@ -20,6 +20,8 @@ type InstanceData struct {
 	Time       time.Time
 	InstanceID int
 	Value      float64
+	From       time.Time
+	To         time.Time
 }
 
 type HistoricalUsageFetcher struct {

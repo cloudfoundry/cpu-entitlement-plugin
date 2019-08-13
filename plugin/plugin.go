@@ -49,15 +49,17 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	}
 
 	infoGetter := metadata.NewInfoGetter(cli)
-	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
+	averageUsageFetcher := fetchers.NewAverageUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken),
+	)
+	lastSpikeFetcher := fetchers.NewLastSpikeFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 		time.Now().Add(-month),
-		time.Now(),
 	)
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 	)
-	metricsReporter := reporter.New(historicalUsageFetcher, currentUsageFetcher)
+	metricsReporter := reporter.New(currentUsageFetcher, averageUsageFetcher, lastSpikeFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
 

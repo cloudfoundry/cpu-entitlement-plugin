@@ -1,7 +1,7 @@
 package reporter
 
 import (
-	"sort"
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
@@ -9,8 +9,9 @@ import (
 )
 
 type Reporter struct {
-	historicalUsageFetcher InstanceDataFetcher
-	currentUsageFetcher    InstanceDataFetcher
+	currentUsageFetcher InstanceDataFetcher
+	averageUsageFetcher InstanceDataFetcher
+	lastSpikeFetcher    InstanceDataFetcher
 }
 
 //go:generate counterfeiter . InstanceDataFetcher
@@ -39,91 +40,68 @@ func (r InstanceReport) HasRecordedSpike() bool {
 	return !r.HistoricalUsage.LastSpikeTo.IsZero()
 }
 
-func New(historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) Reporter {
+func New(currentUsageFetcher, averageUsageFetcher, lastSpikeFetcher InstanceDataFetcher) Reporter {
 	return Reporter{
-		historicalUsageFetcher: historicalUsageFetcher,
-		currentUsageFetcher:    currentUsageFetcher,
+		currentUsageFetcher: currentUsageFetcher,
+		averageUsageFetcher: averageUsageFetcher,
+		lastSpikeFetcher:    lastSpikeFetcher,
 	}
 }
 
 func (r Reporter) CreateInstanceReports(appInfo metadata.CFAppInfo) ([]InstanceReport, error) {
 	latestReports := map[int]InstanceReport{}
 
-	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
-	if err != nil {
-		return nil, err
-	}
-
-	for instanceID, historicalUsage := range historicalUsagePerInstance {
-		spikeFrom, spikeTo := findLatestSpike(historicalUsage)
-		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
-		currentReport.HistoricalUsage = HistoricalUsage{
-			Value:         historicalUsage[len(historicalUsage)-1].Value,
-			LastSpikeFrom: spikeFrom,
-			LastSpikeTo:   spikeTo,
-		}
-		latestReports[instanceID] = currentReport
-	}
-
 	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
 	if err != nil {
 		return nil, err
 	}
 
-	for instanceID, currentUsage := range currentUsagePerInstance {
-		if len(currentUsage) != 1 {
-			continue
+	averageUsagePerInstance, err := r.averageUsageFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSpikePerInstance, err := r.lastSpikeFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, instance := range appInfo.Instances {
+		if len(currentUsagePerInstance[instance.InstanceID]) == 0 {
+			return nil, fmt.Errorf("no current usage for instance id %d", instance.InstanceID)
 		}
-		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
-		currentReport.CurrentUsage = CurrentUsage{Value: currentUsage[0].Value}
-		latestReports[instanceID] = currentReport
-	}
+		currentUsage := currentUsagePerInstance[instance.InstanceID][0]
 
-	return buildReportsSlice(latestReports), nil
-}
+		if len(averageUsagePerInstance[instance.InstanceID]) == 0 {
+			return nil, fmt.Errorf("no average usage for instance id %d", instance.InstanceID)
+		}
+		averageUsage := averageUsagePerInstance[instance.InstanceID][0]
 
-func getOrCreateInstanceReport(reports map[int]InstanceReport, instanceID int) InstanceReport {
-	_, ok := reports[instanceID]
-	if !ok {
-		reports[instanceID] = InstanceReport{InstanceID: instanceID}
-	}
-	return reports[instanceID]
-}
-
-func findLatestSpike(instanceData []fetchers.InstanceData) (time.Time, time.Time) {
-	var from, to time.Time
-
-	for i := len(instanceData) - 1; i >= 0; i-- {
-		dataPoint := instanceData[i]
-
-		if isSpiking(dataPoint) {
-			if to.IsZero() {
-				to = dataPoint.Time
-			}
-			from = dataPoint.Time
+		report := InstanceReport{
+			InstanceID:      instance.InstanceID,
+			CurrentUsage:    CurrentUsage{Value: currentUsage.Value},
+			HistoricalUsage: HistoricalUsage{Value: averageUsage.Value},
 		}
 
-		if !isSpiking(dataPoint) && !to.IsZero() {
-			break
+		if len(lastSpikePerInstance[instance.InstanceID]) > 0 {
+			lastSpike := lastSpikePerInstance[instance.InstanceID][0]
+			report.HistoricalUsage.LastSpikeFrom = lastSpike.From
+			report.HistoricalUsage.LastSpikeTo = lastSpike.To
 		}
+
+		latestReports[instance.InstanceID] = report
 	}
 
-	return from, to
+	return sortByInstance(latestReports), nil
 }
 
-func isSpiking(dataPoint fetchers.InstanceData) bool {
-	return dataPoint.Value > 1
-}
-
-func buildReportsSlice(reportsMap map[int]InstanceReport) []InstanceReport {
-	var reports []InstanceReport
-	for _, report := range reportsMap {
-		reports = append(reports, report)
+func sortByInstance(reports map[int]InstanceReport) []InstanceReport {
+	result := []InstanceReport{}
+	for i := 0; i < len(reports); i++ {
+		result = append(result, reports[i])
 	}
 
-	sort.Slice(reports, func(i, j int) bool {
-		return reports[i].InstanceID < reports[j].InstanceID
-	})
-
-	return reports
+	return result
 }
+
+// Instance #0 was over entitlement from 2019-08-13 15:32:33 to 2019-08-13 15:34:03
