@@ -44,8 +44,8 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]metadat
 			return nil, fmt.Errorf("envelope is not a gauge: %#v", envelope)
 		}
 		gaugeValues := envelopeGauge.Gauge.Metrics
-		spikeStart := time.Unix(int64(gaugeValues["spike_started"].Value), 0)
-		spikeEnd := time.Unix(int64(gaugeValues["spike_ended"].Value), 0)
+		spikeStart := time.Unix(int64(gaugeValues["spike_start"].Value), 0)
+		spikeEnd := time.Unix(int64(gaugeValues["spike_end"].Value), 0)
 
 		dataPoint := InstanceData{
 			InstanceID: instanceID,
