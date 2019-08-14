@@ -122,6 +122,17 @@ var _ = Describe("Runner", func() {
 		})
 	})
 
+	When("no reports are returned", func() {
+		BeforeEach(func() {
+			instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{}, nil)
+		})
+
+		It("returns a failure", func() {
+			Expect(runResult.IsFailure).To(BeTrue())
+			Expect(runResult.ErrorMessage).To(ContainSubstring("Could not find any CPU data for app app-name"))
+		})
+	})
+
 	When("rendering the app metrics fails", func() {
 		BeforeEach(func() {
 			metricsRenderer.ShowInstanceReportsReturns(errors.New("render error"))

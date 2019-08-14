@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"fmt"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
@@ -49,6 +51,10 @@ func (r Runner) Run(appName string) result.Result {
 	instanceReports, err := r.reporter.CreateInstanceReports(info)
 	if err != nil {
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
+	}
+
+	if len(instanceReports) == 0 {
+		return result.Failure(fmt.Sprintf("Could not find any CPU data for app %s. Make sure that you are using cf-deployment version >= v5.5.0.", appName))
 	}
 
 	err = r.metricsRenderer.ShowInstanceReports(info, instanceReports)
