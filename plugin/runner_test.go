@@ -17,7 +17,7 @@ var _ = Describe("Runner", func() {
 	var (
 		infoGetter       *pluginfakes.FakeCFAppInfoGetter
 		instanceReporter *pluginfakes.FakeReporter
-		metricsRenderer  *pluginfakes.FakeMetricsRenderer
+		outputRenderer   *pluginfakes.FakeOutputRenderer
 
 		runner    plugin.Runner
 		runResult result.Result
@@ -26,12 +26,13 @@ var _ = Describe("Runner", func() {
 	BeforeEach(func() {
 		infoGetter = new(pluginfakes.FakeCFAppInfoGetter)
 		instanceReporter = new(pluginfakes.FakeReporter)
-		metricsRenderer = new(pluginfakes.FakeMetricsRenderer)
-		runner = plugin.NewRunner(infoGetter, instanceReporter, metricsRenderer)
+		outputRenderer = new(pluginfakes.FakeOutputRenderer)
+		runner = plugin.NewRunner(infoGetter, instanceReporter, outputRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
-			Guid: "123",
-			Name: "app-name",
+			Guid:      "123",
+			Name:      "app-name",
+			Instances: map[int]metadata.CFAppInstance{0: metadata.CFAppInstance{}},
 		}, nil)
 
 		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
@@ -71,11 +72,12 @@ var _ = Describe("Runner", func() {
 		actualAppInfo := instanceReporter.CreateInstanceReportsArgsForCall(0)
 		Expect(actualAppInfo.Guid).To(Equal("123"))
 
-		Expect(metricsRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
-		info, instanceReports := metricsRenderer.ShowInstanceReportsArgsForCall(0)
+		Expect(outputRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
+		info, instanceReports := outputRenderer.ShowInstanceReportsArgsForCall(0)
 		Expect(info).To(Equal(metadata.CFAppInfo{
-			Guid: "123",
-			Name: "app-name",
+			Guid:      "123",
+			Name:      "app-name",
+			Instances: map[int]metadata.CFAppInstance{0: metadata.CFAppInstance{}},
 		}))
 		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
 			{
@@ -110,6 +112,33 @@ var _ = Describe("Runner", func() {
 		})
 	})
 
+	When("there are zero instances of the application", func() {
+		BeforeEach(func() {
+			infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
+				Guid: "123",
+				Name: "app-name",
+			}, nil)
+
+		})
+		It("succeeds", func() {
+			Expect(runResult.IsFailure).To(BeFalse())
+		})
+
+		It("prints a message", func() {
+			Expect(outputRenderer.ShowMessageCallCount()).To(Equal(1))
+			info, message, _ := outputRenderer.ShowMessageArgsForCall(0)
+			Expect(info).To(Equal(metadata.CFAppInfo{
+				Guid: "123",
+				Name: "app-name",
+			}))
+			Expect(message).To(Equal("There are no running instances of this process."))
+		})
+
+		It("does not try to generate reports", func() {
+			Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(0))
+		})
+	})
+
 	When("creating the reports fails", func() {
 		BeforeEach(func() {
 			instanceReporter.CreateInstanceReportsReturns(nil, errors.New("reports error"))
@@ -135,7 +164,7 @@ var _ = Describe("Runner", func() {
 
 	When("rendering the app metrics fails", func() {
 		BeforeEach(func() {
-			metricsRenderer.ShowInstanceReportsReturns(errors.New("render error"))
+			outputRenderer.ShowInstanceReportsReturns(errors.New("render error"))
 		})
 
 		It("returns a failure", func() {

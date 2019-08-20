@@ -213,6 +213,31 @@ var _ = Describe("Renderer", func() {
 			})
 		})
 	})
+
+	Describe("ShowMessage", func() {
+		JustBeforeEach(func() {
+			renderer.ShowMessage(appInfo, "Hello", "my", "friend")
+		})
+
+		It("shows a message with the application info", func() {
+			Expect(display.ShowMessageCallCount()).To(Equal(2))
+			message, values := display.ShowMessageArgsForCall(0)
+			Expect(message).To(Equal("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n"))
+			Expect(values).To(Equal([]interface{}{
+				terminal.EntityNameColor("myapp"),
+				terminal.EntityNameColor("theorg"),
+				terminal.EntityNameColor("thespace"),
+				terminal.EntityNameColor("theuser"),
+			}))
+		})
+
+		It("shows a message with the application info", func() {
+			Expect(display.ShowMessageCallCount()).To(Equal(2))
+			message, values := display.ShowMessageArgsForCall(1)
+			Expect(message).To(Equal("Hello"))
+			Expect(values).To(Equal([]interface{}{"my", "friend"}))
+		})
+	})
 })
 
 func red(s string) string {

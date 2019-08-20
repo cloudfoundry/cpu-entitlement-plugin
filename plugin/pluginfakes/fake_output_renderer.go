@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
-type FakeMetricsRenderer struct {
+type FakeOutputRenderer struct {
 	ShowInstanceReportsStub        func(metadata.CFAppInfo, []reporter.InstanceReport) error
 	showInstanceReportsMutex       sync.RWMutex
 	showInstanceReportsArgsForCall []struct {
@@ -22,11 +22,18 @@ type FakeMetricsRenderer struct {
 	showInstanceReportsReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ShowMessageStub        func(metadata.CFAppInfo, string, ...interface{})
+	showMessageMutex       sync.RWMutex
+	showMessageArgsForCall []struct {
+		arg1 metadata.CFAppInfo
+		arg2 string
+		arg3 []interface{}
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg2 []reporter.InstanceReport) error {
+func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg2 []reporter.InstanceReport) error {
 	var arg2Copy []reporter.InstanceReport
 	if arg2 != nil {
 		arg2Copy = make([]reporter.InstanceReport, len(arg2))
@@ -50,26 +57,26 @@ func (fake *FakeMetricsRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, ar
 	return fakeReturns.result1
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsCallCount() int {
+func (fake *FakeOutputRenderer) ShowInstanceReportsCallCount() int {
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
 	return len(fake.showInstanceReportsArgsForCall)
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsCalls(stub func(metadata.CFAppInfo, []reporter.InstanceReport) error) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsCalls(stub func(metadata.CFAppInfo, []reporter.InstanceReport) error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = stub
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsArgsForCall(i int) (metadata.CFAppInfo, []reporter.InstanceReport) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsArgsForCall(i int) (metadata.CFAppInfo, []reporter.InstanceReport) {
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
 	argsForCall := fake.showInstanceReportsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsReturns(result1 error) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsReturns(result1 error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = nil
@@ -78,7 +85,7 @@ func (fake *FakeMetricsRenderer) ShowInstanceReportsReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeMetricsRenderer) ShowInstanceReportsReturnsOnCall(i int, result1 error) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsReturnsOnCall(i int, result1 error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = nil
@@ -92,11 +99,46 @@ func (fake *FakeMetricsRenderer) ShowInstanceReportsReturnsOnCall(i int, result1
 	}{result1}
 }
 
-func (fake *FakeMetricsRenderer) Invocations() map[string][][]interface{} {
+func (fake *FakeOutputRenderer) ShowMessage(arg1 metadata.CFAppInfo, arg2 string, arg3 ...interface{}) {
+	fake.showMessageMutex.Lock()
+	fake.showMessageArgsForCall = append(fake.showMessageArgsForCall, struct {
+		arg1 metadata.CFAppInfo
+		arg2 string
+		arg3 []interface{}
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("ShowMessage", []interface{}{arg1, arg2, arg3})
+	fake.showMessageMutex.Unlock()
+	if fake.ShowMessageStub != nil {
+		fake.ShowMessageStub(arg1, arg2, arg3...)
+	}
+}
+
+func (fake *FakeOutputRenderer) ShowMessageCallCount() int {
+	fake.showMessageMutex.RLock()
+	defer fake.showMessageMutex.RUnlock()
+	return len(fake.showMessageArgsForCall)
+}
+
+func (fake *FakeOutputRenderer) ShowMessageCalls(stub func(metadata.CFAppInfo, string, ...interface{})) {
+	fake.showMessageMutex.Lock()
+	defer fake.showMessageMutex.Unlock()
+	fake.ShowMessageStub = stub
+}
+
+func (fake *FakeOutputRenderer) ShowMessageArgsForCall(i int) (metadata.CFAppInfo, string, []interface{}) {
+	fake.showMessageMutex.RLock()
+	defer fake.showMessageMutex.RUnlock()
+	argsForCall := fake.showMessageArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeOutputRenderer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
+	fake.showMessageMutex.RLock()
+	defer fake.showMessageMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
@@ -104,7 +146,7 @@ func (fake *FakeMetricsRenderer) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeMetricsRenderer) recordInvocation(key string, args []interface{}) {
+func (fake *FakeOutputRenderer) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -116,4 +158,4 @@ func (fake *FakeMetricsRenderer) recordInvocation(key string, args []interface{}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ plugin.MetricsRenderer = new(FakeMetricsRenderer)
+var _ plugin.OutputRenderer = new(FakeOutputRenderer)

@@ -28,12 +28,7 @@ func NewRenderer(display Display) Renderer {
 }
 
 func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []reporter.InstanceReport) error {
-	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
-		terminal.EntityNameColor(info.Name),
-		terminal.EntityNameColor(info.Org),
-		terminal.EntityNameColor(info.Space),
-		terminal.EntityNameColor(info.Username),
-	)
+	r.showAppInfoHeader(info)
 
 	var rows [][]string
 
@@ -81,6 +76,20 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	}
 
 	return nil
+}
+
+func (r Renderer) ShowMessage(info metadata.CFAppInfo, message string, values ...interface{}) {
+	r.showAppInfoHeader(info)
+	r.display.ShowMessage(message, values...)
+}
+
+func (r Renderer) showAppInfoHeader(info metadata.CFAppInfo) {
+	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
+		terminal.EntityNameColor(info.Name),
+		terminal.EntityNameColor(info.Org),
+		terminal.EntityNameColor(info.Space),
+		terminal.EntityNameColor(info.Username),
+	)
 }
 
 func colorizeRow(row []string, rowColor color.Attribute) []string {

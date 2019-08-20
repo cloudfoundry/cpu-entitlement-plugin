@@ -16,10 +16,11 @@ type CFAppInfoGetter interface {
 	GetCFAppInfo(appName string) (metadata.CFAppInfo, error)
 }
 
-//go:generate counterfeiter . MetricsRenderer
+//go:generate counterfeiter . OutputRenderer
 
-type MetricsRenderer interface {
+type OutputRenderer interface {
 	ShowInstanceReports(metadata.CFAppInfo, []reporter.InstanceReport) error
+	ShowMessage(metadata.CFAppInfo, string, ...interface{})
 }
 
 //go:generate counterfeiter . Reporter
@@ -31,10 +32,10 @@ type Reporter interface {
 type Runner struct {
 	infoGetter      CFAppInfoGetter
 	reporter        Reporter
-	metricsRenderer MetricsRenderer
+	metricsRenderer OutputRenderer
 }
 
-func NewRunner(infoGetter CFAppInfoGetter, reporter Reporter, metricsRenderer MetricsRenderer) Runner {
+func NewRunner(infoGetter CFAppInfoGetter, reporter Reporter, metricsRenderer OutputRenderer) Runner {
 	return Runner{
 		infoGetter:      infoGetter,
 		reporter:        reporter,
@@ -46,6 +47,11 @@ func (r Runner) Run(appName string) result.Result {
 	info, err := r.infoGetter.GetCFAppInfo(appName)
 	if err != nil {
 		return result.FailureFromError(err)
+	}
+
+	if len(info.Instances) == 0 {
+		r.metricsRenderer.ShowMessage(info, "There are no running instances of this process.")
+		return result.Success()
 	}
 
 	instanceReports, err := r.reporter.CreateInstanceReports(info)
