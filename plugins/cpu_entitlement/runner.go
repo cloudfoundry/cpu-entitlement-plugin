@@ -1,4 +1,4 @@
-package plugin
+package cpu_entitlement
 
 import (
 	"fmt"

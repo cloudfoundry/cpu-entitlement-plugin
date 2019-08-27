@@ -1,0 +1,22 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+export ENV_NAME=mel-b
+ARGS=$@
+
+echo "$ARGS"
+
+if grep -Eq integration <(echo "$ARGS"); then
+  "$DIR/remote-fly" integration-test.yml -- "$ARGS"
+elif grep -Eq e2e <(echo "$@"); then
+  "$DIR/remote-fly" e2e-test.yml -- "$ARGS"
+else
+  ginkgo \
+    -race -nodes=8 \
+    -failOnPending \
+    -randomizeAllSpecs -randomizeSuites \
+    -skipPackage e2e -skipPackage integration \
+    "$ARGS"
+fi
+

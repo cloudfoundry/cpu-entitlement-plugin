@@ -1,4 +1,4 @@
-package plugin // import "code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
+package cpu_entitlement
 
 import (
 	"errors"

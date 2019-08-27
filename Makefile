@@ -8,7 +8,8 @@ help:
 	@echo '  help ......................... show help menu'
 
 build:
-	go build -mod vendor
+	go build -mod vendor -o cpu-entitlement-plugin  ./cmd/cpu-entitlement
+	go build -mod vendor -o cpu-overentitlement-instances-plugin  ./cmd/cpu-overentitlement-instances
 
 test:
 	ginkgo -r --race
@@ -16,3 +17,5 @@ test:
 install: build
 	cf uninstall-plugin CPUEntitlementPlugin || true
 	cf install-plugin ./cpu-entitlement-plugin -f
+	cf uninstall-plugin CPUEntitlementAdminPlugin || true
+	cf install-plugin ./cpu-overentitlement-instances-plugin -f

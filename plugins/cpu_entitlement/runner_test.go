@@ -1,11 +1,11 @@
-package plugin_test
+package cpu_entitlement_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/plugin/pluginfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/cpu_entitlement"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/cpu_entitlement/cpu_entitlementfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 
@@ -15,19 +15,19 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		infoGetter       *pluginfakes.FakeCFAppInfoGetter
-		instanceReporter *pluginfakes.FakeReporter
-		outputRenderer   *pluginfakes.FakeOutputRenderer
+		infoGetter       *cpu_entitlementfakes.FakeCFAppInfoGetter
+		instanceReporter *cpu_entitlementfakes.FakeReporter
+		outputRenderer   *cpu_entitlementfakes.FakeOutputRenderer
 
-		runner    plugin.Runner
+		runner    cpu_entitlement.Runner
 		runResult result.Result
 	)
 
 	BeforeEach(func() {
-		infoGetter = new(pluginfakes.FakeCFAppInfoGetter)
-		instanceReporter = new(pluginfakes.FakeReporter)
-		outputRenderer = new(pluginfakes.FakeOutputRenderer)
-		runner = plugin.NewRunner(infoGetter, instanceReporter, outputRenderer)
+		infoGetter = new(cpu_entitlementfakes.FakeCFAppInfoGetter)
+		instanceReporter = new(cpu_entitlementfakes.FakeReporter)
+		outputRenderer = new(cpu_entitlementfakes.FakeOutputRenderer)
+		runner = cpu_entitlement.NewRunner(infoGetter, instanceReporter, outputRenderer)
 
 		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
 			Guid:      "123",

@@ -1,4 +1,4 @@
-package plugin_test
+package cpu_entitlement_test
 
 import (
 	"testing"

@@ -1,0 +1,20 @@
+---
+image_resource:
+  type: registry-image
+  source:
+    repository: cfgarden/garden-ci
+    tag: '2.0.21'
+
+platform: linux
+
+inputs:
+- name: cpu-entitlement-plugin
+- name: spinner
+
+params:
+  CF_API:
+  CF_USERNAME:
+  CF_PASSWORD:
+
+run:
+  path: cpu-entitlement-plugin/ci/scripts/e2e-test
