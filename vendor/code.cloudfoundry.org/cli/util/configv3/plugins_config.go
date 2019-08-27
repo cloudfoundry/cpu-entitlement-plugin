@@ -12,6 +12,8 @@ import (
 	"code.cloudfoundry.org/cli/util"
 )
 
+const notApplicable = "N/A"
+
 // PluginsConfig represents the plugin configuration
 type PluginsConfig struct {
 	Plugins map[string]Plugin `json:"Plugins"`
@@ -25,13 +27,13 @@ type Plugin struct {
 	Commands []PluginCommand `json:"Commands"`
 }
 
-// CalculateSHA1 returns the sha1 value of the plugin executable. If an error
-// is encountered calculating sha1, N/A is returned
+// CalculateSHA1 returns the SHA1 value of the plugin executable. If an error
+// is encountered calculating SHA1, N/A is returned
 func (p Plugin) CalculateSHA1() string {
 	fileSHA, err := util.NewSha1Checksum(p.Location).ComputeFileSha1()
 
 	if err != nil {
-		return "N/A"
+		return notApplicable
 	}
 
 	return fmt.Sprintf("%x", fileSHA)
@@ -55,7 +57,7 @@ type PluginVersion struct {
 // String returns the plugin's version in the format x.y.z.
 func (v PluginVersion) String() string {
 	if v.Major == 0 && v.Minor == 0 && v.Build == 0 {
-		return "N/A"
+		return notApplicable
 	}
 	return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Build)
 }
@@ -102,7 +104,7 @@ func (config *Config) GetPlugin(pluginName string) (Plugin, bool) {
 // insensitive and returns true if it exists.
 func (config *Config) GetPluginCaseInsensitive(pluginName string) (Plugin, bool) {
 	for name, plugin := range config.pluginsConfig.Plugins {
-		if strings.ToLower(name) == strings.ToLower(pluginName) {
+		if strings.EqualFold(name, pluginName) {
 			return plugin, true
 		}
 	}

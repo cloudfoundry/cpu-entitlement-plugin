@@ -17,7 +17,54 @@ import (
 	"code.cloudfoundry.org/cli/util/configv3"
 	"github.com/fatih/color"
 	runewidth "github.com/mattn/go-runewidth"
+	"github.com/vito/go-interact/interact"
 )
+
+var realExiter exiterFunc = os.Exit
+
+var realInteract interactorFunc = func(prompt string, choices ...interact.Choice) Resolver {
+	return &interactionWrapper{
+		interact.NewInteraction(prompt, choices...),
+	}
+}
+
+//go:generate counterfeiter . Interactor
+
+// Interactor hides interact.NewInteraction for testing purposes
+type Interactor interface {
+	NewInteraction(prompt string, choices ...interact.Choice) Resolver
+}
+
+type interactorFunc func(prompt string, choices ...interact.Choice) Resolver
+
+func (f interactorFunc) NewInteraction(prompt string, choices ...interact.Choice) Resolver {
+	return f(prompt, choices...)
+}
+
+type interactionWrapper struct {
+	interact.Interaction
+}
+
+func (w *interactionWrapper) SetIn(in io.Reader) {
+	w.Input = in
+}
+
+func (w *interactionWrapper) SetOut(o io.Writer) {
+	w.Output = o
+}
+
+//go:generate counterfeiter . Exiter
+
+// Exiter hides os.Exit for testing purposes
+type Exiter interface {
+	Exit(code int)
+}
+
+type exiterFunc func(int)
+
+func (f exiterFunc) Exit(code int) {
+	f(code)
+}
 
 // UI is interface to interact with the user
 type UI struct {
@@ -34,9 +81,12 @@ type UI struct {
 
 	colorEnabled configv3.ColorSetting
 	translate    TranslateFunc
+	Exiter       Exiter
 
 	terminalLock *sync.Mutex
 	fileLock     *sync.Mutex
+
+	Interactor Interactor
 
 	IsTTY         bool
 	TerminalWidth int
@@ -62,7 +112,9 @@ func NewUI(config Config) (*UI, error) {
 		colorEnabled:     config.ColorEnabled(),
 		translate:        translateFunc,
 		terminalLock:     &sync.Mutex{},
+		Exiter:           realExiter,
 		fileLock:         &sync.Mutex{},
+		Interactor:       realInteract,
 		IsTTY:            config.IsTTY(),
 		TerminalWidth:    config.TerminalWidth(),
 		TimezoneLocation: location,
@@ -82,12 +134,21 @@ func NewTestUI(in io.Reader, out io.Writer, err io.Writer) *UI {
 		Out:              out,
 		OutForInteration: out,
 		Err:              err,
+		Exiter:           realExiter,
 		colorEnabled:     configv3.ColorDisabled,
 		translate:        translationFunc,
+		Interactor:       realInteract,
 		terminalLock:     &sync.Mutex{},
 		fileLock:         &sync.Mutex{},
 		TimezoneLocation: time.UTC,
 	}
+}
+
+func (ui *UI) DisplayDeprecationWarning() {
+	ui.terminalLock.Lock()
+	defer ui.terminalLock.Unlock()
+
+	fmt.Fprintf(ui.Err, "Deprecation warning: This command has been deprecated. This feature will be removed in the future.\n")
 }
 
 // DisplayError outputs the translated error message to ui.Err if the error
@@ -106,6 +167,13 @@ func (ui *UI) DisplayError(err error) {
 	defer ui.terminalLock.Unlock()
 
 	fmt.Fprintf(ui.Out, "%s\n", ui.modifyColor(ui.TranslateText("FAILED"), color.New(color.FgRed, color.Bold)))
+}
+
+func (ui *UI) DisplayFileDeprecationWarning() {
+	ui.terminalLock.Lock()
+	defer ui.terminalLock.Unlock()
+
+	fmt.Fprintf(ui.Err, "Deprecation warning: This command has been deprecated and will be removed in the future. For similar functionality, please use the `cf ssh` command instead.\n")
 }
 
 // DisplayHeader translates the header, bolds and adds the default color to the
@@ -130,7 +198,7 @@ func (ui *UI) DisplayOK() {
 	ui.terminalLock.Lock()
 	defer ui.terminalLock.Unlock()
 
-	fmt.Fprintf(ui.Out, "%s\n", ui.modifyColor(ui.TranslateText("OK"), color.New(color.FgGreen, color.Bold)))
+	fmt.Fprintf(ui.Out, "%s\n\n", ui.modifyColor(ui.TranslateText("OK"), color.New(color.FgGreen, color.Bold)))
 }
 
 // DisplayText translates the template, substitutes in templateValues, and
@@ -241,7 +309,7 @@ func (ui *UI) displayWrappingTableWithWidth(prefix string, table [][]string, pad
 	lastColumnWidth := ui.TerminalWidth - spilloverPadding
 
 	for row := 0; row < rows; row++ {
-		fmt.Fprintf(ui.Out, prefix)
+		fmt.Fprint(ui.Out, prefix)
 
 		// for all columns except last, add cell value and padding
 		for col := 0; col < columns-1; col++ {
@@ -258,13 +326,14 @@ func (ui *UI) displayWrappingTableWithWidth(prefix string, table [][]string, pad
 
 		for _, word := range words {
 			wordWidth := runewidth.StringWidth(word)
-			if currentWidth == 0 {
+			switch {
+			case currentWidth == 0:
 				currentWidth = wordWidth
 				fmt.Fprintf(ui.Out, "%s", word)
-			} else if wordWidth+1+currentWidth > lastColumnWidth {
+			case (wordWidth + 1 + currentWidth) > lastColumnWidth:
 				fmt.Fprintf(ui.Out, "\n%s%s", strings.Repeat(" ", spilloverPadding), word)
 				currentWidth = wordWidth
-			} else {
+			default:
 				fmt.Fprintf(ui.Out, " %s", word)
 				currentWidth += wordWidth + 1
 			}
@@ -292,7 +361,7 @@ func (ui *UI) modifyColor(text string, colorPrinter *color.Color) string {
 // getFirstSet returns the first map if 1 or more maps are provided. Otherwise
 // it returns the empty map.
 func getFirstSet(list []map[string]interface{}) map[string]interface{} {
-	if list == nil || len(list) == 0 {
+	if len(list) == 0 {
 		return map[string]interface{}{}
 	}
 	return list[0]

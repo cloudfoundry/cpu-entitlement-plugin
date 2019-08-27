@@ -27,7 +27,7 @@ func WriteConfig(c *Config) error {
 	// Setup notifications of termination signals to channel sig, create a process to
 	// watch for these signals so we can remove transient config temp files.
 	sig := make(chan os.Signal, 10)
-	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGQUIT, syscall.SIGTERM, os.Interrupt)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, os.Interrupt)
 	defer signal.Stop(sig)
 
 	tempConfigFile, err := ioutil.TempFile(dir, "temp-config")
@@ -52,9 +52,7 @@ func WriteConfig(c *Config) error {
 // ends.  Note:  we cannot intercept a `kill -9`, so a well-timed `kill -9`
 // will allow a temp config file to linger.
 func catchSignal(sig chan os.Signal, tempConfigFileName string) {
-	select {
-	case <-sig:
-		_ = os.Remove(tempConfigFileName)
-		os.Exit(2)
-	}
+	<-sig
+	_ = os.Remove(tempConfigFileName)
+	os.Exit(2)
 }

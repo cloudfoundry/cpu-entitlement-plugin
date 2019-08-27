@@ -100,7 +100,7 @@ func (config *Config) HasTargetedSpace() bool {
 	return config.ConfigFile.TargetedSpace.GUID != ""
 }
 
-// MinCLIVersion returns the minimum CLI version requried by the CC.
+// MinCLIVersion returns the minimum CLI version required by the CC.
 func (config *Config) MinCLIVersion() string {
 	return config.ConfigFile.MinCLIVersion
 }
@@ -131,6 +131,11 @@ func (config *Config) SetAccessToken(accessToken string) {
 	config.ConfigFile.AccessToken = accessToken
 }
 
+// SetMinCLIVersion sets the minimum CLI version required by the CC.
+func (config *Config) SetMinCLIVersion(minVersion string) {
+	config.ConfigFile.MinCLIVersion = minVersion
+}
+
 // SetOrganizationInformation sets the currently targeted organization.
 func (config *Config) SetOrganizationInformation(guid string, name string) {
 	config.ConfigFile.TargetedOrganization.GUID = guid
@@ -144,9 +149,11 @@ func (config *Config) SetRefreshToken(refreshToken string) {
 }
 
 // SetSpaceInformation sets the currently targeted space.
+// The "AllowSSH" field is not returned by v3, and is never read from the config.
+// Persist `true` to maintain compatibility in the config file.
+// TODO: this field should be removed entirely in v7
 func (config *Config) SetSpaceInformation(guid string, name string, allowSSH bool) {
-	config.ConfigFile.TargetedSpace.GUID = guid
-	config.ConfigFile.TargetedSpace.Name = name
+	config.V7SetSpaceInformation(guid, name)
 	config.ConfigFile.TargetedSpace.AllowSSH = allowSSH
 }
 
@@ -156,7 +163,7 @@ func (config *Config) SetTargetInformation(api string, apiVersion string, auth s
 	config.ConfigFile.Target = api
 	config.ConfigFile.APIVersion = apiVersion
 	config.ConfigFile.AuthorizationEndpoint = auth
-	config.ConfigFile.MinCLIVersion = minCLIVersion
+	config.SetMinCLIVersion(minCLIVersion)
 	config.ConfigFile.DopplerEndpoint = doppler
 	config.ConfigFile.RoutingEndpoint = routing
 	config.ConfigFile.SkipSSLValidation = skipSSLValidation
@@ -258,6 +265,12 @@ func (config *Config) UnsetUserInformation() {
 
 	config.UnsetOrganizationAndSpaceInformation()
 
+}
+
+// V7SetSpaceInformation sets the currently targeted space.
+func (config *Config) V7SetSpaceInformation(guid string, name string) {
+	config.ConfigFile.TargetedSpace.GUID = guid
+	config.ConfigFile.TargetedSpace.Name = name
 }
 
 func decodeUserFromJWT(accessToken string) (User, error) {

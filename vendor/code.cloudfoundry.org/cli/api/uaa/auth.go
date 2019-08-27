@@ -1,7 +1,7 @@
 package uaa
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,23 +19,29 @@ type AuthResponse struct {
 
 // Authenticate sends a username and password to UAA then returns an access
 // token and a refresh token.
-func (client Client) Authenticate(ID string, secret string, origin string, grantType constant.GrantType) (string, string, error) {
+func (client Client) Authenticate(creds map[string]string, origin string, grantType constant.GrantType) (string, string, error) {
 	requestBody := url.Values{
 		"grant_type": {string(grantType)},
 	}
-	switch grantType {
-	case constant.GrantTypeClientCredentials:
-		requestBody.Set("client_id", ID)
-		requestBody.Set("client_secret", secret)
-	default:
-		requestBody.Set("username", ID)
-		requestBody.Set("password", secret)
+
+	for k, v := range creds {
+		requestBody.Set(k, v)
+	}
+
+	type loginHint struct {
+		Origin string `json:"origin"`
+	}
+
+	originStruct := loginHint{origin}
+	originParam, err := json.Marshal(originStruct)
+	if err != nil {
+		return "", "", err
 	}
 
 	var query url.Values
 	if origin != "" {
 		query = url.Values{
-			"login_hint": {fmt.Sprintf(`{"origin":"%s"}`, origin)},
+			"login_hint": {string(originParam)},
 		}
 	}
 

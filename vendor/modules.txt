@@ -1,10 +1,10 @@
-# code.cloudfoundry.org/bytefmt v0.0.0-20190710193110-1eb035ffe2b6
+# code.cloudfoundry.org/bytefmt v0.0.0-20190819182555-854d396b647c
 code.cloudfoundry.org/bytefmt
-# code.cloudfoundry.org/cli v0.0.0-20181126222710-7168de1051d4
+# code.cloudfoundry.org/cli v6.46.0+incompatible
 code.cloudfoundry.org/cli/plugin
-code.cloudfoundry.org/cli/plugin/models
 code.cloudfoundry.org/cli/cf/terminal
 code.cloudfoundry.org/cli/cf/trace
+code.cloudfoundry.org/cli/plugin/models
 code.cloudfoundry.org/cli/plugin/pluginfakes
 code.cloudfoundry.org/cli/cf
 code.cloudfoundry.org/cli/cf/configuration/coreconfig
@@ -25,10 +25,17 @@ code.cloudfoundry.org/cli/api/uaa
 code.cloudfoundry.org/cli/util/clissh/ssherror
 code.cloudfoundry.org/cli/util/download
 code.cloudfoundry.org/cli/util/manifest
+code.cloudfoundry.org/cli/util/manifestparser
 code.cloudfoundry.org/cli/util
 code.cloudfoundry.org/cli/api/cloudcontroller/ccv2/constant
+code.cloudfoundry.org/cli/api/cloudcontroller/ccv3/constant
 code.cloudfoundry.org/cli/api/uaa/constant
 code.cloudfoundry.org/cli/api/uaa/internal
+# code.cloudfoundry.org/cpu-entitlement-admin-plugin v0.0.0-20190822140233-4852fbd7ff0d
+code.cloudfoundry.org/cpu-entitlement-admin-plugin/cf
+code.cloudfoundry.org/cpu-entitlement-admin-plugin/metrics
+code.cloudfoundry.org/cpu-entitlement-admin-plugin/output
+code.cloudfoundry.org/cpu-entitlement-admin-plugin/reporter
 # code.cloudfoundry.org/go-loggregator v7.4.0+incompatible
 code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2
 # code.cloudfoundry.org/log-cache v2.3.1+incompatible
@@ -50,7 +57,7 @@ github.com/bmatcuk/doublestar
 github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli v6.0.0+incompatible
 github.com/cloudfoundry/bosh-cli/director/template
-# github.com/cloudfoundry/bosh-utils v0.0.0-20190803100152-d286f594c8d9
+# github.com/cloudfoundry/bosh-utils v0.0.0-20190824100155-2bd955afd080
 github.com/cloudfoundry/bosh-utils/errors
 github.com/cloudfoundry/bosh-utils/logger
 github.com/cloudfoundry/bosh-utils/system
@@ -71,7 +78,9 @@ github.com/golang/protobuf/protoc-gen-go/descriptor
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/protoc-gen-go/generator/internal/remap
 github.com/golang/protobuf/protoc-gen-go/plugin
-# github.com/grpc-ecosystem/grpc-gateway v1.9.5
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
+# github.com/grpc-ecosystem/grpc-gateway v1.9.6
 github.com/grpc-ecosystem/grpc-gateway/runtime
 github.com/grpc-ecosystem/grpc-gateway/utilities
 github.com/grpc-ecosystem/grpc-gateway/internal
@@ -87,7 +96,7 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/lunixbochs/vtclean
 # github.com/mattn/go-colorable v0.1.2
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.8
+# github.com/mattn/go-isatty v0.0.9
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
@@ -112,13 +121,15 @@ github.com/onsi/ginkgo/internal/specrunner
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 # github.com/onsi/gomega v0.0.0-20181126164539-1136bd4f6ec1
 github.com/onsi/gomega
+github.com/onsi/gomega/gexec
+github.com/onsi/gomega/gbytes
 github.com/onsi/gomega/internal/assertion
 github.com/onsi/gomega/internal/asyncassertion
 github.com/onsi/gomega/internal/testingtsupport
 github.com/onsi/gomega/matchers
 github.com/onsi/gomega/types
-github.com/onsi/gomega/internal/oraclematcher
 github.com/onsi/gomega/format
+github.com/onsi/gomega/internal/oraclematcher
 github.com/onsi/gomega/matchers/support/goraph/bipartitegraph
 github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
@@ -133,15 +144,15 @@ golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 golang.org/x/net/context
 golang.org/x/net/trace
+golang.org/x/net/html/charset
 golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
-golang.org/x/net/html/charset
+golang.org/x/net/html
 golang.org/x/net/http/httpguts
 golang.org/x/net/idna
-golang.org/x/net/html
 golang.org/x/net/html/atom
-# golang.org/x/sys v0.0.0-20190422165155-953cdadca894
+# golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.0
@@ -151,9 +162,6 @@ golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
 golang.org/x/text/transform
 golang.org/x/text/internal/tag
-golang.org/x/text/secure/bidirule
-golang.org/x/text/unicode/bidi
-golang.org/x/text/unicode/norm
 golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/internal
 golang.org/x/text/encoding/japanese
@@ -161,14 +169,17 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
+golang.org/x/text/secure/bidirule
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/runes
-# google.golang.org/genproto v0.0.0-20190801165951-fa694d86fc64
+# google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/api/httpbody
 google.golang.org/genproto/protobuf/field_mask
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.22.1
+# google.golang.org/grpc v1.23.0
 google.golang.org/grpc
 google.golang.org/grpc/codes
 google.golang.org/grpc/grpclog

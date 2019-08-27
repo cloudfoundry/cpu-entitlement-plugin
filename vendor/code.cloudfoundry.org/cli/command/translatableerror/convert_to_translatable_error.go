@@ -12,6 +12,7 @@ import (
 	"code.cloudfoundry.org/cli/util/clissh/ssherror"
 	"code.cloudfoundry.org/cli/util/download"
 	"code.cloudfoundry.org/cli/util/manifest"
+	"code.cloudfoundry.org/cli/util/manifestparser"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,6 +29,8 @@ func ConvertToTranslatableError(err error) error {
 		return ApplicationNotStartedError(e)
 	case actionerror.AppNotFoundInManifestError:
 		return AppNotFoundInManifestError(e)
+	case manifestparser.AppNotInManifestError:
+		return AppNotFoundInManifestError(e)
 	case actionerror.AssignDropletError:
 		return AssignDropletError(e)
 	case actionerror.BuildpackNotFoundError:
@@ -42,6 +45,8 @@ func ConvertToTranslatableError(err error) error {
 		return DomainNotFoundError(e)
 	case manifest.EmptyBuildpacksError:
 		return EmptyBuildpacksError(e)
+	case actionerror.EmptyArchiveError:
+		return EmptyDirectoryError(e)
 	case actionerror.EmptyDirectoryError:
 		return EmptyDirectoryError(e)
 	case actionerror.EmptyBuildpackDirectoryError:
@@ -65,7 +70,7 @@ func ConvertToTranslatableError(err error) error {
 	case actionerror.IsolationSegmentNotFoundError:
 		return IsolationSegmentNotFoundError(e)
 	case actionerror.MissingNameError:
-		return RequiredNameForPushError{}
+		return AppNameOrManifestRequiredError{}
 	case actionerror.MultipleBuildpacksFoundError:
 		return MultipleBuildpacksFoundError(e)
 	case actionerror.NoCompatibleBinaryError:
@@ -77,6 +82,8 @@ func ConvertToTranslatableError(err error) error {
 	case actionerror.NoMatchingDomainError:
 		return NoMatchingDomainError(e)
 	case actionerror.NonexistentAppPathError:
+		return FileNotFoundError(e)
+	case manifestparser.InvalidManifestApplicationPathError:
 		return FileNotFoundError(e)
 	case actionerror.NoOrganizationTargetedError:
 		return NoOrganizationTargetedError(e)
@@ -151,6 +158,11 @@ func ConvertToTranslatableError(err error) error {
 			CommandLineOptions: e.CommandLineOptions,
 		}
 
+	// Wrapped Errors
+	case TipDecoratorError:
+		e.BaseError = ConvertToTranslatableError(e.BaseError)
+		return e
+
 	// Generic CC Errors
 	case ccerror.APINotFoundError:
 		return APINotFoundError(e)
@@ -162,8 +174,10 @@ func ConvertToTranslatableError(err error) error {
 		return InvalidSSLCertError(e)
 
 	// Specific CC Errors
-	case ccerror.JobFailedError:
+	case ccerror.V2JobFailedError:
 		return JobFailedError(e)
+	case ccerror.V3JobFailedError:
+		return JobFailedError{JobGUID: e.JobGUID, Message: e.Detail}
 	case ccerror.JobTimeoutError:
 		return JobTimeoutError{JobGUID: e.JobGUID}
 	case ccerror.MultiError:
@@ -187,6 +201,12 @@ func ConvertToTranslatableError(err error) error {
 	case manifest.InterpolationError:
 		return InterpolationError(e)
 
+	// ManifestParser Errors
+	case manifestparser.InterpolationError:
+		return InterpolationError(e)
+	case manifestparser.InvalidYAMLError:
+		return InvalidYAMLError(e)
+
 	// Plugin Execution Errors
 	case pluginerror.RawHTTPStatusError:
 		return DownloadPluginHTTPError{Message: e.Status}
@@ -202,6 +222,8 @@ func ConvertToTranslatableError(err error) error {
 	// UAA Errors
 	case uaa.UnauthorizedError:
 		return UnauthorizedError(e)
+	case uaa.AccountLockedError:
+		return AccountLockedError(e)
 	case uaa.InsufficientScopeError:
 		return UnauthorizedToPerformActionError{}
 	case uaa.InvalidAuthTokenError:
