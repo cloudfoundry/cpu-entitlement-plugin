@@ -1,10 +1,10 @@
 # code.cloudfoundry.org/bytefmt v0.0.0-20190819182555-854d396b647c
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v6.46.0+incompatible
+code.cloudfoundry.org/cli/plugin/models
 code.cloudfoundry.org/cli/plugin
 code.cloudfoundry.org/cli/cf/terminal
 code.cloudfoundry.org/cli/cf/trace
-code.cloudfoundry.org/cli/plugin/models
 code.cloudfoundry.org/cli/plugin/pluginfakes
 code.cloudfoundry.org/cli/cf
 code.cloudfoundry.org/cli/cf/configuration/coreconfig
@@ -31,11 +31,6 @@ code.cloudfoundry.org/cli/api/cloudcontroller/ccv2/constant
 code.cloudfoundry.org/cli/api/cloudcontroller/ccv3/constant
 code.cloudfoundry.org/cli/api/uaa/constant
 code.cloudfoundry.org/cli/api/uaa/internal
-# code.cloudfoundry.org/cpu-entitlement-admin-plugin v0.0.0-20190822140233-4852fbd7ff0d
-code.cloudfoundry.org/cpu-entitlement-admin-plugin/cf
-code.cloudfoundry.org/cpu-entitlement-admin-plugin/metrics
-code.cloudfoundry.org/cpu-entitlement-admin-plugin/output
-code.cloudfoundry.org/cpu-entitlement-admin-plugin/reporter
 # code.cloudfoundry.org/go-loggregator v7.4.0+incompatible
 code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2
 # code.cloudfoundry.org/log-cache v2.3.1+incompatible

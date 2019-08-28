@@ -21,7 +21,7 @@ func Cmd(cmd string, args ...string) Command {
 	return Command{
 		cmd:     cmd,
 		args:    args,
-		timeout: "2s",
+		timeout: "5s",
 	}
 }
 

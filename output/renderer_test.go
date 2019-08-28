@@ -12,13 +12,13 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 )
 
 var _ = Describe("Renderer", func() {
 	var (
 		appInfo         metadata.CFAppInfo
-		instanceReports []reporter.InstanceReport
+		instanceReports []app.InstanceReport
 		display         *outputfakes.FakeDisplay
 		renderer        output.Renderer
 	)
@@ -30,22 +30,22 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		instanceReports = []reporter.InstanceReport{
+		instanceReports = []app.InstanceReport{
 			{
 				InstanceID: 123,
-				HistoricalUsage: reporter.HistoricalUsage{
+				HistoricalUsage: app.HistoricalUsage{
 					Value: 0.5,
 				},
-				CurrentUsage: reporter.CurrentUsage{
+				CurrentUsage: app.CurrentUsage{
 					Value: 1.5,
 				},
 			},
 			{
 				InstanceID: 432,
-				HistoricalUsage: reporter.HistoricalUsage{
+				HistoricalUsage: app.HistoricalUsage{
 					Value: 0.75,
 				},
-				CurrentUsage: reporter.CurrentUsage{
+				CurrentUsage: app.CurrentUsage{
 					Value: 1.75,
 				},
 			},
@@ -57,7 +57,7 @@ var _ = Describe("Renderer", func() {
 
 	Describe("ShowMetrics", func() {
 		JustBeforeEach(func() {
-			renderer.ShowInstanceReports(appInfo, instanceReports)
+			Expect(renderer.ShowInstanceReports(appInfo, instanceReports)).To(Succeed())
 		})
 
 		It("shows a message with the application info", func() {
@@ -150,17 +150,17 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more instances have been over entitlement", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, reporter.InstanceReport{
+				instanceReports = append(instanceReports, app.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
+					HistoricalUsage: app.HistoricalUsage{
 						Value:         0.5,
 						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 					},
 				},
-					reporter.InstanceReport{
+					app.InstanceReport{
 						InstanceID: 345,
-						HistoricalUsage: reporter.HistoricalUsage{
+						HistoricalUsage: app.HistoricalUsage{
 							Value:         0.5,
 							LastSpikeFrom: time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
 							LastSpikeTo:   time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
@@ -179,9 +179,9 @@ var _ = Describe("Renderer", func() {
 
 		When("an instance is currently over entitlement with a 'current' spike", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, reporter.InstanceReport{
+				instanceReports = append(instanceReports, app.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
+					HistoricalUsage: app.HistoricalUsage{
 						Value:         1.5,
 						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
@@ -196,9 +196,9 @@ var _ = Describe("Renderer", func() {
 
 		When("spike was instantaneous", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, reporter.InstanceReport{
+				instanceReports = append(instanceReports, app.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
+					HistoricalUsage: app.HistoricalUsage{
 						Value:         0.5,
 						LastSpikeFrom: time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
@@ -239,10 +239,6 @@ var _ = Describe("Renderer", func() {
 		})
 	})
 })
-
-func red(s string) string {
-	return terminal.Colorize(s, color.FgRed)
-}
 
 func yellow(s string) string {
 	return terminal.Colorize(s, color.FgYellow)
