@@ -20,7 +20,7 @@ var _ = Describe("Renderer", func() {
 		appInfo         cf.Application
 		instanceReports []reporter.InstanceReport
 		display         *outputfakes.FakeDisplay
-		renderer        output.Renderer
+		renderer        output.AppRenderer
 	)
 
 	BeforeEach(func() {
@@ -52,7 +52,7 @@ var _ = Describe("Renderer", func() {
 		}
 
 		display = new(outputfakes.FakeDisplay)
-		renderer = output.NewRenderer(display)
+		renderer = output.NewAppRenderer(display)
 	})
 
 	Describe("ShowMetrics", func() {

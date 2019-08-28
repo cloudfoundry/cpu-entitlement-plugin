@@ -7,13 +7,13 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
-type Renderer struct{}
+type OverEntitlementInstancesRenderer struct{}
 
-func NewRenderer(ui terminal.UI) *Renderer {
-	return &Renderer{}
+func NewOverEntitlementInstancesRenderer(ui terminal.UI) *OverEntitlementInstancesRenderer {
+	return &OverEntitlementInstancesRenderer{}
 }
 
-func (r *Renderer) Render(report reporter.OEIReport) error {
+func (r *OverEntitlementInstancesRenderer) Render(report reporter.OEIReport) error {
 	if len(report.SpaceReports) == 0 {
 		fmt.Printf("No apps over entitlement")
 	} else {

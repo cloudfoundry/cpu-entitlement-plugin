@@ -58,7 +58,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	)
 	metricsReporter := reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
 	display := output.NewTerminalDisplay(ui)
-	metricsRenderer := output.NewRenderer(display)
+	metricsRenderer := output.NewAppRenderer(display)
 
 	appName := args[1]
 	runner := NewRunner(cfClient, metricsReporter, metricsRenderer)

@@ -12,7 +12,7 @@ import (
 const DateFmt = "2006-01-02 15:04:05"
 const noColor color.Attribute = -1
 
-type Renderer struct {
+type AppRenderer struct {
 	display Display
 }
 
@@ -23,11 +23,11 @@ type Display interface {
 	ShowTable(headers []string, rows [][]string) error
 }
 
-func NewRenderer(display Display) Renderer {
-	return Renderer{display: display}
+func NewAppRenderer(display Display) AppRenderer {
+	return AppRenderer{display: display}
 }
 
-func (r Renderer) ShowInstanceReports(application cf.Application, instanceReports []reporter.InstanceReport) error {
+func (r AppRenderer) ShowInstanceReports(application cf.Application, instanceReports []reporter.InstanceReport) error {
 	r.showAppInfoHeader(application)
 
 	var rows [][]string
@@ -78,12 +78,12 @@ func (r Renderer) ShowInstanceReports(application cf.Application, instanceReport
 	return nil
 }
 
-func (r Renderer) ShowMessage(application cf.Application, message string, values ...interface{}) {
+func (r AppRenderer) ShowMessage(application cf.Application, message string, values ...interface{}) {
 	r.showAppInfoHeader(application)
 	r.display.ShowMessage(message, values...)
 }
 
-func (r Renderer) showAppInfoHeader(application cf.Application) {
+func (r AppRenderer) showAppInfoHeader(application cf.Application) {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
 		terminal.EntityNameColor(application.Name),
 		terminal.EntityNameColor(application.Org),
