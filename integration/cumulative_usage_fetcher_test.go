@@ -3,8 +3,10 @@ package integration_test
 import (
 	"strings"
 
-	fetcherorg "code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -16,14 +18,14 @@ var _ = Describe("Fetcher", func() {
 		org string
 		uid string
 
-		logCacheFetcher fetcherorg.LogCacheFetcher
-		getToken        func() (string, error)
+		fetcher  fetchers.CumulativeUsage
+		getToken func() (string, error)
 	)
 
 	getUsages := func(appName string) func() []float64 {
 		appGuid := getCmdOutput("cf", "app", appName, "--guid")
 		return func() []float64 {
-			usages, err := logCacheFetcher.FetchInstanceEntitlementUsages(appGuid)
+			usages, err := fetcher.FetchInstanceEntitlementUsages(appGuid)
 			Expect(err).NotTo(HaveOccurred())
 			return usages
 		}
@@ -44,7 +46,12 @@ var _ = Describe("Fetcher", func() {
 			return getCmdOutput("cf", "oauth-token"), nil
 		}
 
-		logCacheFetcher = fetcherorg.NewLogCacheFetcher(logCacheURL, getToken)
+		logCacheClient := logcache.NewClient(
+			logCacheURL,
+			logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(getToken))),
+		)
+
+		fetcher = fetchers.NewCumulativeUsage(logCacheClient)
 	})
 
 	AfterEach(func() {
@@ -75,11 +82,16 @@ var _ = Describe("Fetcher", func() {
 
 	When("the log-cache URL is not correct", func() {
 		BeforeEach(func() {
-			logCacheFetcher = fetcherorg.NewLogCacheFetcher("http://1.2.3:123", getToken)
+			logCacheClient := logcache.NewClient(
+				"http://1.2.3:123",
+				logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(getToken))),
+			)
+
+			fetcher = fetchers.NewCumulativeUsage(logCacheClient)
 		})
 
 		It("returns an error about the url", func() {
-			_, err := logCacheFetcher.FetchInstanceEntitlementUsages("anything")
+			_, err := fetcher.FetchInstanceEntitlementUsages("anything")
 			Expect(err).To(MatchError(ContainSubstring("dial")))
 		})
 	})

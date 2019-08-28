@@ -10,9 +10,11 @@ import (
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
-	orgfetcher "code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	outputorg "code.cloudfoundry.org/cpu-entitlement-plugin/output/org"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
 type CPUEntitlementAdminPlugin struct{}
@@ -35,7 +37,7 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 		os.Exit(1)
 	}
 
-	fetcher := orgfetcher.NewLogCacheFetcher(logCacheURL, cli.AccessToken)
+	fetcher := fetchers.NewCumulativeUsage(createLogClient(logCacheURL, cli.AccessToken))
 	cfClient := cf.NewClient(cli)
 	reporter := org.New(cfClient, fetcher)
 	renderer := outputorg.NewRenderer(ui)
@@ -99,4 +101,11 @@ func buildLogCacheURL(dopplerURL string) (string, error) {
 	logStreamURL.Host = "log-cache" + match[1]
 
 	return logStreamURL.String(), nil
+}
+
+func createLogClient(logCacheURL string, accessTokenFunc func() (string, error)) *logcache.Client {
+	return logcache.NewClient(
+		logCacheURL,
+		logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(accessTokenFunc))),
+	)
 }

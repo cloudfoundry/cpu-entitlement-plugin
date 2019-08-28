@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -133,23 +132,6 @@ func buildLogCacheURL(dopplerURL string) (string, error) {
 func createLogClient(logCacheURL string, accessTokenFunc func() (string, error)) *logcache.Client {
 	return logcache.NewClient(
 		logCacheURL,
-		logcache.WithHTTPClient(authenticatedBy(token.NewGetter(accessTokenFunc))),
+		logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(accessTokenFunc))),
 	)
-}
-
-func authenticatedBy(tokenGetter *token.Getter) *authClient {
-	return &authClient{tokenGetter: tokenGetter}
-}
-
-type authClient struct {
-	tokenGetter *token.Getter
-}
-
-func (a *authClient) Do(req *http.Request) (*http.Response, error) {
-	t, err := a.tokenGetter.Token()
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", t)
-	return http.DefaultClient.Do(req)
 }
