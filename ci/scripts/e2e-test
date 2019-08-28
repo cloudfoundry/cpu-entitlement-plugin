@@ -2,5 +2,5 @@
 set -e
 
 pushd cpu-entitlement-plugin
-ginkgo e2e
+ginkgo -mod vendor e2e
 popd
