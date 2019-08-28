@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
@@ -17,14 +17,14 @@ import (
 
 var _ = Describe("Renderer", func() {
 	var (
-		appInfo         metadata.CFAppInfo
+		appInfo         cf.Application
 		instanceReports []app.InstanceReport
 		display         *outputfakes.FakeDisplay
 		renderer        output.Renderer
 	)
 
 	BeforeEach(func() {
-		appInfo = metadata.CFAppInfo{
+		appInfo = cf.Application{
 			Name:     "myapp",
 			Username: "theuser",
 			Org:      "theorg",

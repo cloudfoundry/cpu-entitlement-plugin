@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app/appfakes"
 )
@@ -32,7 +32,7 @@ var _ = Describe("Reporter", func() {
 	})
 
 	JustBeforeEach(func() {
-		reports, err = instanceReporter.CreateInstanceReports(metadata.CFAppInfo{Guid: appGuid})
+		reports, err = instanceReporter.CreateInstanceReports(cf.Application{Guid: appGuid})
 	})
 
 	Describe("Report", func() {

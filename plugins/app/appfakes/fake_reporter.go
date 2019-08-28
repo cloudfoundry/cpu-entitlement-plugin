@@ -4,16 +4,16 @@ package appfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
 	appa "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 )
 
 type FakeReporter struct {
-	CreateInstanceReportsStub        func(metadata.CFAppInfo) ([]appa.InstanceReport, error)
+	CreateInstanceReportsStub        func(cf.Application) ([]appa.InstanceReport, error)
 	createInstanceReportsMutex       sync.RWMutex
 	createInstanceReportsArgsForCall []struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 	}
 	createInstanceReportsReturns struct {
 		result1 []appa.InstanceReport
@@ -27,11 +27,11 @@ type FakeReporter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeReporter) CreateInstanceReports(arg1 metadata.CFAppInfo) ([]appa.InstanceReport, error) {
+func (fake *FakeReporter) CreateInstanceReports(arg1 cf.Application) ([]appa.InstanceReport, error) {
 	fake.createInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.createInstanceReportsReturnsOnCall[len(fake.createInstanceReportsArgsForCall)]
 	fake.createInstanceReportsArgsForCall = append(fake.createInstanceReportsArgsForCall, struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 	}{arg1})
 	fake.recordInvocation("CreateInstanceReports", []interface{}{arg1})
 	fake.createInstanceReportsMutex.Unlock()
@@ -51,13 +51,13 @@ func (fake *FakeReporter) CreateInstanceReportsCallCount() int {
 	return len(fake.createInstanceReportsArgsForCall)
 }
 
-func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(metadata.CFAppInfo) ([]appa.InstanceReport, error)) {
+func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(cf.Application) ([]appa.InstanceReport, error)) {
 	fake.createInstanceReportsMutex.Lock()
 	defer fake.createInstanceReportsMutex.Unlock()
 	fake.CreateInstanceReportsStub = stub
 }
 
-func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) metadata.CFAppInfo {
+func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) cf.Application {
 	fake.createInstanceReportsMutex.RLock()
 	defer fake.createInstanceReportsMutex.RUnlock()
 	argsForCall := fake.createInstanceReportsArgsForCall[i]

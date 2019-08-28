@@ -11,8 +11,8 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
@@ -48,7 +48,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	infoGetter := metadata.NewInfoGetter(cli)
+	cfClient := cf.NewClient(cli)
 	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 		time.Now().Add(-month),
@@ -62,7 +62,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	metricsRenderer := output.NewRenderer(display)
 
 	appName := args[1]
-	runner := NewRunner(infoGetter, metricsReporter, metricsRenderer)
+	runner := NewRunner(cfClient, metricsReporter, metricsRenderer)
 	res := runner.Run(appName)
 	if res.IsFailure {
 		if res.ErrorMessage != "" {

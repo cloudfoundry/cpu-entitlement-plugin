@@ -9,6 +9,43 @@ import (
 )
 
 type FakeCli struct {
+	GetAppStub        func(string) (plugin_models.GetAppModel, error)
+	getAppMutex       sync.RWMutex
+	getAppArgsForCall []struct {
+		arg1 string
+	}
+	getAppReturns struct {
+		result1 plugin_models.GetAppModel
+		result2 error
+	}
+	getAppReturnsOnCall map[int]struct {
+		result1 plugin_models.GetAppModel
+		result2 error
+	}
+	GetCurrentOrgStub        func() (plugin_models.Organization, error)
+	getCurrentOrgMutex       sync.RWMutex
+	getCurrentOrgArgsForCall []struct {
+	}
+	getCurrentOrgReturns struct {
+		result1 plugin_models.Organization
+		result2 error
+	}
+	getCurrentOrgReturnsOnCall map[int]struct {
+		result1 plugin_models.Organization
+		result2 error
+	}
+	GetCurrentSpaceStub        func() (plugin_models.Space, error)
+	getCurrentSpaceMutex       sync.RWMutex
+	getCurrentSpaceArgsForCall []struct {
+	}
+	getCurrentSpaceReturns struct {
+		result1 plugin_models.Space
+		result2 error
+	}
+	getCurrentSpaceReturnsOnCall map[int]struct {
+		result1 plugin_models.Space
+		result2 error
+	}
 	GetSpaceStub        func(string) (plugin_models.GetSpace_Model, error)
 	getSpaceMutex       sync.RWMutex
 	getSpaceArgsForCall []struct {
@@ -34,8 +71,193 @@ type FakeCli struct {
 		result1 []plugin_models.GetSpaces_Model
 		result2 error
 	}
+	UsernameStub        func() (string, error)
+	usernameMutex       sync.RWMutex
+	usernameArgsForCall []struct {
+	}
+	usernameReturns struct {
+		result1 string
+		result2 error
+	}
+	usernameReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeCli) GetApp(arg1 string) (plugin_models.GetAppModel, error) {
+	fake.getAppMutex.Lock()
+	ret, specificReturn := fake.getAppReturnsOnCall[len(fake.getAppArgsForCall)]
+	fake.getAppArgsForCall = append(fake.getAppArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("GetApp", []interface{}{arg1})
+	fake.getAppMutex.Unlock()
+	if fake.GetAppStub != nil {
+		return fake.GetAppStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getAppReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCli) GetAppCallCount() int {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	return len(fake.getAppArgsForCall)
+}
+
+func (fake *FakeCli) GetAppCalls(stub func(string) (plugin_models.GetAppModel, error)) {
+	fake.getAppMutex.Lock()
+	defer fake.getAppMutex.Unlock()
+	fake.GetAppStub = stub
+}
+
+func (fake *FakeCli) GetAppArgsForCall(i int) string {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	argsForCall := fake.getAppArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeCli) GetAppReturns(result1 plugin_models.GetAppModel, result2 error) {
+	fake.getAppMutex.Lock()
+	defer fake.getAppMutex.Unlock()
+	fake.GetAppStub = nil
+	fake.getAppReturns = struct {
+		result1 plugin_models.GetAppModel
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) GetAppReturnsOnCall(i int, result1 plugin_models.GetAppModel, result2 error) {
+	fake.getAppMutex.Lock()
+	defer fake.getAppMutex.Unlock()
+	fake.GetAppStub = nil
+	if fake.getAppReturnsOnCall == nil {
+		fake.getAppReturnsOnCall = make(map[int]struct {
+			result1 plugin_models.GetAppModel
+			result2 error
+		})
+	}
+	fake.getAppReturnsOnCall[i] = struct {
+		result1 plugin_models.GetAppModel
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) GetCurrentOrg() (plugin_models.Organization, error) {
+	fake.getCurrentOrgMutex.Lock()
+	ret, specificReturn := fake.getCurrentOrgReturnsOnCall[len(fake.getCurrentOrgArgsForCall)]
+	fake.getCurrentOrgArgsForCall = append(fake.getCurrentOrgArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCurrentOrg", []interface{}{})
+	fake.getCurrentOrgMutex.Unlock()
+	if fake.GetCurrentOrgStub != nil {
+		return fake.GetCurrentOrgStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getCurrentOrgReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCli) GetCurrentOrgCallCount() int {
+	fake.getCurrentOrgMutex.RLock()
+	defer fake.getCurrentOrgMutex.RUnlock()
+	return len(fake.getCurrentOrgArgsForCall)
+}
+
+func (fake *FakeCli) GetCurrentOrgCalls(stub func() (plugin_models.Organization, error)) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = stub
+}
+
+func (fake *FakeCli) GetCurrentOrgReturns(result1 plugin_models.Organization, result2 error) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = nil
+	fake.getCurrentOrgReturns = struct {
+		result1 plugin_models.Organization
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) GetCurrentOrgReturnsOnCall(i int, result1 plugin_models.Organization, result2 error) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = nil
+	if fake.getCurrentOrgReturnsOnCall == nil {
+		fake.getCurrentOrgReturnsOnCall = make(map[int]struct {
+			result1 plugin_models.Organization
+			result2 error
+		})
+	}
+	fake.getCurrentOrgReturnsOnCall[i] = struct {
+		result1 plugin_models.Organization
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) GetCurrentSpace() (plugin_models.Space, error) {
+	fake.getCurrentSpaceMutex.Lock()
+	ret, specificReturn := fake.getCurrentSpaceReturnsOnCall[len(fake.getCurrentSpaceArgsForCall)]
+	fake.getCurrentSpaceArgsForCall = append(fake.getCurrentSpaceArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCurrentSpace", []interface{}{})
+	fake.getCurrentSpaceMutex.Unlock()
+	if fake.GetCurrentSpaceStub != nil {
+		return fake.GetCurrentSpaceStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getCurrentSpaceReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCli) GetCurrentSpaceCallCount() int {
+	fake.getCurrentSpaceMutex.RLock()
+	defer fake.getCurrentSpaceMutex.RUnlock()
+	return len(fake.getCurrentSpaceArgsForCall)
+}
+
+func (fake *FakeCli) GetCurrentSpaceCalls(stub func() (plugin_models.Space, error)) {
+	fake.getCurrentSpaceMutex.Lock()
+	defer fake.getCurrentSpaceMutex.Unlock()
+	fake.GetCurrentSpaceStub = stub
+}
+
+func (fake *FakeCli) GetCurrentSpaceReturns(result1 plugin_models.Space, result2 error) {
+	fake.getCurrentSpaceMutex.Lock()
+	defer fake.getCurrentSpaceMutex.Unlock()
+	fake.GetCurrentSpaceStub = nil
+	fake.getCurrentSpaceReturns = struct {
+		result1 plugin_models.Space
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) GetCurrentSpaceReturnsOnCall(i int, result1 plugin_models.Space, result2 error) {
+	fake.getCurrentSpaceMutex.Lock()
+	defer fake.getCurrentSpaceMutex.Unlock()
+	fake.GetCurrentSpaceStub = nil
+	if fake.getCurrentSpaceReturnsOnCall == nil {
+		fake.getCurrentSpaceReturnsOnCall = make(map[int]struct {
+			result1 plugin_models.Space
+			result2 error
+		})
+	}
+	fake.getCurrentSpaceReturnsOnCall[i] = struct {
+		result1 plugin_models.Space
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCli) GetSpace(arg1 string) (plugin_models.GetSpace_Model, error) {
@@ -156,13 +378,76 @@ func (fake *FakeCli) GetSpacesReturnsOnCall(i int, result1 []plugin_models.GetSp
 	}{result1, result2}
 }
 
+func (fake *FakeCli) Username() (string, error) {
+	fake.usernameMutex.Lock()
+	ret, specificReturn := fake.usernameReturnsOnCall[len(fake.usernameArgsForCall)]
+	fake.usernameArgsForCall = append(fake.usernameArgsForCall, struct {
+	}{})
+	fake.recordInvocation("Username", []interface{}{})
+	fake.usernameMutex.Unlock()
+	if fake.UsernameStub != nil {
+		return fake.UsernameStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.usernameReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCli) UsernameCallCount() int {
+	fake.usernameMutex.RLock()
+	defer fake.usernameMutex.RUnlock()
+	return len(fake.usernameArgsForCall)
+}
+
+func (fake *FakeCli) UsernameCalls(stub func() (string, error)) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = stub
+}
+
+func (fake *FakeCli) UsernameReturns(result1 string, result2 error) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = nil
+	fake.usernameReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCli) UsernameReturnsOnCall(i int, result1 string, result2 error) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = nil
+	if fake.usernameReturnsOnCall == nil {
+		fake.usernameReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.usernameReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeCli) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	fake.getCurrentOrgMutex.RLock()
+	defer fake.getCurrentOrgMutex.RUnlock()
+	fake.getCurrentSpaceMutex.RLock()
+	defer fake.getCurrentSpaceMutex.RUnlock()
 	fake.getSpaceMutex.RLock()
 	defer fake.getSpaceMutex.RUnlock()
 	fake.getSpacesMutex.RLock()
 	defer fake.getSpacesMutex.RUnlock()
+	fake.usernameMutex.RLock()
+	defer fake.usernameMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

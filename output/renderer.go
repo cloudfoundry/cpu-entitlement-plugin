@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 	"github.com/fatih/color"
 )
@@ -27,8 +27,8 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports []app.InstanceReport) error {
-	r.showAppInfoHeader(info)
+func (r Renderer) ShowInstanceReports(application cf.Application, instanceReports []app.InstanceReport) error {
+	r.showAppInfoHeader(application)
 
 	var rows [][]string
 
@@ -78,17 +78,17 @@ func (r Renderer) ShowInstanceReports(info metadata.CFAppInfo, instanceReports [
 	return nil
 }
 
-func (r Renderer) ShowMessage(info metadata.CFAppInfo, message string, values ...interface{}) {
-	r.showAppInfoHeader(info)
+func (r Renderer) ShowMessage(application cf.Application, message string, values ...interface{}) {
+	r.showAppInfoHeader(application)
 	r.display.ShowMessage(message, values...)
 }
 
-func (r Renderer) showAppInfoHeader(info metadata.CFAppInfo) {
+func (r Renderer) showAppInfoHeader(application cf.Application) {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
-		terminal.EntityNameColor(info.Name),
-		terminal.EntityNameColor(info.Org),
-		terminal.EntityNameColor(info.Space),
-		terminal.EntityNameColor(info.Username),
+		terminal.EntityNameColor(application.Name),
+		terminal.EntityNameColor(application.Org),
+		terminal.EntityNameColor(application.Space),
+		terminal.EntityNameColor(application.Username),
 	)
 }
 

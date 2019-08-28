@@ -7,8 +7,7 @@ import (
 
 	"strconv"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
-
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
@@ -40,7 +39,7 @@ func NewHistoricalUsageFetcher(client LogCacheClient, from, to time.Time) *Histo
 	return &HistoricalUsageFetcher{client: client, from: from, to: to}
 }
 
-func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]metadata.CFAppInstance) (map[int][]InstanceData, error) {
+func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {
 	res, err := f.client.PromQLRange(
 		context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGUID, appGUID),
@@ -55,7 +54,7 @@ func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, appInstances m
 	return parseResult(res, appInstances), nil
 }
 
-func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]metadata.CFAppInstance) map[int][]InstanceData {
+func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]cf.Instance) map[int][]InstanceData {
 	dataPerInstance := map[int][]InstanceData{}
 	for _, series := range res.GetMatrix().GetSeries() {
 		instanceID, err := strconv.Atoi(series.GetMetric()["instance_id"])
@@ -92,7 +91,7 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]
 	return dataPerInstance
 }
 
-func isCurrentSeries(series *logcache_v1.PromQL_Series, instance metadata.CFAppInstance) bool {
+func isCurrentSeries(series *logcache_v1.PromQL_Series, instance cf.Instance) bool {
 	points := series.GetPoints()
 	if len(points) == 0 {
 		return false

@@ -4,47 +4,47 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 	"github.com/fatih/color"
 )
 
-//go:generate counterfeiter . CFAppInfoGetter
+//go:generate counterfeiter . CFClient
 
-type CFAppInfoGetter interface {
-	GetCFAppInfo(appName string) (metadata.CFAppInfo, error)
+type CFClient interface {
+	GetApplication(appName string) (cf.Application, error)
 }
 
 //go:generate counterfeiter . OutputRenderer
 
 type OutputRenderer interface {
-	ShowInstanceReports(metadata.CFAppInfo, []app.InstanceReport) error
-	ShowMessage(metadata.CFAppInfo, string, ...interface{})
+	ShowInstanceReports(cf.Application, []app.InstanceReport) error
+	ShowMessage(cf.Application, string, ...interface{})
 }
 
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	CreateInstanceReports(appInfo metadata.CFAppInfo) ([]app.InstanceReport, error)
+	CreateInstanceReports(app cf.Application) ([]app.InstanceReport, error)
 }
 
 type Runner struct {
-	infoGetter      CFAppInfoGetter
+	cfClient        CFClient
 	reporter        Reporter
 	metricsRenderer OutputRenderer
 }
 
-func NewRunner(infoGetter CFAppInfoGetter, reporter Reporter, metricsRenderer OutputRenderer) Runner {
+func NewRunner(cfClient CFClient, reporter Reporter, metricsRenderer OutputRenderer) Runner {
 	return Runner{
-		infoGetter:      infoGetter,
+		cfClient:        cfClient,
 		reporter:        reporter,
 		metricsRenderer: metricsRenderer,
 	}
 }
 
 func (r Runner) Run(appName string) result.Result {
-	info, err := r.infoGetter.GetCFAppInfo(appName)
+	info, err := r.cfClient.GetApplication(appName)
 	if err != nil {
 		return result.FailureFromError(err)
 	}

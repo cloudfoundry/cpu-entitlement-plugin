@@ -4,16 +4,16 @@ package appfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
 	appa "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
 )
 
 type FakeOutputRenderer struct {
-	ShowInstanceReportsStub        func(metadata.CFAppInfo, []appa.InstanceReport) error
+	ShowInstanceReportsStub        func(cf.Application, []appa.InstanceReport) error
 	showInstanceReportsMutex       sync.RWMutex
 	showInstanceReportsArgsForCall []struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 		arg2 []appa.InstanceReport
 	}
 	showInstanceReportsReturns struct {
@@ -22,10 +22,10 @@ type FakeOutputRenderer struct {
 	showInstanceReportsReturnsOnCall map[int]struct {
 		result1 error
 	}
-	ShowMessageStub        func(metadata.CFAppInfo, string, ...interface{})
+	ShowMessageStub        func(cf.Application, string, ...interface{})
 	showMessageMutex       sync.RWMutex
 	showMessageArgsForCall []struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 		arg2 string
 		arg3 []interface{}
 	}
@@ -33,7 +33,7 @@ type FakeOutputRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg2 []appa.InstanceReport) error {
+func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 cf.Application, arg2 []appa.InstanceReport) error {
 	var arg2Copy []appa.InstanceReport
 	if arg2 != nil {
 		arg2Copy = make([]appa.InstanceReport, len(arg2))
@@ -42,7 +42,7 @@ func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 metadata.CFAppInfo, arg
 	fake.showInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.showInstanceReportsReturnsOnCall[len(fake.showInstanceReportsArgsForCall)]
 	fake.showInstanceReportsArgsForCall = append(fake.showInstanceReportsArgsForCall, struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 		arg2 []appa.InstanceReport
 	}{arg1, arg2Copy})
 	fake.recordInvocation("ShowInstanceReports", []interface{}{arg1, arg2Copy})
@@ -63,13 +63,13 @@ func (fake *FakeOutputRenderer) ShowInstanceReportsCallCount() int {
 	return len(fake.showInstanceReportsArgsForCall)
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReportsCalls(stub func(metadata.CFAppInfo, []appa.InstanceReport) error) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsCalls(stub func(cf.Application, []appa.InstanceReport) error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = stub
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReportsArgsForCall(i int) (metadata.CFAppInfo, []appa.InstanceReport) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsArgsForCall(i int) (cf.Application, []appa.InstanceReport) {
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
 	argsForCall := fake.showInstanceReportsArgsForCall[i]
@@ -99,10 +99,10 @@ func (fake *FakeOutputRenderer) ShowInstanceReportsReturnsOnCall(i int, result1 
 	}{result1}
 }
 
-func (fake *FakeOutputRenderer) ShowMessage(arg1 metadata.CFAppInfo, arg2 string, arg3 ...interface{}) {
+func (fake *FakeOutputRenderer) ShowMessage(arg1 cf.Application, arg2 string, arg3 ...interface{}) {
 	fake.showMessageMutex.Lock()
 	fake.showMessageArgsForCall = append(fake.showMessageArgsForCall, struct {
-		arg1 metadata.CFAppInfo
+		arg1 cf.Application
 		arg2 string
 		arg3 []interface{}
 	}{arg1, arg2, arg3})
@@ -119,13 +119,13 @@ func (fake *FakeOutputRenderer) ShowMessageCallCount() int {
 	return len(fake.showMessageArgsForCall)
 }
 
-func (fake *FakeOutputRenderer) ShowMessageCalls(stub func(metadata.CFAppInfo, string, ...interface{})) {
+func (fake *FakeOutputRenderer) ShowMessageCalls(stub func(cf.Application, string, ...interface{})) {
 	fake.showMessageMutex.Lock()
 	defer fake.showMessageMutex.Unlock()
 	fake.ShowMessageStub = stub
 }
 
-func (fake *FakeOutputRenderer) ShowMessageArgsForCall(i int) (metadata.CFAppInfo, string, []interface{}) {
+func (fake *FakeOutputRenderer) ShowMessageArgsForCall(i int) (cf.Application, string, []interface{}) {
 	fake.showMessageMutex.RLock()
 	defer fake.showMessageMutex.RUnlock()
 	argsForCall := fake.showMessageArgsForCall[i]

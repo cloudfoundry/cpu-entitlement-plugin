@@ -3,7 +3,7 @@ package app_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	plugin "code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app/appfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		infoGetter       *appfakes.FakeCFAppInfoGetter
+		cfClient         *appfakes.FakeCFClient
 		instanceReporter *appfakes.FakeReporter
 		outputRenderer   *appfakes.FakeOutputRenderer
 
@@ -24,15 +24,15 @@ var _ = Describe("Runner", func() {
 	)
 
 	BeforeEach(func() {
-		infoGetter = new(appfakes.FakeCFAppInfoGetter)
+		cfClient = new(appfakes.FakeCFClient)
 		instanceReporter = new(appfakes.FakeReporter)
 		outputRenderer = new(appfakes.FakeOutputRenderer)
-		runner = plugin.NewRunner(infoGetter, instanceReporter, outputRenderer)
+		runner = plugin.NewRunner(cfClient, instanceReporter, outputRenderer)
 
-		infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
+		cfClient.GetApplicationReturns(cf.Application{
 			Guid:      "123",
 			Name:      "app-name",
-			Instances: map[int]metadata.CFAppInstance{0: metadata.CFAppInstance{}},
+			Instances: map[int]cf.Instance{0: cf.Instance{}},
 		}, nil)
 
 		instanceReporter.CreateInstanceReportsReturns([]app.InstanceReport{
@@ -64,8 +64,8 @@ var _ = Describe("Runner", func() {
 	It("prints the app CPU metrics", func() {
 		Expect(runResult.IsFailure).To(BeFalse())
 
-		Expect(infoGetter.GetCFAppInfoCallCount()).To(Equal(1))
-		appName := infoGetter.GetCFAppInfoArgsForCall(0)
+		Expect(cfClient.GetApplicationCallCount()).To(Equal(1))
+		appName := cfClient.GetApplicationArgsForCall(0)
 		Expect(appName).To(Equal("app-name"))
 
 		Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(1))
@@ -74,10 +74,10 @@ var _ = Describe("Runner", func() {
 
 		Expect(outputRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
 		info, instanceReports := outputRenderer.ShowInstanceReportsArgsForCall(0)
-		Expect(info).To(Equal(metadata.CFAppInfo{
+		Expect(info).To(Equal(cf.Application{
 			Guid:      "123",
 			Name:      "app-name",
-			Instances: map[int]metadata.CFAppInstance{0: metadata.CFAppInstance{}},
+			Instances: map[int]cf.Instance{0: cf.Instance{}},
 		}))
 		Expect(instanceReports).To(Equal([]app.InstanceReport{
 			{
@@ -103,7 +103,7 @@ var _ = Describe("Runner", func() {
 
 	When("getting the app info fails", func() {
 		BeforeEach(func() {
-			infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{}, errors.New("info error"))
+			cfClient.GetApplicationReturns(cf.Application{}, errors.New("info error"))
 		})
 
 		It("returns a failure with a warning", func() {
@@ -114,7 +114,7 @@ var _ = Describe("Runner", func() {
 
 	When("there are zero instances of the application", func() {
 		BeforeEach(func() {
-			infoGetter.GetCFAppInfoReturns(metadata.CFAppInfo{
+			cfClient.GetApplicationReturns(cf.Application{
 				Guid: "123",
 				Name: "app-name",
 			}, nil)
@@ -127,7 +127,7 @@ var _ = Describe("Runner", func() {
 		It("prints a message", func() {
 			Expect(outputRenderer.ShowMessageCallCount()).To(Equal(1))
 			info, message, _ := outputRenderer.ShowMessageArgsForCall(0)
-			Expect(info).To(Equal(metadata.CFAppInfo{
+			Expect(info).To(Equal(cf.Application{
 				Guid: "123",
 				Name: "app-name",
 			}))

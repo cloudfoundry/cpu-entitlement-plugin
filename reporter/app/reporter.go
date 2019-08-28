@@ -4,8 +4,8 @@ import (
 	"sort"
 	"time"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 )
 
 type Reporter struct {
@@ -16,7 +16,7 @@ type Reporter struct {
 //go:generate counterfeiter . InstanceDataFetcher
 
 type InstanceDataFetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]metadata.CFAppInstance) (map[int][]fetchers.InstanceData, error)
+	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)
 }
 
 type InstanceReport struct {
@@ -46,10 +46,10 @@ func New(historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) Report
 	}
 }
 
-func (r Reporter) CreateInstanceReports(appInfo metadata.CFAppInfo) ([]InstanceReport, error) {
+func (r Reporter) CreateInstanceReports(application cf.Application) ([]InstanceReport, error) {
 	latestReports := map[int]InstanceReport{}
 
-	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
+	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (r Reporter) CreateInstanceReports(appInfo metadata.CFAppInfo) ([]InstanceR
 		latestReports[instanceID] = currentReport
 	}
 
-	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(appInfo.Guid, appInfo.Instances)
+	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
 	if err != nil {
 		return nil, err
 	}

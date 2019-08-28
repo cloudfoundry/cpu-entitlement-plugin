@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/fetchersfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/metadata"
 )
 
 var _ = Describe("HistoricalUsageFetcher", func() {
@@ -19,7 +19,7 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		logCacheClient  *fetchersfakes.FakeLogCacheClient
 		fetcher         *fetchers.HistoricalUsageFetcher
 		appGuid         string
-		appInstances    map[int]metadata.CFAppInstance
+		appInstances    map[int]cf.Instance
 		historicalUsage map[int][]fetchers.InstanceData
 		fetchErr        error
 		from, to        time.Time
@@ -45,10 +45,10 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 			),
 		), nil)
 
-		appInstances = map[int]metadata.CFAppInstance{
-			0: metadata.CFAppInstance{InstanceID: 0, Since: time.Unix(0, 0)},
-			1: metadata.CFAppInstance{InstanceID: 1, Since: time.Unix(0, 0)},
-			2: metadata.CFAppInstance{InstanceID: 2, Since: time.Unix(0, 0)},
+		appInstances = map[int]cf.Instance{
+			0: cf.Instance{InstanceID: 0, Since: time.Unix(0, 0)},
+			1: cf.Instance{InstanceID: 1, Since: time.Unix(0, 0)},
+			2: cf.Instance{InstanceID: 2, Since: time.Unix(0, 0)},
 		}
 	})
 
@@ -99,8 +99,8 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 
 	When("cache returns data for instances that are no longer running (because the app has been scaled down", func() {
 		BeforeEach(func() {
-			appInstances = map[int]metadata.CFAppInstance{
-				0: metadata.CFAppInstance{InstanceID: 0, Since: time.Unix(0, 0)},
+			appInstances = map[int]cf.Instance{
+				0: cf.Instance{InstanceID: 0, Since: time.Unix(0, 0)},
 			}
 		})
 
@@ -125,10 +125,10 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 
 	When("cache returns data before the instance has been created", func() {
 		BeforeEach(func() {
-			appInstances = map[int]metadata.CFAppInstance{
-				0: metadata.CFAppInstance{InstanceID: 0, Since: time.Unix(2, 0)},
-				1: metadata.CFAppInstance{InstanceID: 1, Since: time.Unix(2, 0)},
-				2: metadata.CFAppInstance{InstanceID: 2, Since: time.Unix(2, 0)},
+			appInstances = map[int]cf.Instance{
+				0: cf.Instance{InstanceID: 0, Since: time.Unix(2, 0)},
+				1: cf.Instance{InstanceID: 1, Since: time.Unix(2, 0)},
+				2: cf.Instance{InstanceID: 2, Since: time.Unix(2, 0)},
 			}
 		})
 
