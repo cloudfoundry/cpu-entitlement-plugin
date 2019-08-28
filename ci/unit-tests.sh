@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export GOPATH=$PWD
-
 go version
 
-ginkgo -r --race
+cd src/code.cloudfoundry.org/cpu-entitlement-plugin
+
+ginkgo -mod vendor --skipPackage e2e,integration -r --race
