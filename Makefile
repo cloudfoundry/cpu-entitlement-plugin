@@ -12,7 +12,7 @@ build:
 	go build -mod vendor -o cpu-overentitlement-instances-plugin  ./cmd/cpu-overentitlement-instances
 
 test:
-	ginkgo -r --race -mod vendor -skipPackage e2e,integration
+	ginkgo -r -p -mod vendor -skipPackage e2e,integration
 
 install: build
 	cf uninstall-plugin CPUEntitlementPlugin || true

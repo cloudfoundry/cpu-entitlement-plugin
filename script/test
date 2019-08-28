@@ -16,7 +16,7 @@ else
     -race -nodes=8 \
     -failOnPending \
     -randomizeAllSpecs -randomizeSuites \
-    -skipPackage e2e -skipPackage integration \
+    -skipPackage e2e,integration \
     "$ARGS"
 fi
 
