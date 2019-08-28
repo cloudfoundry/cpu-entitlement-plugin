@@ -5,14 +5,14 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org"
-	orga "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeRenderer struct {
-	RenderStub        func(orga.Report) error
+	RenderStub        func(reporter.OEIReport) error
 	renderMutex       sync.RWMutex
 	renderArgsForCall []struct {
-		arg1 orga.Report
+		arg1 reporter.OEIReport
 	}
 	renderReturns struct {
 		result1 error
@@ -24,11 +24,11 @@ type FakeRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeRenderer) Render(arg1 orga.Report) error {
+func (fake *FakeRenderer) Render(arg1 reporter.OEIReport) error {
 	fake.renderMutex.Lock()
 	ret, specificReturn := fake.renderReturnsOnCall[len(fake.renderArgsForCall)]
 	fake.renderArgsForCall = append(fake.renderArgsForCall, struct {
-		arg1 orga.Report
+		arg1 reporter.OEIReport
 	}{arg1})
 	fake.recordInvocation("Render", []interface{}{arg1})
 	fake.renderMutex.Unlock()
@@ -48,13 +48,13 @@ func (fake *FakeRenderer) RenderCallCount() int {
 	return len(fake.renderArgsForCall)
 }
 
-func (fake *FakeRenderer) RenderCalls(stub func(orga.Report) error) {
+func (fake *FakeRenderer) RenderCalls(stub func(reporter.OEIReport) error) {
 	fake.renderMutex.Lock()
 	defer fake.renderMutex.Unlock()
 	fake.RenderStub = stub
 }
 
-func (fake *FakeRenderer) RenderArgsForCall(i int) orga.Report {
+func (fake *FakeRenderer) RenderArgsForCall(i int) reporter.OEIReport {
 	fake.renderMutex.RLock()
 	defer fake.renderMutex.RUnlock()
 	argsForCall := fake.renderArgsForCall[i]

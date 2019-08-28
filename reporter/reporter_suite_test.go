@@ -1,4 +1,4 @@
-package org_test
+package reporter_test
 
 import (
 	"testing"

@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
@@ -56,7 +56,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 	)
-	metricsReporter := app.New(historicalUsageFetcher, currentUsageFetcher)
+	metricsReporter := reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewRenderer(display)
 

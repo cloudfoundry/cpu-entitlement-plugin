@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 	"github.com/fatih/color"
 )
@@ -19,14 +19,14 @@ type CFClient interface {
 //go:generate counterfeiter . OutputRenderer
 
 type OutputRenderer interface {
-	ShowInstanceReports(cf.Application, []app.InstanceReport) error
+	ShowInstanceReports(cf.Application, []reporter.InstanceReport) error
 	ShowMessage(cf.Application, string, ...interface{})
 }
 
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	CreateInstanceReports(app cf.Application) ([]app.InstanceReport, error)
+	CreateInstanceReports(app cf.Application) ([]reporter.InstanceReport, error)
 }
 
 type Runner struct {

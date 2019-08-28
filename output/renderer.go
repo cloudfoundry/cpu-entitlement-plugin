@@ -5,7 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"github.com/fatih/color"
 )
 
@@ -27,13 +27,13 @@ func NewRenderer(display Display) Renderer {
 	return Renderer{display: display}
 }
 
-func (r Renderer) ShowInstanceReports(application cf.Application, instanceReports []app.InstanceReport) error {
+func (r Renderer) ShowInstanceReports(application cf.Application, instanceReports []reporter.InstanceReport) error {
 	r.showAppInfoHeader(application)
 
 	var rows [][]string
 
 	var status string
-	var reportsWithSpikes []app.InstanceReport
+	var reportsWithSpikes []reporter.InstanceReport
 	for _, report := range instanceReports {
 		rowColor := noColor
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)

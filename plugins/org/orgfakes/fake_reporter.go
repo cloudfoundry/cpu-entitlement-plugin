@@ -5,27 +5,27 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org"
-	orga "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeReporter struct {
-	OverEntitlementInstancesStub        func() (orga.Report, error)
+	OverEntitlementInstancesStub        func() (reporter.OEIReport, error)
 	overEntitlementInstancesMutex       sync.RWMutex
 	overEntitlementInstancesArgsForCall []struct {
 	}
 	overEntitlementInstancesReturns struct {
-		result1 orga.Report
+		result1 reporter.OEIReport
 		result2 error
 	}
 	overEntitlementInstancesReturnsOnCall map[int]struct {
-		result1 orga.Report
+		result1 reporter.OEIReport
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeReporter) OverEntitlementInstances() (orga.Report, error) {
+func (fake *FakeReporter) OverEntitlementInstances() (reporter.OEIReport, error) {
 	fake.overEntitlementInstancesMutex.Lock()
 	ret, specificReturn := fake.overEntitlementInstancesReturnsOnCall[len(fake.overEntitlementInstancesArgsForCall)]
 	fake.overEntitlementInstancesArgsForCall = append(fake.overEntitlementInstancesArgsForCall, struct {
@@ -48,34 +48,34 @@ func (fake *FakeReporter) OverEntitlementInstancesCallCount() int {
 	return len(fake.overEntitlementInstancesArgsForCall)
 }
 
-func (fake *FakeReporter) OverEntitlementInstancesCalls(stub func() (orga.Report, error)) {
+func (fake *FakeReporter) OverEntitlementInstancesCalls(stub func() (reporter.OEIReport, error)) {
 	fake.overEntitlementInstancesMutex.Lock()
 	defer fake.overEntitlementInstancesMutex.Unlock()
 	fake.OverEntitlementInstancesStub = stub
 }
 
-func (fake *FakeReporter) OverEntitlementInstancesReturns(result1 orga.Report, result2 error) {
+func (fake *FakeReporter) OverEntitlementInstancesReturns(result1 reporter.OEIReport, result2 error) {
 	fake.overEntitlementInstancesMutex.Lock()
 	defer fake.overEntitlementInstancesMutex.Unlock()
 	fake.OverEntitlementInstancesStub = nil
 	fake.overEntitlementInstancesReturns = struct {
-		result1 orga.Report
+		result1 reporter.OEIReport
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReporter) OverEntitlementInstancesReturnsOnCall(i int, result1 orga.Report, result2 error) {
+func (fake *FakeReporter) OverEntitlementInstancesReturnsOnCall(i int, result1 reporter.OEIReport, result2 error) {
 	fake.overEntitlementInstancesMutex.Lock()
 	defer fake.overEntitlementInstancesMutex.Unlock()
 	fake.OverEntitlementInstancesStub = nil
 	if fake.overEntitlementInstancesReturnsOnCall == nil {
 		fake.overEntitlementInstancesReturnsOnCall = make(map[int]struct {
-			result1 orga.Report
+			result1 reporter.OEIReport
 			result2 error
 		})
 	}
 	fake.overEntitlementInstancesReturnsOnCall[i] = struct {
-		result1 orga.Report
+		result1 reporter.OEIReport
 		result2 error
 	}{result1, result2}
 }

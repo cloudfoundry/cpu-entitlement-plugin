@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	outputorg "code.cloudfoundry.org/cpu-entitlement-plugin/output/org"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
@@ -39,7 +39,7 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 
 	fetcher := fetchers.NewCumulativeUsage(createLogClient(logCacheURL, cli.AccessToken))
 	cfClient := cf.NewClient(cli)
-	reporter := org.New(cfClient, fetcher)
+	reporter := reporter.NewOverEntitlementInstances(cfClient, fetcher)
 	renderer := outputorg.NewRenderer(ui)
 	runner := NewRunner(reporter, renderer)
 

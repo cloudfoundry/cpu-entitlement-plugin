@@ -1,4 +1,4 @@
-package app
+package reporter
 
 import (
 	"sort"
@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 )
 
-type Reporter struct {
+type AppReporter struct {
 	historicalUsageFetcher InstanceDataFetcher
 	currentUsageFetcher    InstanceDataFetcher
 }
@@ -39,14 +39,14 @@ func (r InstanceReport) HasRecordedSpike() bool {
 	return !r.HistoricalUsage.LastSpikeTo.IsZero()
 }
 
-func New(historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) Reporter {
-	return Reporter{
+func NewAppReporter(historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) AppReporter {
+	return AppReporter{
 		historicalUsageFetcher: historicalUsageFetcher,
 		currentUsageFetcher:    currentUsageFetcher,
 	}
 }
 
-func (r Reporter) CreateInstanceReports(application cf.Application) ([]InstanceReport, error) {
+func (r AppReporter) CreateInstanceReports(application cf.Application) ([]InstanceReport, error) {
 	latestReports := map[int]InstanceReport{}
 
 	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(application.Guid, application.Instances)

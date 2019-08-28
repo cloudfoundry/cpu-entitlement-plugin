@@ -6,28 +6,28 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
-	appa "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeReporter struct {
-	CreateInstanceReportsStub        func(cf.Application) ([]appa.InstanceReport, error)
+	CreateInstanceReportsStub        func(cf.Application) ([]reporter.InstanceReport, error)
 	createInstanceReportsMutex       sync.RWMutex
 	createInstanceReportsArgsForCall []struct {
 		arg1 cf.Application
 	}
 	createInstanceReportsReturns struct {
-		result1 []appa.InstanceReport
+		result1 []reporter.InstanceReport
 		result2 error
 	}
 	createInstanceReportsReturnsOnCall map[int]struct {
-		result1 []appa.InstanceReport
+		result1 []reporter.InstanceReport
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeReporter) CreateInstanceReports(arg1 cf.Application) ([]appa.InstanceReport, error) {
+func (fake *FakeReporter) CreateInstanceReports(arg1 cf.Application) ([]reporter.InstanceReport, error) {
 	fake.createInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.createInstanceReportsReturnsOnCall[len(fake.createInstanceReportsArgsForCall)]
 	fake.createInstanceReportsArgsForCall = append(fake.createInstanceReportsArgsForCall, struct {
@@ -51,7 +51,7 @@ func (fake *FakeReporter) CreateInstanceReportsCallCount() int {
 	return len(fake.createInstanceReportsArgsForCall)
 }
 
-func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(cf.Application) ([]appa.InstanceReport, error)) {
+func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(cf.Application) ([]reporter.InstanceReport, error)) {
 	fake.createInstanceReportsMutex.Lock()
 	defer fake.createInstanceReportsMutex.Unlock()
 	fake.CreateInstanceReportsStub = stub
@@ -64,28 +64,28 @@ func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) cf.Application
 	return argsForCall.arg1
 }
 
-func (fake *FakeReporter) CreateInstanceReportsReturns(result1 []appa.InstanceReport, result2 error) {
+func (fake *FakeReporter) CreateInstanceReportsReturns(result1 []reporter.InstanceReport, result2 error) {
 	fake.createInstanceReportsMutex.Lock()
 	defer fake.createInstanceReportsMutex.Unlock()
 	fake.CreateInstanceReportsStub = nil
 	fake.createInstanceReportsReturns = struct {
-		result1 []appa.InstanceReport
+		result1 []reporter.InstanceReport
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReporter) CreateInstanceReportsReturnsOnCall(i int, result1 []appa.InstanceReport, result2 error) {
+func (fake *FakeReporter) CreateInstanceReportsReturnsOnCall(i int, result1 []reporter.InstanceReport, result2 error) {
 	fake.createInstanceReportsMutex.Lock()
 	defer fake.createInstanceReportsMutex.Unlock()
 	fake.CreateInstanceReportsStub = nil
 	if fake.createInstanceReportsReturnsOnCall == nil {
 		fake.createInstanceReportsReturnsOnCall = make(map[int]struct {
-			result1 []appa.InstanceReport
+			result1 []reporter.InstanceReport
 			result2 error
 		})
 	}
 	fake.createInstanceReportsReturnsOnCall[i] = struct {
-		result1 []appa.InstanceReport
+		result1 []reporter.InstanceReport
 		result2 error
 	}{result1, result2}
 }

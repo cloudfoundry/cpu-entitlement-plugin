@@ -1,25 +1,25 @@
-package org_test
+package reporter_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org/orgfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Reporter", func() {
+var _ = Describe("Over-entitlement Instances Reporter", func() {
 	var (
-		reporter           org.Reporter
-		fakeCfClient       *orgfakes.FakeCloudFoundryClient
-		fakeMetricsFetcher *orgfakes.FakeMetricsFetcher
+		oeiReporter        reporter.OverEntitlementInstances
+		fakeCfClient       *reporterfakes.FakeCloudFoundryClient
+		fakeMetricsFetcher *reporterfakes.FakeMetricsFetcher
 	)
 
 	BeforeEach(func() {
-		fakeCfClient = new(orgfakes.FakeCloudFoundryClient)
-		fakeMetricsFetcher = new(orgfakes.FakeMetricsFetcher)
+		fakeCfClient = new(reporterfakes.FakeCloudFoundryClient)
+		fakeMetricsFetcher = new(reporterfakes.FakeMetricsFetcher)
 
 		fakeCfClient.GetSpacesReturns([]cf.Space{
 			{
@@ -50,17 +50,17 @@ var _ = Describe("Reporter", func() {
 			return nil, nil
 		}
 
-		reporter = org.New(fakeCfClient, fakeMetricsFetcher)
+		oeiReporter = reporter.NewOverEntitlementInstances(fakeCfClient, fakeMetricsFetcher)
 	})
 
 	Describe("OverEntitlementInstances", func() {
 		var (
-			report org.Report
+			report reporter.OEIReport
 			err    error
 		)
 
 		JustBeforeEach(func() {
-			report, err = reporter.OverEntitlementInstances()
+			report, err = oeiReporter.OverEntitlementInstances()
 		})
 
 		It("succeeds", func() {
@@ -68,9 +68,9 @@ var _ = Describe("Reporter", func() {
 		})
 
 		It("returns all instances that are over entitlement", func() {
-			Expect(report).To(Equal(org.Report{
-				SpaceReports: []org.SpaceReport{
-					org.SpaceReport{
+			Expect(report).To(Equal(reporter.OEIReport{
+				SpaceReports: []reporter.SpaceReport{
+					reporter.SpaceReport{
 						SpaceName: "space1",
 						Apps: []string{
 							"app1",

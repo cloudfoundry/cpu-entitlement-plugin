@@ -5,7 +5,7 @@ import (
 
 	plugin "code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org/orgfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -17,15 +17,15 @@ var _ = Describe("Runner", func() {
 
 		runner *plugin.Runner
 		err    error
-		report org.Report
+		report reporter.OEIReport
 	)
 
 	BeforeEach(func() {
 		fakeReporter = new(orgfakes.FakeReporter)
 		fakeRenderer = new(orgfakes.FakeRenderer)
 
-		report = org.Report{
-			SpaceReports: []org.SpaceReport{
+		report = reporter.OEIReport{
+			SpaceReports: []reporter.SpaceReport{
 				{
 					SpaceName: "space-1",
 					Apps: []string{
@@ -58,7 +58,7 @@ var _ = Describe("Runner", func() {
 
 	When("the reporter fails", func() {
 		BeforeEach(func() {
-			fakeReporter.OverEntitlementInstancesReturns(org.Report{}, errors.New("reporter-err"))
+			fakeReporter.OverEntitlementInstancesReturns(reporter.OEIReport{}, errors.New("reporter-err"))
 		})
 
 		It("returns the error", func() {

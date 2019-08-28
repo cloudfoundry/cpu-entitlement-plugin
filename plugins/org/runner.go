@@ -1,17 +1,19 @@
 package org
 
-import "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/org"
+import (
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+)
 
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	OverEntitlementInstances() (org.Report, error)
+	OverEntitlementInstances() (reporter.OEIReport, error)
 }
 
 //go:generate counterfeiter . Renderer
 
 type Renderer interface {
-	Render(org.Report) error
+	Render(reporter.OEIReport) error
 }
 
 type Runner struct {

@@ -6,7 +6,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	plugin "code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app/appfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 
 	. "github.com/onsi/ginkgo"
@@ -35,22 +35,22 @@ var _ = Describe("Runner", func() {
 			Instances: map[int]cf.Instance{0: cf.Instance{}},
 		}, nil)
 
-		instanceReporter.CreateInstanceReportsReturns([]app.InstanceReport{
+		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
 			{
 				InstanceID: 0,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.5,
 				},
 			},
 			{
 				InstanceID: 1,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.8,
 				},
 			},
 			{
 				InstanceID: 2,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.875,
 				},
 			},
@@ -79,22 +79,22 @@ var _ = Describe("Runner", func() {
 			Name:      "app-name",
 			Instances: map[int]cf.Instance{0: cf.Instance{}},
 		}))
-		Expect(instanceReports).To(Equal([]app.InstanceReport{
+		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
 			{
 				InstanceID: 0,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.5,
 				},
 			},
 			{
 				InstanceID: 1,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.8,
 				},
 			},
 			{
 				InstanceID: 2,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.875,
 				},
 			},
@@ -153,7 +153,7 @@ var _ = Describe("Runner", func() {
 
 	When("no reports are returned", func() {
 		BeforeEach(func() {
-			instanceReporter.CreateInstanceReportsReturns([]app.InstanceReport{}, nil)
+			instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{}, nil)
 		})
 
 		It("returns a failure", func() {

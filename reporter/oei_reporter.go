@@ -1,8 +1,8 @@
-package org
+package reporter
 
 import "code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 
-type Report struct {
+type OEIReport struct {
 	SpaceReports []SpaceReport
 }
 
@@ -23,30 +23,30 @@ type CloudFoundryClient interface {
 	GetSpaces() ([]cf.Space, error)
 }
 
-type Reporter struct {
+type OverEntitlementInstances struct {
 	cf             CloudFoundryClient
 	metricsFetcher MetricsFetcher
 }
 
-func New(cf CloudFoundryClient, metricsFetcher MetricsFetcher) Reporter {
-	return Reporter{
+func NewOverEntitlementInstances(cf CloudFoundryClient, metricsFetcher MetricsFetcher) OverEntitlementInstances {
+	return OverEntitlementInstances{
 		cf:             cf,
 		metricsFetcher: metricsFetcher,
 	}
 }
 
-func (r Reporter) OverEntitlementInstances() (Report, error) {
+func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) {
 	spaceReports := []SpaceReport{}
 
 	spaces, err := r.cf.GetSpaces()
 	if err != nil {
-		return Report{}, err
+		return OEIReport{}, err
 	}
 
 	for _, space := range spaces {
 		apps, err := r.filterApps(space.Applications)
 		if err != nil {
-			return Report{}, err
+			return OEIReport{}, err
 		}
 
 		if len(apps) == 0 {
@@ -56,10 +56,10 @@ func (r Reporter) OverEntitlementInstances() (Report, error) {
 		spaceReports = append(spaceReports, SpaceReport{SpaceName: space.Name, Apps: apps})
 	}
 
-	return Report{SpaceReports: spaceReports}, nil
+	return OEIReport{SpaceReports: spaceReports}, nil
 }
 
-func (r Reporter) filterApps(spaceApps []cf.Application) ([]string, error) {
+func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]string, error) {
 	apps := []string{}
 	for _, app := range spaceApps {
 		isOverEntitlement, err := r.isOverEntitlement(app.Guid)
@@ -73,7 +73,7 @@ func (r Reporter) filterApps(spaceApps []cf.Application) ([]string, error) {
 	return apps, nil
 }
 
-func (r Reporter) isOverEntitlement(appGuid string) (bool, error) {
+func (r OverEntitlementInstances) isOverEntitlement(appGuid string) (bool, error) {
 	appInstancesUsages, err := r.metricsFetcher.FetchInstanceEntitlementUsages(appGuid)
 	if err != nil {
 		return false, err

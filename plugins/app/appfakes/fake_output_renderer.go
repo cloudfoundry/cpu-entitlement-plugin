@@ -6,15 +6,15 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
-	appa "code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeOutputRenderer struct {
-	ShowInstanceReportsStub        func(cf.Application, []appa.InstanceReport) error
+	ShowInstanceReportsStub        func(cf.Application, []reporter.InstanceReport) error
 	showInstanceReportsMutex       sync.RWMutex
 	showInstanceReportsArgsForCall []struct {
 		arg1 cf.Application
-		arg2 []appa.InstanceReport
+		arg2 []reporter.InstanceReport
 	}
 	showInstanceReportsReturns struct {
 		result1 error
@@ -33,17 +33,17 @@ type FakeOutputRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 cf.Application, arg2 []appa.InstanceReport) error {
-	var arg2Copy []appa.InstanceReport
+func (fake *FakeOutputRenderer) ShowInstanceReports(arg1 cf.Application, arg2 []reporter.InstanceReport) error {
+	var arg2Copy []reporter.InstanceReport
 	if arg2 != nil {
-		arg2Copy = make([]appa.InstanceReport, len(arg2))
+		arg2Copy = make([]reporter.InstanceReport, len(arg2))
 		copy(arg2Copy, arg2)
 	}
 	fake.showInstanceReportsMutex.Lock()
 	ret, specificReturn := fake.showInstanceReportsReturnsOnCall[len(fake.showInstanceReportsArgsForCall)]
 	fake.showInstanceReportsArgsForCall = append(fake.showInstanceReportsArgsForCall, struct {
 		arg1 cf.Application
-		arg2 []appa.InstanceReport
+		arg2 []reporter.InstanceReport
 	}{arg1, arg2Copy})
 	fake.recordInvocation("ShowInstanceReports", []interface{}{arg1, arg2Copy})
 	fake.showInstanceReportsMutex.Unlock()
@@ -63,13 +63,13 @@ func (fake *FakeOutputRenderer) ShowInstanceReportsCallCount() int {
 	return len(fake.showInstanceReportsArgsForCall)
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReportsCalls(stub func(cf.Application, []appa.InstanceReport) error) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsCalls(stub func(cf.Application, []reporter.InstanceReport) error) {
 	fake.showInstanceReportsMutex.Lock()
 	defer fake.showInstanceReportsMutex.Unlock()
 	fake.ShowInstanceReportsStub = stub
 }
 
-func (fake *FakeOutputRenderer) ShowInstanceReportsArgsForCall(i int) (cf.Application, []appa.InstanceReport) {
+func (fake *FakeOutputRenderer) ShowInstanceReportsArgsForCall(i int) (cf.Application, []reporter.InstanceReport) {
 	fake.showInstanceReportsMutex.RLock()
 	defer fake.showInstanceReportsMutex.RUnlock()
 	argsForCall := fake.showInstanceReportsArgsForCall[i]

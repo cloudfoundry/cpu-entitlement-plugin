@@ -1,4 +1,4 @@
-package app_test
+package reporter_test
 
 import (
 	"errors"
@@ -9,16 +9,16 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app/appfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
 )
 
 var _ = Describe("Reporter", func() {
 	var (
-		historicalUsageFetcher *appfakes.FakeInstanceDataFetcher
-		currentUsageFetcher    *appfakes.FakeInstanceDataFetcher
-		instanceReporter       app.Reporter
-		reports                []app.InstanceReport
+		historicalUsageFetcher *reporterfakes.FakeInstanceDataFetcher
+		currentUsageFetcher    *reporterfakes.FakeInstanceDataFetcher
+		instanceReporter       reporter.AppReporter
+		reports                []reporter.InstanceReport
 		err                    error
 		appGuid                string
 	)
@@ -26,9 +26,9 @@ var _ = Describe("Reporter", func() {
 	BeforeEach(func() {
 		appGuid = "foo"
 
-		historicalUsageFetcher = new(appfakes.FakeInstanceDataFetcher)
-		currentUsageFetcher = new(appfakes.FakeInstanceDataFetcher)
-		instanceReporter = app.New(historicalUsageFetcher, currentUsageFetcher)
+		historicalUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
+		currentUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
+		instanceReporter = reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
 	})
 
 	JustBeforeEach(func() {

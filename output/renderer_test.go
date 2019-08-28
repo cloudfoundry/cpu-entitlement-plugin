@@ -12,13 +12,13 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 var _ = Describe("Renderer", func() {
 	var (
 		appInfo         cf.Application
-		instanceReports []app.InstanceReport
+		instanceReports []reporter.InstanceReport
 		display         *outputfakes.FakeDisplay
 		renderer        output.Renderer
 	)
@@ -30,22 +30,22 @@ var _ = Describe("Renderer", func() {
 			Org:      "theorg",
 			Space:    "thespace",
 		}
-		instanceReports = []app.InstanceReport{
+		instanceReports = []reporter.InstanceReport{
 			{
 				InstanceID: 123,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.5,
 				},
-				CurrentUsage: app.CurrentUsage{
+				CurrentUsage: reporter.CurrentUsage{
 					Value: 1.5,
 				},
 			},
 			{
 				InstanceID: 432,
-				HistoricalUsage: app.HistoricalUsage{
+				HistoricalUsage: reporter.HistoricalUsage{
 					Value: 0.75,
 				},
-				CurrentUsage: app.CurrentUsage{
+				CurrentUsage: reporter.CurrentUsage{
 					Value: 1.75,
 				},
 			},
@@ -150,17 +150,17 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more instances have been over entitlement", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, app.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: app.HistoricalUsage{
+					HistoricalUsage: reporter.HistoricalUsage{
 						Value:         0.5,
 						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 					},
 				},
-					app.InstanceReport{
+					reporter.InstanceReport{
 						InstanceID: 345,
-						HistoricalUsage: app.HistoricalUsage{
+						HistoricalUsage: reporter.HistoricalUsage{
 							Value:         0.5,
 							LastSpikeFrom: time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
 							LastSpikeTo:   time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
@@ -179,9 +179,9 @@ var _ = Describe("Renderer", func() {
 
 		When("an instance is currently over entitlement with a 'current' spike", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, app.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: app.HistoricalUsage{
+					HistoricalUsage: reporter.HistoricalUsage{
 						Value:         1.5,
 						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
@@ -196,9 +196,9 @@ var _ = Describe("Renderer", func() {
 
 		When("spike was instantaneous", func() {
 			BeforeEach(func() {
-				instanceReports = append(instanceReports, app.InstanceReport{
+				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: app.HistoricalUsage{
+					HistoricalUsage: reporter.HistoricalUsage{
 						Value:         0.5,
 						LastSpikeFrom: time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
