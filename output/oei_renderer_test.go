@@ -1,6 +1,7 @@
 package output_test
 
 import (
+	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
@@ -34,7 +35,7 @@ var _ = Describe("OEI Renderer", func() {
 		Expect(display.ShowMessageCallCount()).To(Equal(1))
 		actualMsg, actualMsgArgs := display.ShowMessageArgsForCall(0)
 		Expect(actualMsg).To(Equal("Showing over-entitlement apps in org %s as %s...\n"))
-		Expect(actualMsgArgs).To(ConsistOf("org", "user"))
+		Expect(actualMsgArgs).To(ConsistOf(terminal.EntityNameColor("org"), terminal.EntityNameColor("user")))
 	})
 
 })
