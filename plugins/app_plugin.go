@@ -1,10 +1,11 @@
-package org
+package plugins
 
 import (
 	"errors"
 	"net/url"
 	"os"
 	"regexp"
+	"time"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cli/cf/trace"
@@ -17,13 +18,15 @@ import (
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
-type CPUEntitlementAdminPlugin struct{}
+const month time.Duration = 31 * 24 * time.Hour
 
-func New() CPUEntitlementAdminPlugin {
-	return CPUEntitlementAdminPlugin{}
+type CPUEntitlementPlugin struct{}
+
+func NewCPUEntitlementPlugin() CPUEntitlementPlugin {
+	return CPUEntitlementPlugin{}
 }
 
-func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) {
+func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	if args[0] == "CLI-MESSAGE-UNINSTALL" {
 		os.Exit(0)
 	}
@@ -31,40 +34,63 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
 	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
 
+	if len(args) != 2 {
+		ui.Failed("Usage: cf cpu-entitlement <APP_NAME>")
+		os.Exit(1)
+	}
+
+	ui.Warn("Note: This feature is experimental.")
+
 	logCacheURL, err := getLogCacheURL(cli)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)
 	}
 
-	fetcher := fetchers.NewCumulativeUsage(createLogClient(logCacheURL, cli.AccessToken))
 	cfClient := cf.NewClient(cli)
-	reporter := reporter.NewOverEntitlementInstances(cfClient, fetcher)
-	renderer := output.NewOverEntitlementInstancesRenderer(ui)
-	runner := NewRunner(reporter, renderer)
+	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken),
+		time.Now().Add(-month),
+		time.Now(),
+	)
+	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken),
+	)
+	metricsReporter := reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
+	display := output.NewTerminalDisplay(ui)
+	metricsRenderer := output.NewAppRenderer(display)
 
-	err = runner.Run()
-	if err != nil {
-		ui.Failed(err.Error())
+	appName := args[1]
+	runner := NewAppRunner(cfClient, metricsReporter, metricsRenderer)
+	res := runner.Run(appName)
+	if res.IsFailure {
+		if res.ErrorMessage != "" {
+			ui.Failed(res.ErrorMessage)
+		}
+
+		if res.WarningMessage != "" {
+			ui.Warn(res.WarningMessage)
+		}
+
 		os.Exit(1)
 	}
 }
 
-func (p CPUEntitlementAdminPlugin) GetMetadata() plugin.PluginMetadata {
+func (p CPUEntitlementPlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name: "CPUEntitlementAdminPlugin",
+		Name: "CPUEntitlementPlugin",
 		Version: plugin.VersionType{
 			Major: 0,
 			Minor: 0,
-			Build: 1,
+			Build: 2,
 		},
 		Commands: []plugin.Command{
 			{
-				Name:     "over-entitlement-instances",
-				Alias:    "oei",
-				HelpText: "See which instances are over entitlement",
+				Name:     "cpu-entitlement",
+				Alias:    "cpu",
+				HelpText: "See cpu usage per app",
 				UsageDetails: plugin.Usage{
-					Usage: "cf over-entitlement-instances",
+					Usage: "cf cpu-entitlement APP_NAME",
 				},
 			},
 		},

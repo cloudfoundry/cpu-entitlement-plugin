@@ -1,10 +1,10 @@
-package org_test
+package plugins_test
 
 import (
 	"errors"
 
-	plugin "code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/org/orgfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/pluginsfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,17 +12,17 @@ import (
 
 var _ = Describe("Runner", func() {
 	var (
-		fakeReporter *orgfakes.FakeReporter
-		fakeRenderer *orgfakes.FakeRenderer
+		fakeReporter *pluginsfakes.FakeOverEntitlementInstancesReporter
+		fakeRenderer *pluginsfakes.FakeOverEntitlementInstancesRenderer
 
-		runner *plugin.Runner
+		runner *plugins.OverEntitlementInstancesRunner
 		err    error
 		report reporter.OEIReport
 	)
 
 	BeforeEach(func() {
-		fakeReporter = new(orgfakes.FakeReporter)
-		fakeRenderer = new(orgfakes.FakeRenderer)
+		fakeReporter = new(pluginsfakes.FakeOverEntitlementInstancesReporter)
+		fakeRenderer = new(pluginsfakes.FakeOverEntitlementInstancesRenderer)
 
 		report = reporter.OEIReport{
 			SpaceReports: []reporter.SpaceReport{
@@ -43,7 +43,7 @@ var _ = Describe("Runner", func() {
 
 		fakeReporter.OverEntitlementInstancesReturns(report, nil)
 
-		runner = plugin.NewRunner(fakeReporter, fakeRenderer)
+		runner = plugins.NewOverEntitlementInstancesRunner(fakeReporter, fakeRenderer)
 	})
 
 	JustBeforeEach(func() {

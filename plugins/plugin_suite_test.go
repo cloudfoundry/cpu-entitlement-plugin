@@ -1,4 +1,4 @@
-package app_test
+package plugins_test
 
 import (
 	"testing"

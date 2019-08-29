@@ -1,11 +1,11 @@
-package app_test
+package plugins_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
-	plugin "code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app/appfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/pluginsfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
 
@@ -13,21 +13,21 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Runner", func() {
+var _ = Describe("App Runner", func() {
 	var (
-		cfClient         *appfakes.FakeCFClient
-		instanceReporter *appfakes.FakeReporter
-		outputRenderer   *appfakes.FakeOutputRenderer
+		cfClient         *pluginsfakes.FakeCFClient
+		instanceReporter *pluginsfakes.FakeReporter
+		outputRenderer   *pluginsfakes.FakeOutputRenderer
 
-		runner    plugin.Runner
+		runner    plugins.AppRunner
 		runResult result.Result
 	)
 
 	BeforeEach(func() {
-		cfClient = new(appfakes.FakeCFClient)
-		instanceReporter = new(appfakes.FakeReporter)
-		outputRenderer = new(appfakes.FakeOutputRenderer)
-		runner = plugin.NewRunner(cfClient, instanceReporter, outputRenderer)
+		cfClient = new(pluginsfakes.FakeCFClient)
+		instanceReporter = new(pluginsfakes.FakeReporter)
+		outputRenderer = new(pluginsfakes.FakeOutputRenderer)
+		runner = plugins.NewAppRunner(cfClient, instanceReporter, outputRenderer)
 
 		cfClient.GetApplicationReturns(cf.Application{
 			Guid:      "123",

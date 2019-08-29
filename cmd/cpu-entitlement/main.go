@@ -2,9 +2,9 @@ package main
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/app"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 )
 
 func main() {
-	plugin.Start(app.New())
+	plugin.Start(plugins.NewCPUEntitlementPlugin())
 }

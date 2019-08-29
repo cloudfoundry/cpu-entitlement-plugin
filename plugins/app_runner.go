@@ -1,4 +1,4 @@
-package app
+package plugins
 
 import (
 	"fmt"
@@ -29,21 +29,21 @@ type Reporter interface {
 	CreateInstanceReports(app cf.Application) ([]reporter.InstanceReport, error)
 }
 
-type Runner struct {
+type AppRunner struct {
 	cfClient        CFClient
 	reporter        Reporter
 	metricsRenderer OutputRenderer
 }
 
-func NewRunner(cfClient CFClient, reporter Reporter, metricsRenderer OutputRenderer) Runner {
-	return Runner{
+func NewAppRunner(cfClient CFClient, reporter Reporter, metricsRenderer OutputRenderer) AppRunner {
+	return AppRunner{
 		cfClient:        cfClient,
 		reporter:        reporter,
 		metricsRenderer: metricsRenderer,
 	}
 }
 
-func (r Runner) Run(appName string) result.Result {
+func (r AppRunner) Run(appName string) result.Result {
 	info, err := r.cfClient.GetApplication(appName)
 	if err != nil {
 		return result.FailureFromError(err)
