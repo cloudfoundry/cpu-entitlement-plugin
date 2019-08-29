@@ -2,5 +2,5 @@
 set -e
 
 pushd cpu-entitlement-plugin
-ginkgo -mod vendor e2e
+ginkgo -mod vendor -randomizeAllSpecs -randomizeSuites -race e2e
 popd

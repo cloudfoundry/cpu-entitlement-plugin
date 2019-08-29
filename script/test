@@ -2,21 +2,79 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+RED=1
+GREEN=2
+export FLY_TARGET="$GARDEN_REMOTE_ATC_URL"
+
+print_message() {
+  message=$1
+  colour=$2
+  printf "\\r\\033[00;3%sm%s\\033[0m\\n" "$colour" "$message"
+}
+
+usage() {
+  colour=$1
+  print_message "Usage:" "$colour"
+  print_message "    test -a           --- run all tests in parallel (tmux panes will autosplit)" "$colour"
+  print_message "    test <directory>  --- run tests in a given directory" "$colour"
+}
+
 export ENV_NAME=mel-b
-ARGS=$@
 
-echo "$ARGS"
+fly_login() {
+  which flightattendant &>/dev/null || wget -qO- bit.ly/fa_xip | tar xz -C /usr/local/bin
 
-if grep -Eq integration <(echo "$ARGS"); then
-  "$DIR/remote-fly" integration-test.yml -- "$ARGS"
-elif grep -Eq e2e <(echo "$@"); then
-  "$DIR/remote-fly" e2e-test.yml -- "$ARGS"
-else
-  ginkgo \
-    -race -nodes=8 \
-    -failOnPending \
-    -randomizeAllSpecs -randomizeSuites \
-    -skipPackage e2e,integration \
-    "$ARGS"
-fi
+  if ! flightattendant; then
+    fly -t "$GARDEN_REMOTE_ATC_URL" login
+  fi
+}
 
+
+run_all_tests_in_parallel() {
+  fly_login
+  print_message "about to run tests in parallel, it will be mildly exciting" $GREEN
+  print_message "ctrl-d panes when they are done" $RED
+  go vet -mod vendor ./...
+
+  tmux split-window -v -p 90 "/bin/bash -c \"ginkgo -r -race -nodes=8 -failOnPending -randomizeAllSpecs -randomizeSuites -skipPackage e2e,integration; bash --init-file <(echo 'history -s ginkgo -r -race -nodes=8 -failOnPending -randomizeAllSpecs -randomizeSuites -skipPackage e2e,integration')\""
+  tmux split-window -v -p 50 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/integration-test.yml  && ./script/remote-fly ci/e2e-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/integration-test.yml \&\& ./script/remote-fly ci/e2e-test.yml')\""
+
+  tmux select-pane -t 0
+}
+
+run_tests_in_directory() {
+  ARGS=$*
+  if grep -Eq integration <(echo "$ARGS"); then
+    "$DIR/remote-fly" ci/integration-test.yml -- "$ARGS"
+  elif grep -Eq e2e <(echo "$@"); then
+    "$DIR/remote-fly" ci/e2e-test.yml -- "$ARGS"
+  else
+    ginkgo \
+      -race -nodes=8 \
+      -failOnPending \
+      -randomizeAllSpecs -randomizeSuites \
+      -skipPackage e2e,integration \
+      "$ARGS"
+  fi
+}
+
+while getopts "ah" OPTION; do
+  case $OPTION in
+    a)
+      run_all_tests_in_parallel
+     exit
+     ;;
+    h)
+      usage $GREEN
+    exit
+    ;;
+    *)
+      usage $RED
+    exit
+    ;;
+ esac
+done
+
+shift $((OPTIND-1))
+
+run_tests_in_directory "$@"

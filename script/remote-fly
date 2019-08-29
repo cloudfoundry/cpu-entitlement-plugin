@@ -13,6 +13,6 @@ export CF_PASSWORD
 CF_PASSWORD="$(bosh int --path=/cf_admin_password "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
 
 fly -t "$GARDEN_REMOTE_ATC_URL" execute \
-  -c "$DIR/../ci/$task" \
+  -c "$DIR/../$task" \
   -i cpu-entitlement-plugin="$DIR/.." \
   -i spinner="$DIR/../../spinner"
