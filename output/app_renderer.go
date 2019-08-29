@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"github.com/fatih/color"
 )
@@ -13,28 +12,33 @@ const DateFmt = "2006-01-02 15:04:05"
 const noColor color.Attribute = -1
 
 type AppRenderer struct {
-	display Display
+	display AppDisplay
 }
 
-//go:generate counterfeiter . Display
+//go:generate counterfeiter . AppDisplay
 
-type Display interface {
+type AppDisplay interface {
 	ShowMessage(message string, values ...interface{})
 	ShowTable(headers []string, rows [][]string) error
 }
 
-func NewAppRenderer(display Display) AppRenderer {
+func NewAppRenderer(display AppDisplay) AppRenderer {
 	return AppRenderer{display: display}
 }
 
-func (r AppRenderer) ShowInstanceReports(application cf.Application, instanceReports []reporter.InstanceReport) error {
-	r.showAppInfoHeader(application)
+func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport) error {
+	r.showAppInfoHeader(appReport)
+
+	if len(appReport.InstanceReports) == 0 {
+		r.display.ShowMessage("There are no running instances of this application.")
+		return nil
+	}
 
 	var rows [][]string
 
 	var status string
 	var reportsWithSpikes []reporter.InstanceReport
-	for _, report := range instanceReports {
+	for _, report := range appReport.InstanceReports {
 		rowColor := noColor
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)
 		avgEntitlementRatio := fmt.Sprintf("%.2f%%", report.HistoricalUsage.Value*100)
@@ -78,17 +82,12 @@ func (r AppRenderer) ShowInstanceReports(application cf.Application, instanceRep
 	return nil
 }
 
-func (r AppRenderer) ShowMessage(application cf.Application, message string, values ...interface{}) {
-	r.showAppInfoHeader(application)
-	r.display.ShowMessage(message, values...)
-}
-
-func (r AppRenderer) showAppInfoHeader(application cf.Application) {
+func (r AppRenderer) showAppInfoHeader(appReport reporter.ApplicationReport) {
 	r.display.ShowMessage("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n",
-		terminal.EntityNameColor(application.Name),
-		terminal.EntityNameColor(application.Org),
-		terminal.EntityNameColor(application.Space),
-		terminal.EntityNameColor(application.Username),
+		terminal.EntityNameColor(appReport.ApplicationName),
+		terminal.EntityNameColor(appReport.Org),
+		terminal.EntityNameColor(appReport.Space),
+		terminal.EntityNameColor(appReport.Username),
 	)
 }
 

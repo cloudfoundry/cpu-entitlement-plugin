@@ -4,88 +4,87 @@ package pluginsfakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeReporter struct {
-	CreateInstanceReportsStub        func(cf.Application) ([]reporter.InstanceReport, error)
-	createInstanceReportsMutex       sync.RWMutex
-	createInstanceReportsArgsForCall []struct {
-		arg1 cf.Application
+	CreateApplicationReportStub        func(string) (reporter.ApplicationReport, error)
+	createApplicationReportMutex       sync.RWMutex
+	createApplicationReportArgsForCall []struct {
+		arg1 string
 	}
-	createInstanceReportsReturns struct {
-		result1 []reporter.InstanceReport
+	createApplicationReportReturns struct {
+		result1 reporter.ApplicationReport
 		result2 error
 	}
-	createInstanceReportsReturnsOnCall map[int]struct {
-		result1 []reporter.InstanceReport
+	createApplicationReportReturnsOnCall map[int]struct {
+		result1 reporter.ApplicationReport
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeReporter) CreateInstanceReports(arg1 cf.Application) ([]reporter.InstanceReport, error) {
-	fake.createInstanceReportsMutex.Lock()
-	ret, specificReturn := fake.createInstanceReportsReturnsOnCall[len(fake.createInstanceReportsArgsForCall)]
-	fake.createInstanceReportsArgsForCall = append(fake.createInstanceReportsArgsForCall, struct {
-		arg1 cf.Application
+func (fake *FakeReporter) CreateApplicationReport(arg1 string) (reporter.ApplicationReport, error) {
+	fake.createApplicationReportMutex.Lock()
+	ret, specificReturn := fake.createApplicationReportReturnsOnCall[len(fake.createApplicationReportArgsForCall)]
+	fake.createApplicationReportArgsForCall = append(fake.createApplicationReportArgsForCall, struct {
+		arg1 string
 	}{arg1})
-	fake.recordInvocation("CreateInstanceReports", []interface{}{arg1})
-	fake.createInstanceReportsMutex.Unlock()
-	if fake.CreateInstanceReportsStub != nil {
-		return fake.CreateInstanceReportsStub(arg1)
+	fake.recordInvocation("CreateApplicationReport", []interface{}{arg1})
+	fake.createApplicationReportMutex.Unlock()
+	if fake.CreateApplicationReportStub != nil {
+		return fake.CreateApplicationReportStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.createInstanceReportsReturns
+	fakeReturns := fake.createApplicationReportReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeReporter) CreateInstanceReportsCallCount() int {
-	fake.createInstanceReportsMutex.RLock()
-	defer fake.createInstanceReportsMutex.RUnlock()
-	return len(fake.createInstanceReportsArgsForCall)
+func (fake *FakeReporter) CreateApplicationReportCallCount() int {
+	fake.createApplicationReportMutex.RLock()
+	defer fake.createApplicationReportMutex.RUnlock()
+	return len(fake.createApplicationReportArgsForCall)
 }
 
-func (fake *FakeReporter) CreateInstanceReportsCalls(stub func(cf.Application) ([]reporter.InstanceReport, error)) {
-	fake.createInstanceReportsMutex.Lock()
-	defer fake.createInstanceReportsMutex.Unlock()
-	fake.CreateInstanceReportsStub = stub
+func (fake *FakeReporter) CreateApplicationReportCalls(stub func(string) (reporter.ApplicationReport, error)) {
+	fake.createApplicationReportMutex.Lock()
+	defer fake.createApplicationReportMutex.Unlock()
+	fake.CreateApplicationReportStub = stub
 }
 
-func (fake *FakeReporter) CreateInstanceReportsArgsForCall(i int) cf.Application {
-	fake.createInstanceReportsMutex.RLock()
-	defer fake.createInstanceReportsMutex.RUnlock()
-	argsForCall := fake.createInstanceReportsArgsForCall[i]
+func (fake *FakeReporter) CreateApplicationReportArgsForCall(i int) string {
+	fake.createApplicationReportMutex.RLock()
+	defer fake.createApplicationReportMutex.RUnlock()
+	argsForCall := fake.createApplicationReportArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *FakeReporter) CreateInstanceReportsReturns(result1 []reporter.InstanceReport, result2 error) {
-	fake.createInstanceReportsMutex.Lock()
-	defer fake.createInstanceReportsMutex.Unlock()
-	fake.CreateInstanceReportsStub = nil
-	fake.createInstanceReportsReturns = struct {
-		result1 []reporter.InstanceReport
+func (fake *FakeReporter) CreateApplicationReportReturns(result1 reporter.ApplicationReport, result2 error) {
+	fake.createApplicationReportMutex.Lock()
+	defer fake.createApplicationReportMutex.Unlock()
+	fake.CreateApplicationReportStub = nil
+	fake.createApplicationReportReturns = struct {
+		result1 reporter.ApplicationReport
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeReporter) CreateInstanceReportsReturnsOnCall(i int, result1 []reporter.InstanceReport, result2 error) {
-	fake.createInstanceReportsMutex.Lock()
-	defer fake.createInstanceReportsMutex.Unlock()
-	fake.CreateInstanceReportsStub = nil
-	if fake.createInstanceReportsReturnsOnCall == nil {
-		fake.createInstanceReportsReturnsOnCall = make(map[int]struct {
-			result1 []reporter.InstanceReport
+func (fake *FakeReporter) CreateApplicationReportReturnsOnCall(i int, result1 reporter.ApplicationReport, result2 error) {
+	fake.createApplicationReportMutex.Lock()
+	defer fake.createApplicationReportMutex.Unlock()
+	fake.CreateApplicationReportStub = nil
+	if fake.createApplicationReportReturnsOnCall == nil {
+		fake.createApplicationReportReturnsOnCall = make(map[int]struct {
+			result1 reporter.ApplicationReport
 			result2 error
 		})
 	}
-	fake.createInstanceReportsReturnsOnCall[i] = struct {
-		result1 []reporter.InstanceReport
+	fake.createApplicationReportReturnsOnCall[i] = struct {
+		result1 reporter.ApplicationReport
 		result2 error
 	}{result1, result2}
 }
@@ -93,8 +92,8 @@ func (fake *FakeReporter) CreateInstanceReportsReturnsOnCall(i int, result1 []re
 func (fake *FakeReporter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.createInstanceReportsMutex.RLock()
-	defer fake.createInstanceReportsMutex.RUnlock()
+	fake.createApplicationReportMutex.RLock()
+	defer fake.createApplicationReportMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

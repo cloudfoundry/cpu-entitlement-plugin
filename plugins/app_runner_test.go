@@ -3,7 +3,6 @@ package plugins_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/pluginsfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
@@ -15,46 +14,42 @@ import (
 
 var _ = Describe("App Runner", func() {
 	var (
-		cfClient         *pluginsfakes.FakeCFClient
 		instanceReporter *pluginsfakes.FakeReporter
 		outputRenderer   *pluginsfakes.FakeOutputRenderer
 
-		runner    plugins.AppRunner
-		runResult result.Result
+		runner            plugins.AppRunner
+		runResult         result.Result
+		applicationReport reporter.ApplicationReport
 	)
 
 	BeforeEach(func() {
-		cfClient = new(pluginsfakes.FakeCFClient)
 		instanceReporter = new(pluginsfakes.FakeReporter)
 		outputRenderer = new(pluginsfakes.FakeOutputRenderer)
-		runner = plugins.NewAppRunner(cfClient, instanceReporter, outputRenderer)
+		runner = plugins.NewAppRunner(instanceReporter, outputRenderer)
+		applicationReport = reporter.ApplicationReport{
+			InstanceReports: []reporter.InstanceReport{
+				{
+					InstanceID: 0,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value: 0.5,
+					},
+				},
+				{
+					InstanceID: 1,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value: 0.8,
+					},
+				},
+				{
+					InstanceID: 2,
+					HistoricalUsage: reporter.HistoricalUsage{
+						Value: 0.875,
+					},
+				},
+			},
+		}
 
-		cfClient.GetApplicationReturns(cf.Application{
-			Guid:      "123",
-			Name:      "app-name",
-			Instances: map[int]cf.Instance{0: cf.Instance{}},
-		}, nil)
-
-		instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{
-			{
-				InstanceID: 0,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.5,
-				},
-			},
-			{
-				InstanceID: 1,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.8,
-				},
-			},
-			{
-				InstanceID: 2,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.875,
-				},
-			},
-		}, nil)
+		instanceReporter.CreateApplicationReportReturns(applicationReport, nil)
 	})
 
 	JustBeforeEach(func() {
@@ -64,84 +59,30 @@ var _ = Describe("App Runner", func() {
 	It("prints the app CPU metrics", func() {
 		Expect(runResult.IsFailure).To(BeFalse())
 
-		Expect(cfClient.GetApplicationCallCount()).To(Equal(1))
-		appName := cfClient.GetApplicationArgsForCall(0)
-		Expect(appName).To(Equal("app-name"))
+		Expect(instanceReporter.CreateApplicationReportCallCount()).To(Equal(1))
+		actualAppName := instanceReporter.CreateApplicationReportArgsForCall(0)
+		Expect(actualAppName).To(Equal("app-name"))
 
-		Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(1))
-		actualAppInfo := instanceReporter.CreateInstanceReportsArgsForCall(0)
-		Expect(actualAppInfo.Guid).To(Equal("123"))
-
-		Expect(outputRenderer.ShowInstanceReportsCallCount()).To(Equal(1))
-		info, instanceReports := outputRenderer.ShowInstanceReportsArgsForCall(0)
-		Expect(info).To(Equal(cf.Application{
-			Guid:      "123",
-			Name:      "app-name",
-			Instances: map[int]cf.Instance{0: cf.Instance{}},
-		}))
-		Expect(instanceReports).To(Equal([]reporter.InstanceReport{
-			{
-				InstanceID: 0,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.5,
-				},
-			},
-			{
-				InstanceID: 1,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.8,
-				},
-			},
-			{
-				InstanceID: 2,
-				HistoricalUsage: reporter.HistoricalUsage{
-					Value: 0.875,
-				},
-			},
-		}))
+		Expect(outputRenderer.ShowApplicationReportCallCount()).To(Equal(1))
+		actualApplicationReport := outputRenderer.ShowApplicationReportArgsForCall(0)
+		Expect(actualApplicationReport).To(Equal(applicationReport))
 	})
 
-	When("getting the app info fails", func() {
+	When("creating the reports fails with a unsupported cf-deployment error", func() {
 		BeforeEach(func() {
-			cfClient.GetApplicationReturns(cf.Application{}, errors.New("info error"))
+			instanceReporter.CreateApplicationReportReturns(reporter.ApplicationReport{}, reporter.NewUnsupportedCFDeploymentError("app-name"))
 		})
 
-		It("returns a failure with a warning", func() {
+		It("returns a failure", func() {
 			Expect(runResult.IsFailure).To(BeTrue())
-			Expect(runResult.ErrorMessage).To(Equal("info error"))
+			Expect(runResult.ErrorMessage).To(ContainSubstring("app-name"))
+			Expect(runResult.WarningMessage).To(BeEmpty())
 		})
 	})
 
-	When("there are zero instances of the application", func() {
+	When("creating the reports fails with a general error", func() {
 		BeforeEach(func() {
-			cfClient.GetApplicationReturns(cf.Application{
-				Guid: "123",
-				Name: "app-name",
-			}, nil)
-
-		})
-		It("succeeds", func() {
-			Expect(runResult.IsFailure).To(BeFalse())
-		})
-
-		It("prints a message", func() {
-			Expect(outputRenderer.ShowMessageCallCount()).To(Equal(1))
-			info, message, _ := outputRenderer.ShowMessageArgsForCall(0)
-			Expect(info).To(Equal(cf.Application{
-				Guid: "123",
-				Name: "app-name",
-			}))
-			Expect(message).To(Equal("There are no running instances of this process."))
-		})
-
-		It("does not try to generate reports", func() {
-			Expect(instanceReporter.CreateInstanceReportsCallCount()).To(Equal(0))
-		})
-	})
-
-	When("creating the reports fails", func() {
-		BeforeEach(func() {
-			instanceReporter.CreateInstanceReportsReturns(nil, errors.New("reports error"))
+			instanceReporter.CreateApplicationReportReturns(reporter.ApplicationReport{}, errors.New("reports error"))
 		})
 
 		It("returns a failure", func() {
@@ -151,20 +92,9 @@ var _ = Describe("App Runner", func() {
 		})
 	})
 
-	When("no reports are returned", func() {
-		BeforeEach(func() {
-			instanceReporter.CreateInstanceReportsReturns([]reporter.InstanceReport{}, nil)
-		})
-
-		It("returns a failure", func() {
-			Expect(runResult.IsFailure).To(BeTrue())
-			Expect(runResult.ErrorMessage).To(ContainSubstring("Could not find any CPU data for app app-name"))
-		})
-	})
-
 	When("rendering the app metrics fails", func() {
 		BeforeEach(func() {
-			outputRenderer.ShowInstanceReportsReturns(errors.New("render error"))
+			outputRenderer.ShowApplicationReportReturns(errors.New("render error"))
 		})
 
 		It("returns a failure", func() {

@@ -56,12 +56,12 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 	)
-	metricsReporter := reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
+	metricsReporter := reporter.NewAppReporter(cfClient, historicalUsageFetcher, currentUsageFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewAppRenderer(display)
 
 	appName := args[1]
-	runner := NewAppRunner(cfClient, metricsReporter, metricsRenderer)
+	runner := NewAppRunner(metricsReporter, metricsRenderer)
 	res := runner.Run(appName)
 	if res.IsFailure {
 		if res.ErrorMessage != "" {

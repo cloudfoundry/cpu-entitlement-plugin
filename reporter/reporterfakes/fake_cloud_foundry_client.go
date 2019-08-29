@@ -9,6 +9,18 @@ import (
 )
 
 type FakeCloudFoundryClient struct {
+	GetCurrentOrgStub        func() (string, error)
+	getCurrentOrgMutex       sync.RWMutex
+	getCurrentOrgArgsForCall []struct {
+	}
+	getCurrentOrgReturns struct {
+		result1 string
+		result2 error
+	}
+	getCurrentOrgReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	GetSpacesStub        func() ([]cf.Space, error)
 	getSpacesMutex       sync.RWMutex
 	getSpacesArgsForCall []struct {
@@ -23,6 +35,61 @@ type FakeCloudFoundryClient struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrg() (string, error) {
+	fake.getCurrentOrgMutex.Lock()
+	ret, specificReturn := fake.getCurrentOrgReturnsOnCall[len(fake.getCurrentOrgArgsForCall)]
+	fake.getCurrentOrgArgsForCall = append(fake.getCurrentOrgArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetCurrentOrg", []interface{}{})
+	fake.getCurrentOrgMutex.Unlock()
+	if fake.GetCurrentOrgStub != nil {
+		return fake.GetCurrentOrgStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getCurrentOrgReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrgCallCount() int {
+	fake.getCurrentOrgMutex.RLock()
+	defer fake.getCurrentOrgMutex.RUnlock()
+	return len(fake.getCurrentOrgArgsForCall)
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrgCalls(stub func() (string, error)) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = stub
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrgReturns(result1 string, result2 error) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = nil
+	fake.getCurrentOrgReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrgReturnsOnCall(i int, result1 string, result2 error) {
+	fake.getCurrentOrgMutex.Lock()
+	defer fake.getCurrentOrgMutex.Unlock()
+	fake.GetCurrentOrgStub = nil
+	if fake.getCurrentOrgReturnsOnCall == nil {
+		fake.getCurrentOrgReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.getCurrentOrgReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCloudFoundryClient) GetSpaces() ([]cf.Space, error) {
@@ -83,6 +150,8 @@ func (fake *FakeCloudFoundryClient) GetSpacesReturnsOnCall(i int, result1 []cf.S
 func (fake *FakeCloudFoundryClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.getCurrentOrgMutex.RLock()
+	defer fake.getCurrentOrgMutex.RUnlock()
 	fake.getSpacesMutex.RLock()
 	defer fake.getSpacesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

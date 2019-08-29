@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
@@ -17,19 +16,12 @@ import (
 
 var _ = Describe("Renderer", func() {
 	var (
-		appInfo         cf.Application
 		instanceReports []reporter.InstanceReport
-		display         *outputfakes.FakeDisplay
+		display         *outputfakes.FakeAppDisplay
 		renderer        output.AppRenderer
 	)
 
 	BeforeEach(func() {
-		appInfo = cf.Application{
-			Name:     "myapp",
-			Username: "theuser",
-			Org:      "theorg",
-			Space:    "thespace",
-		}
 		instanceReports = []reporter.InstanceReport{
 			{
 				InstanceID: 123,
@@ -51,13 +43,17 @@ var _ = Describe("Renderer", func() {
 			},
 		}
 
-		display = new(outputfakes.FakeDisplay)
+		display = new(outputfakes.FakeAppDisplay)
 		renderer = output.NewAppRenderer(display)
 	})
 
 	Describe("ShowMetrics", func() {
+		var (
+			appReport reporter.ApplicationReport
+		)
 		JustBeforeEach(func() {
-			Expect(renderer.ShowInstanceReports(appInfo, instanceReports)).To(Succeed())
+			appReport = reporter.ApplicationReport{ApplicationName: "myapp", Org: "theorg", Space: "thespace", Username: "theuser", InstanceReports: instanceReports}
+			Expect(renderer.ShowApplicationReport(appReport)).To(Succeed())
 		})
 
 		It("shows a message with the application info", func() {
@@ -80,6 +76,20 @@ var _ = Describe("Renderer", func() {
 				{"#123", "50.00%", "150.00%"},
 				{"#432", "75.00%", "175.00%"},
 			}))
+		})
+
+		When("there are no instances of the application", func() {
+			BeforeEach(func() {
+				instanceReports = []reporter.InstanceReport{}
+			})
+
+			It("prints a message about no instances", func() {
+				Expect(display.ShowTableCallCount()).To(Equal(0))
+				Expect(display.ShowMessageCallCount()).To(Equal(2))
+				message, values := display.ShowMessageArgsForCall(1)
+				Expect(message).To(Equal("There are no running instances of this application."))
+				Expect(values).To(BeEmpty())
+			})
 		})
 
 		When("one or more of the instances is above entitlement", func() {
@@ -211,31 +221,6 @@ var _ = Describe("Renderer", func() {
 				warning, _ := display.ShowMessageArgsForCall(1)
 				Expect(warning).To(Equal(yellow(fmt.Sprintf("WARNING: Instance #234 was over entitlement at 2019-07-31 12:00:00"))))
 			})
-		})
-	})
-
-	Describe("ShowMessage", func() {
-		JustBeforeEach(func() {
-			renderer.ShowMessage(appInfo, "Hello", "my", "friend")
-		})
-
-		It("shows a message with the application info", func() {
-			Expect(display.ShowMessageCallCount()).To(Equal(2))
-			message, values := display.ShowMessageArgsForCall(0)
-			Expect(message).To(Equal("Showing CPU usage against entitlement for app %s in org %s / space %s as %s ...\n"))
-			Expect(values).To(Equal([]interface{}{
-				terminal.EntityNameColor("myapp"),
-				terminal.EntityNameColor("theorg"),
-				terminal.EntityNameColor("thespace"),
-				terminal.EntityNameColor("theuser"),
-			}))
-		})
-
-		It("shows a message with the application info", func() {
-			Expect(display.ShowMessageCallCount()).To(Equal(2))
-			message, values := display.ShowMessageArgsForCall(1)
-			Expect(message).To(Equal("Hello"))
-			Expect(values).To(Equal([]interface{}{"my", "friend"}))
 		})
 	})
 })

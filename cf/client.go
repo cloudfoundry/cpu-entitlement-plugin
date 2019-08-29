@@ -25,8 +25,6 @@ type Space struct {
 type Application struct {
 	Name      string
 	Guid      string
-	Username  string
-	Org       string
 	Space     string
 	Instances map[int]Instance
 }
@@ -45,16 +43,6 @@ func NewClient(cli Cli) Client {
 }
 
 func (c Client) GetSpaces() ([]Space, error) {
-	org, err := c.cli.GetCurrentOrg()
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := c.cli.Username()
-	if err != nil {
-		return nil, err
-	}
-
 	var spaces []Space
 
 	cfSpaces, err := c.cli.GetSpaces()
@@ -70,7 +58,7 @@ func (c Client) GetSpaces() ([]Space, error) {
 
 		var applications []Application
 		for _, cfApp := range cfSpaceDetails.Applications {
-			applications = append(applications, Application{Guid: cfApp.Guid, Name: cfApp.Name, Username: user, Org: org.Name, Space: cfSpace.Name})
+			applications = append(applications, Application{Guid: cfApp.Guid, Name: cfApp.Name, Space: cfSpace.Name})
 		}
 
 		spaces = append(spaces, Space{Name: cfSpace.Name, Applications: applications})
@@ -85,16 +73,6 @@ func (c Client) GetApplication(appName string) (Application, error) {
 		return Application{}, err
 	}
 
-	user, err := c.cli.Username()
-	if err != nil {
-		return Application{}, err
-	}
-
-	org, err := c.cli.GetCurrentOrg()
-	if err != nil {
-		return Application{}, err
-	}
-
 	space, err := c.cli.GetCurrentSpace()
 	if err != nil {
 		return Application{}, err
@@ -105,5 +83,25 @@ func (c Client) GetApplication(appName string) (Application, error) {
 		instances[id] = Instance{InstanceID: id, Since: instance.Since}
 	}
 
-	return Application{Name: app.Name, Guid: app.Guid, Username: user, Org: org.Name, Space: space.Name, Instances: instances}, nil
+	return Application{Name: app.Name, Guid: app.Guid, Space: space.Name, Instances: instances}, nil
+}
+
+func (c Client) GetCurrentOrg() (string, error) {
+	org, err := c.cli.GetCurrentOrg()
+	if err != nil {
+		return "", err
+	}
+	return org.Name, nil
+}
+
+func (c Client) GetCurrentSpace() (string, error) {
+	space, err := c.cli.GetCurrentSpace()
+	if err != nil {
+		return "", err
+	}
+	return space.Name, nil
+}
+
+func (c Client) Username() (string, error) {
+	return c.cli.Username()
 }

@@ -23,16 +23,13 @@ var _ = Describe("Client", func() {
 		fakeCli = new(cffakes.FakeCli)
 		cfClient = cf.NewClient(fakeCli)
 
-		fakeCli.GetCurrentOrgReturns(plugin_models.Organization{OrganizationFields: plugin_models.OrganizationFields{Name: "the-org"}}, nil)
-		fakeCli.GetCurrentSpaceReturns(plugin_models.Space{SpaceFields: plugin_models.SpaceFields{Name: "the-space"}}, nil)
-		fakeCli.UsernameReturns("the-user", nil)
-
 	})
 
 	Describe("Spaces", func() {
 		var spaces []cf.Space
 
 		BeforeEach(func() {
+			fakeCli.GetCurrentSpaceReturns(plugin_models.Space{SpaceFields: plugin_models.SpaceFields{Name: "the-space"}}, nil)
 			fakeCli.GetSpacesReturns([]plugin_models.GetSpaces_Model{
 				{Guid: "space1-guid", Name: "space-1"},
 				{Guid: "space2-guid", Name: "space-2"},
@@ -68,14 +65,14 @@ var _ = Describe("Client", func() {
 				{
 					Name: "space-1",
 					Applications: []cf.Application{
-						{Name: "app-1", Guid: "space-1-app-1-guid", Username: "the-user", Org: "the-org", Space: "space-1"},
-						{Name: "app-2", Guid: "space-1-app-2-guid", Username: "the-user", Org: "the-org", Space: "space-1"},
+						{Name: "app-1", Guid: "space-1-app-1-guid", Space: "space-1"},
+						{Name: "app-2", Guid: "space-1-app-2-guid", Space: "space-1"},
 					},
 				},
 				{
 					Name: "space-2",
 					Applications: []cf.Application{
-						{Name: "app-1", Guid: "space-2-app-1-guid", Username: "the-user", Org: "the-org", Space: "space-2"},
+						{Name: "app-1", Guid: "space-2-app-1-guid", Space: "space-2"},
 					},
 				},
 			}))
@@ -98,26 +95,6 @@ var _ = Describe("Client", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("get-space-error"))
-			})
-		})
-
-		When("getting the current org fails", func() {
-			BeforeEach(func() {
-				fakeCli.GetCurrentOrgReturns(plugin_models.Organization{}, errors.New("get-org-error"))
-			})
-
-			It("returns the error", func() {
-				Expect(err).To(MatchError("get-org-error"))
-			})
-		})
-
-		When("getting the user fails", func() {
-			BeforeEach(func() {
-				fakeCli.UsernameReturns("", errors.New("get-user-error"))
-			})
-
-			It("returns the error", func() {
-				Expect(err).To(MatchError("get-user-error"))
 			})
 		})
 	})
@@ -151,8 +128,6 @@ var _ = Describe("Client", func() {
 
 			Expect(application.Guid).To(Equal("qwerty"))
 			Expect(application.Name).To(Equal("YTREWQ"))
-			Expect(application.Username).To(Equal("the-user"))
-			Expect(application.Org).To(Equal("the-org"))
 			Expect(application.Space).To(Equal("the-space"))
 		})
 
@@ -174,26 +149,6 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-		When("get username errors", func() {
-			BeforeEach(func() {
-				fakeCli.UsernameReturns("", errors.New("username error"))
-			})
-
-			It("returns the error", func() {
-				Expect(err).To(MatchError("username error"))
-			})
-		})
-
-		When("get org errors", func() {
-			BeforeEach(func() {
-				fakeCli.GetCurrentOrgReturns(plugin_models.Organization{}, errors.New("org error"))
-			})
-
-			It("returns the error", func() {
-				Expect(err).To(MatchError("org error"))
-			})
-		})
-
 		When("get space errors", func() {
 			BeforeEach(func() {
 				fakeCli.GetCurrentSpaceReturns(plugin_models.Space{}, errors.New("space error"))
@@ -201,6 +156,93 @@ var _ = Describe("Client", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("space error"))
+			})
+		})
+	})
+
+	Describe("CurrentOrg", func() {
+		var (
+			org string
+			err error
+		)
+
+		BeforeEach(func() {
+			fakeCli.GetCurrentOrgReturns(plugin_models.Organization{OrganizationFields: plugin_models.OrganizationFields{Name: "the-org"}}, nil)
+		})
+
+		JustBeforeEach(func() {
+			org, err = cfClient.GetCurrentOrg()
+		})
+
+		It("returns the org", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(org).To(Equal("the-org"))
+		})
+
+		When("get current org errors", func() {
+			BeforeEach(func() {
+				fakeCli.GetCurrentOrgReturns(plugin_models.Organization{}, errors.New("org error"))
+			})
+			It("returns the error", func() {
+				Expect(err).To(MatchError("org error"))
+			})
+		})
+	})
+
+	Describe("CurrentSpace", func() {
+		var (
+			space string
+			err   error
+		)
+
+		BeforeEach(func() {
+			fakeCli.GetCurrentSpaceReturns(plugin_models.Space{SpaceFields: plugin_models.SpaceFields{Name: "the-space"}}, nil)
+		})
+
+		JustBeforeEach(func() {
+			space, err = cfClient.GetCurrentSpace()
+		})
+
+		It("returns the space", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(space).To(Equal("the-space"))
+		})
+
+		When("get current space errors", func() {
+			BeforeEach(func() {
+				fakeCli.GetCurrentSpaceReturns(plugin_models.Space{}, errors.New("space error"))
+			})
+			It("returns the error", func() {
+				Expect(err).To(MatchError("space error"))
+			})
+		})
+	})
+
+	Describe("Username", func() {
+		var (
+			user string
+			err  error
+		)
+
+		BeforeEach(func() {
+			fakeCli.UsernameReturns("the-user", nil)
+		})
+
+		JustBeforeEach(func() {
+			user, err = cfClient.Username()
+		})
+
+		It("returns the user", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(user).To(Equal("the-user"))
+		})
+
+		When("get username errors", func() {
+			BeforeEach(func() {
+				fakeCli.UsernameReturns("", errors.New("username error"))
+			})
+			It("returns the error", func() {
+				Expect(err).To(MatchError("username error"))
 			})
 		})
 	})

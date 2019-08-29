@@ -17,22 +17,32 @@ var _ = Describe("Reporter", func() {
 	var (
 		historicalUsageFetcher *reporterfakes.FakeInstanceDataFetcher
 		currentUsageFetcher    *reporterfakes.FakeInstanceDataFetcher
+		cfClient               *reporterfakes.FakeAppReporterCloudFoundryClient
 		instanceReporter       reporter.AppReporter
-		reports                []reporter.InstanceReport
+		reports                reporter.ApplicationReport
 		err                    error
+		appName                string
 		appGuid                string
+		appInstances           map[int]cf.Instance
 	)
 
 	BeforeEach(func() {
-		appGuid = "foo"
+		appName = "foo"
+		appGuid = "bar"
 
 		historicalUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
 		currentUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
-		instanceReporter = reporter.NewAppReporter(historicalUsageFetcher, currentUsageFetcher)
+		cfClient = new(reporterfakes.FakeAppReporterCloudFoundryClient)
+		appInstances = map[int]cf.Instance{0: cf.Instance{InstanceID: 0}}
+		cfClient.GetApplicationReturns(cf.Application{Name: appName, Guid: appGuid, Instances: appInstances}, nil)
+		cfClient.GetCurrentOrgReturns("the-org", nil)
+		cfClient.GetCurrentSpaceReturns("the-space", nil)
+		cfClient.UsernameReturns("the-user", nil)
+		instanceReporter = reporter.NewAppReporter(cfClient, historicalUsageFetcher, currentUsageFetcher)
 	})
 
 	JustBeforeEach(func() {
-		reports, err = instanceReporter.CreateInstanceReports(cf.Application{Guid: appGuid})
+		reports, err = instanceReporter.CreateApplicationReport(appName)
 	})
 
 	Describe("Report", func() {
@@ -55,12 +65,68 @@ var _ = Describe("Reporter", func() {
 			}, nil)
 		})
 
-		It("combines historical and current cpu usage data", func() {
-			Expect(len(reports)).To(Equal(1))
+		It("reports the application name", func() {
+			Expect(reports.ApplicationName).To(Equal(appName))
+		})
 
-			Expect(reports[0].InstanceID).To(Equal(0))
-			Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
-			Expect(reports[0].CurrentUsage.Value).To(Equal(1.5))
+		When("getting the application errors", func() {
+			BeforeEach(func() {
+				cfClient.GetApplicationReturns(cf.Application{}, errors.New("app error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("app error"))
+			})
+		})
+
+		It("reports the org", func() {
+			Expect(reports.Org).To(Equal("the-org"))
+		})
+
+		When("getting the org errors", func() {
+			BeforeEach(func() {
+				cfClient.GetCurrentOrgReturns("", errors.New("org error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("org error"))
+			})
+		})
+
+		It("reports the space", func() {
+			Expect(reports.Space).To(Equal("the-space"))
+		})
+
+		When("getting the space errors", func() {
+			BeforeEach(func() {
+				cfClient.GetCurrentSpaceReturns("", errors.New("space error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("space error"))
+			})
+		})
+
+		It("reports the user", func() {
+			Expect(reports.Username).To(Equal("the-user"))
+		})
+
+		When("getting the user errors", func() {
+			BeforeEach(func() {
+				cfClient.UsernameReturns("", errors.New("user error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("user error"))
+			})
+		})
+
+		It("combines historical and current cpu usage data", func() {
+			Expect(len(reports.InstanceReports)).To(Equal(1))
+
+			Expect(reports.InstanceReports[0].InstanceID).To(Equal(0))
+			Expect(reports.InstanceReports[0].HistoricalUsage.Value).To(Equal(0.5))
+			Expect(reports.InstanceReports[0].CurrentUsage.Value).To(Equal(1.5))
 		})
 
 		When("current usage data and historical usage data cannot be matched by instance id", func() {
@@ -84,21 +150,29 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("combines historical and current cpu usage data", func() {
-				Expect(len(reports)).To(Equal(2))
+				Expect(len(reports.InstanceReports)).To(Equal(2))
 
-				Expect(reports[0].InstanceID).To(Equal(0))
-				Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
-				Expect(reports[0].CurrentUsage.Value).To(BeZero())
+				Expect(reports.InstanceReports[0].InstanceID).To(Equal(0))
+				Expect(reports.InstanceReports[0].HistoricalUsage.Value).To(Equal(0.5))
+				Expect(reports.InstanceReports[0].CurrentUsage.Value).To(BeZero())
 
-				Expect(reports[1].InstanceID).To(Equal(1))
-				Expect(reports[1].HistoricalUsage.Value).To(BeZero())
-				Expect(reports[1].CurrentUsage.Value).To(Equal(1.5))
+				Expect(reports.InstanceReports[1].InstanceID).To(Equal(1))
+				Expect(reports.InstanceReports[1].HistoricalUsage.Value).To(BeZero())
+				Expect(reports.InstanceReports[1].CurrentUsage.Value).To(Equal(1.5))
 			})
 		})
 	})
 
 	Describe("Historical CPU usage", func() {
 		BeforeEach(func() {
+			currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				0: {
+					{
+						InstanceID: 0,
+						Value:      1.5,
+					},
+				},
+			}, nil)
 			historicalUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				0: {
 					{
@@ -120,7 +194,9 @@ var _ = Describe("Reporter", func() {
 		})
 		It("fetches the usage data correctly", func() {
 			Expect(historicalUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			Expect(historicalUsageFetcher.FetchInstanceDataArgsForCall(0)).To(Equal(appGuid))
+			actualAppGuid, actualAppInstances := historicalUsageFetcher.FetchInstanceDataArgsForCall(0)
+			Expect(actualAppGuid).To(Equal(appGuid))
+			Expect(actualAppInstances).To(Equal(appInstances))
 		})
 
 		When("fetching the historical usage fails", func() {
@@ -134,13 +210,13 @@ var _ = Describe("Reporter", func() {
 		})
 
 		It("calculates historical entitlement ratio", func() {
-			Expect(len(reports)).To(Equal(2))
+			Expect(len(reports.InstanceReports)).To(Equal(2))
 
-			Expect(reports[0].InstanceID).To(Equal(0))
-			Expect(reports[0].HistoricalUsage.Value).To(Equal(0.5))
+			Expect(reports.InstanceReports[0].InstanceID).To(Equal(0))
+			Expect(reports.InstanceReports[0].HistoricalUsage.Value).To(Equal(0.5))
 
-			Expect(reports[1].InstanceID).To(Equal(1))
-			Expect(reports[1].HistoricalUsage.Value).To(Equal(0.7))
+			Expect(reports.InstanceReports[1].InstanceID).To(Equal(1))
+			Expect(reports.InstanceReports[1].HistoricalUsage.Value).To(Equal(0.7))
 		})
 
 		When("an instance is missing from the historical usage data", func() {
@@ -159,17 +235,24 @@ var _ = Describe("Reporter", func() {
 						},
 					},
 				}, nil)
-				currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{}, nil)
+				currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+					0: {
+						{
+							InstanceID: 0,
+							Value:      1.5,
+						},
+					},
+				}, nil)
 			})
 
 			It("still returns an (incomplete) result", func() {
-				Expect(len(reports)).To(Equal(2))
+				Expect(len(reports.InstanceReports)).To(Equal(2))
 
-				Expect(reports[0].InstanceID).To(Equal(0))
-				Expect(reports[0].HistoricalUsage.Value).To(Equal(0.6))
+				Expect(reports.InstanceReports[0].InstanceID).To(Equal(0))
+				Expect(reports.InstanceReports[0].HistoricalUsage.Value).To(Equal(0.6))
 
-				Expect(reports[1].InstanceID).To(Equal(2))
-				Expect(reports[1].HistoricalUsage.Value).To(Equal(0.5))
+				Expect(reports.InstanceReports[1].InstanceID).To(Equal(2))
+				Expect(reports.InstanceReports[1].HistoricalUsage.Value).To(Equal(0.5))
 			})
 		})
 		When("some instances have spiked", func() {
@@ -189,8 +272,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("adds the spike starting and ending times to the report", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(5, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(5, 0)))
 			})
 		})
 
@@ -206,8 +289,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("reports spike from beginning of data to end of spike", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
 			})
 		})
 
@@ -222,8 +305,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("reports spike from beginning of data to end of data", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(1, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(2, 0)))
 			})
 		})
 
@@ -239,8 +322,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("reports spike from beginning of spike to end of data", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(2, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(2, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
 			})
 		})
 
@@ -259,8 +342,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("reports only the latest spike", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(6, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(7, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(6, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(7, 0)))
 			})
 		})
 
@@ -276,8 +359,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("reports an empty range", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
-				Expect(reports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom).To(Equal(time.Unix(3, 0)))
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo).To(Equal(time.Unix(3, 0)))
 			})
 		})
 
@@ -293,8 +376,8 @@ var _ = Describe("Reporter", func() {
 			})
 
 			It("does not report a spike", func() {
-				Expect(reports[0].HistoricalUsage.LastSpikeFrom.IsZero()).To(BeTrue())
-				Expect(reports[0].HistoricalUsage.LastSpikeTo.IsZero()).To(BeTrue())
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeFrom.IsZero()).To(BeTrue())
+				Expect(reports.InstanceReports[0].HistoricalUsage.LastSpikeTo.IsZero()).To(BeTrue())
 			})
 		})
 	})
@@ -319,7 +402,9 @@ var _ = Describe("Reporter", func() {
 
 		It("fetches the usage data correctly", func() {
 			Expect(currentUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			Expect(currentUsageFetcher.FetchInstanceDataArgsForCall(0)).To(Equal(appGuid))
+			actualAppGuid, actualAppInstances := currentUsageFetcher.FetchInstanceDataArgsForCall(0)
+			Expect(actualAppGuid).To(Equal(appGuid))
+			Expect(actualAppInstances).To(Equal(appInstances))
 		})
 
 		When("fetching the current usage fails", func() {
@@ -333,13 +418,13 @@ var _ = Describe("Reporter", func() {
 		})
 
 		It("calculates current entitlement ratio", func() {
-			Expect(len(reports)).To(Equal(2))
+			Expect(len(reports.InstanceReports)).To(Equal(2))
 
-			Expect(reports[0].InstanceID).To(Equal(0))
-			Expect(reports[0].CurrentUsage.Value).To(Equal(1.5))
+			Expect(reports.InstanceReports[0].InstanceID).To(Equal(0))
+			Expect(reports.InstanceReports[0].CurrentUsage.Value).To(Equal(1.5))
 
-			Expect(reports[1].InstanceID).To(Equal(1))
-			Expect(reports[1].CurrentUsage.Value).To(Equal(1.7))
+			Expect(reports.InstanceReports[1].InstanceID).To(Equal(1))
+			Expect(reports.InstanceReports[1].CurrentUsage.Value).To(Equal(1.7))
 		})
 	})
 })
