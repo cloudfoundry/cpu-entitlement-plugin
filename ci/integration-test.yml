@@ -17,4 +17,4 @@ params:
   CF_PASSWORD:
 
 run:
-  path: cpu-entitlement-plugin/ci/scripts/integration-test
+  path: cpu-entitlement-plugin/ci/integration-test.sh

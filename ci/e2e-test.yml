@@ -17,4 +17,4 @@ params:
   CF_PASSWORD:
 
 run:
-  path: cpu-entitlement-plugin/ci/scripts/e2e-test
+  path: cpu-entitlement-plugin/ci/e2e-test.sh
