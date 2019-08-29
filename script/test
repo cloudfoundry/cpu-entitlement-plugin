@@ -54,6 +54,7 @@ run_tests_in_directory() {
       -failOnPending \
       -randomizeAllSpecs -randomizeSuites \
       -skipPackage e2e,integration \
+      -keepGoing \
       "$ARGS"
   fi
 }

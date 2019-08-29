@@ -5,4 +5,4 @@ go version
 
 cd src/code.cloudfoundry.org/cpu-entitlement-plugin
 
-ginkgo -mod vendor -randomizeAllSpecs -randomizeSuites -race -skipPackage e2e,integration -r
+ginkgo -mod vendor -randomizeAllSpecs -randomizeSuites -race -keepGoing -skipPackage e2e,integration -r
