@@ -17,7 +17,8 @@ func TestE2e(t *testing.T) {
 }
 
 var (
-	cfApi string
+	cfApi      string
+	cfUsername string
 )
 
 var _ = BeforeSuite(func() {
@@ -28,7 +29,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(Cmd("cf", "api", cfApi, "--skip-ssl-validation").Run()).To(gexec.Exit(0))
 
-	cfUsername := GetEnv("CF_USERNAME")
+	cfUsername = GetEnv("CF_USERNAME")
 	cfPassword := GetEnv("CF_PASSWORD")
 
 	Expect(Cmd("cf", "login", "-u", cfUsername, "-p", cfPassword).Run()).To(gexec.Exit(0))

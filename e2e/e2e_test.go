@@ -47,7 +47,7 @@ var _ = Describe("cpu-plugins", func() {
 
 		It("prints the application entitlement info", func() {
 			Eventually(Cmd("cf", "cpu-entitlement", appName).Run, "20s", "1s").Should(SatisfyAll(
-				gbytes.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as", appName, org, space),
+				gbytes.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s...", appName, org, space, cfUsername),
 				gbytes.Say("avg usage"),
 				gbytes.Say("#0"),
 			))
@@ -58,19 +58,29 @@ var _ = Describe("cpu-plugins", func() {
 	Describe("cpu-overentitlement-instances-plugin", func() {
 		Describe("with an app", func() {
 			var (
-				appName string
-				appURL  string
+				overEntitlementApp  string
+				appURL              string
+				underEntitlementApp string
 			)
 
 			BeforeEach(func() {
-				appName = "spinner-" + uid
-				Expect(Cmd("cf", "push", appName).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
-				appURL = strings.Replace(cfApi, "api.", appName+".", 1)
+				overEntitlementApp = "spinner-1-" + uid
+				Expect(Cmd("cf", "push", overEntitlementApp).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+				appURL = strings.Replace(cfApi, "api.", overEntitlementApp+".", 1)
+
+				underEntitlementApp = "spinner-2-" + uid
+				Expect(Cmd("cf", "push", underEntitlementApp).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+
+				httpGet(appURL + "/spin")
 			})
 
-			It("prints the list of apps that are over entitlement", func() {
-				httpGet(appURL + "/spin")
-				Eventually(Cmd("cf", "over-entitlement-instances").Run, "20s", "1s").Should(gbytes.Say(appName))
+			It("prints the application over entitlement", func() {
+				Eventually(Cmd("cf", "over-entitlement-instances").Run, "20s", "1s").Should(SatisfyAll(
+					gbytes.Say("Showing over-entitlement apps in org %s as %s...", org, cfUsername),
+					gbytes.Say("space *app"),
+					gbytes.Say("%s *%s", space, overEntitlementApp),
+				))
+				Eventually(Cmd("cf", "over-entitlement-instances").Run).ShouldNot(gbytes.Say(underEntitlementApp))
 			})
 		})
 
@@ -78,6 +88,8 @@ var _ = Describe("cpu-plugins", func() {
 			Consistently(Cmd("cf", "over-entitlement-instances").Run).Should(gbytes.Say("No apps over entitlement"))
 		})
 	})
+
+	// TODO:test multiple spaces!
 })
 
 func httpGet(url string) {
