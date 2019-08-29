@@ -33,6 +33,18 @@ type FakeCloudFoundryClient struct {
 		result1 []cf.Space
 		result2 error
 	}
+	UsernameStub        func() (string, error)
+	usernameMutex       sync.RWMutex
+	usernameArgsForCall []struct {
+	}
+	usernameReturns struct {
+		result1 string
+		result2 error
+	}
+	usernameReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -147,6 +159,61 @@ func (fake *FakeCloudFoundryClient) GetSpacesReturnsOnCall(i int, result1 []cf.S
 	}{result1, result2}
 }
 
+func (fake *FakeCloudFoundryClient) Username() (string, error) {
+	fake.usernameMutex.Lock()
+	ret, specificReturn := fake.usernameReturnsOnCall[len(fake.usernameArgsForCall)]
+	fake.usernameArgsForCall = append(fake.usernameArgsForCall, struct {
+	}{})
+	fake.recordInvocation("Username", []interface{}{})
+	fake.usernameMutex.Unlock()
+	if fake.UsernameStub != nil {
+		return fake.UsernameStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.usernameReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCloudFoundryClient) UsernameCallCount() int {
+	fake.usernameMutex.RLock()
+	defer fake.usernameMutex.RUnlock()
+	return len(fake.usernameArgsForCall)
+}
+
+func (fake *FakeCloudFoundryClient) UsernameCalls(stub func() (string, error)) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = stub
+}
+
+func (fake *FakeCloudFoundryClient) UsernameReturns(result1 string, result2 error) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = nil
+	fake.usernameReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCloudFoundryClient) UsernameReturnsOnCall(i int, result1 string, result2 error) {
+	fake.usernameMutex.Lock()
+	defer fake.usernameMutex.Unlock()
+	fake.UsernameStub = nil
+	if fake.usernameReturnsOnCall == nil {
+		fake.usernameReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.usernameReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeCloudFoundryClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -154,6 +221,8 @@ func (fake *FakeCloudFoundryClient) Invocations() map[string][][]interface{} {
 	defer fake.getCurrentOrgMutex.RUnlock()
 	fake.getSpacesMutex.RLock()
 	defer fake.getSpacesMutex.RUnlock()
+	fake.usernameMutex.RLock()
+	defer fake.usernameMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

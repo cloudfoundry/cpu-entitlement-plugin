@@ -3,6 +3,8 @@ package reporter
 import "code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 
 type OEIReport struct {
+	Org          string
+	Username     string
 	SpaceReports []SpaceReport
 }
 
@@ -21,6 +23,8 @@ type MetricsFetcher interface {
 
 type CloudFoundryClient interface {
 	GetSpaces() ([]cf.Space, error)
+	GetCurrentOrg() (string, error)
+	Username() (string, error)
 }
 
 type OverEntitlementInstances struct {
@@ -37,6 +41,16 @@ func NewOverEntitlementInstances(cf CloudFoundryClient, metricsFetcher MetricsFe
 
 func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) {
 	spaceReports := []SpaceReport{}
+
+	org, err := r.cf.GetCurrentOrg()
+	if err != nil {
+		return OEIReport{}, err
+	}
+
+	user, err := r.cf.Username()
+	if err != nil {
+		return OEIReport{}, err
+	}
 
 	spaces, err := r.cf.GetSpaces()
 	if err != nil {
@@ -56,7 +70,7 @@ func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) 
 		spaceReports = append(spaceReports, SpaceReport{SpaceName: space.Name, Apps: apps})
 	}
 
-	return OEIReport{SpaceReports: spaceReports}, nil
+	return OEIReport{Org: org, Username: user, SpaceReports: spaceReports}, nil
 }
 
 func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]string, error) {

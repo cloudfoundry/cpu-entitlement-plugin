@@ -21,6 +21,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		fakeCfClient = new(reporterfakes.FakeCloudFoundryClient)
 		fakeMetricsFetcher = new(reporterfakes.FakeMetricsFetcher)
 
+		fakeCfClient.GetCurrentOrgReturns("org", nil)
+		fakeCfClient.UsernameReturns("user", nil)
 		fakeCfClient.GetSpacesReturns([]cf.Space{
 			{
 				Name: "space1",
@@ -69,6 +71,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 		It("returns all instances that are over entitlement", func() {
 			Expect(report).To(Equal(reporter.OEIReport{
+				Org:      "org",
+				Username: "user",
 				SpaceReports: []reporter.SpaceReport{
 					reporter.SpaceReport{
 						SpaceName: "space1",
@@ -97,6 +101,26 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-error"))
+			})
+		})
+
+		When("getting the current org fails", func() {
+			BeforeEach(func() {
+				fakeCfClient.GetCurrentOrgReturns("", errors.New("get-org-error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("get-org-error"))
+			})
+		})
+
+		When("getting the username fails", func() {
+			BeforeEach(func() {
+				fakeCfClient.UsernameReturns("", errors.New("get-user-error"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("get-user-error"))
 			})
 		})
 	})

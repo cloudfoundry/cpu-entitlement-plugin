@@ -35,7 +35,7 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 	fetcher := fetchers.NewCumulativeUsage(createLogClient(logCacheURL, cli.AccessToken))
 	cfClient := cf.NewClient(cli)
 	reporter := reporter.NewOverEntitlementInstances(cfClient, fetcher)
-	renderer := output.NewOverEntitlementInstancesRenderer(ui)
+	renderer := output.NewOverEntitlementInstancesRenderer(output.NewTerminalDisplay(ui))
 	runner := NewOverEntitlementInstancesRunner(reporter, renderer)
 
 	err = runner.Run()
