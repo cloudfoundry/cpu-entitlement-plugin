@@ -16,6 +16,7 @@ usage() {
   colour=$1
   print_message "Usage:" "$colour"
   print_message "    test -a           --- run all tests in parallel (tmux panes will autosplit)" "$colour"
+  print_message "    test -u           --- run all unit tests on Concourse" "$colour"
   print_message "    test <directory>  --- run tests in a given directory" "$colour"
 }
 
@@ -45,6 +46,10 @@ run_all_tests_in_parallel() {
   tmux select-pane -t "$initialTmuxPane"
 }
 
+run_unit_tests() {
+    "$DIR/remote-fly" ci/unit-tests.yml -- "$ARGS"
+}
+
 run_tests_in_directory() {
   ARGS=$*
   if grep -Eq integration <(echo "$ARGS"); then
@@ -62,10 +67,14 @@ run_tests_in_directory() {
   fi
 }
 
-while getopts "ah" OPTION; do
+while getopts "auh" OPTION; do
   case $OPTION in
     a)
       run_all_tests_in_parallel
+     exit
+     ;;
+    u)
+      run_unit_tests
      exit
      ;;
     h)
