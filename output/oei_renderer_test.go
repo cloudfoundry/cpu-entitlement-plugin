@@ -1,6 +1,8 @@
 package output_test
 
 import (
+	"errors"
+
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output/outputfakes"
@@ -63,6 +65,16 @@ var _ = Describe("OEI Renderer", func() {
 			actualMsg, actualMsgArgs := display.ShowMessageArgsForCall(0)
 			Expect(actualMsg).To(ContainSubstring("No apps over entitlement in org"))
 			Expect(actualMsgArgs).To(ConsistOf(terminal.EntityNameColor("org")))
+		})
+	})
+
+	When("showing the table errors", func() {
+		BeforeEach(func() {
+			display.ShowTableReturns(errors.New("table-error"))
+		})
+
+		It("returns the error", func() {
+			Expect(renderErr).To(MatchError("table-error"))
 		})
 	})
 

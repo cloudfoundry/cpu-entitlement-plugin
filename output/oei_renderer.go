@@ -26,8 +26,7 @@ func (r *OverEntitlementInstancesRenderer) Render(report reporter.OEIReport) err
 	}
 
 	r.showReportHeader(report)
-	r.display.ShowTable([]string{"space", "app"}, buildOEITableRows(report))
-	return nil
+	return r.display.ShowTable([]string{"space", "app"}, buildOEITableRows(report))
 }
 
 func (r OverEntitlementInstancesRenderer) showReportHeader(report reporter.OEIReport) {
