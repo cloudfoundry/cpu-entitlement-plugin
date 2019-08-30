@@ -15,6 +15,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		oeiReporter        reporter.OverEntitlementInstances
 		fakeCfClient       *reporterfakes.FakeCloudFoundryClient
 		fakeMetricsFetcher *reporterfakes.FakeMetricsFetcher
+		report             reporter.OEIReport
+		err                error
 	)
 
 	BeforeEach(func() {
@@ -55,73 +57,114 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		oeiReporter = reporter.NewOverEntitlementInstances(fakeCfClient, fakeMetricsFetcher)
 	})
 
-	Describe("OverEntitlementInstances", func() {
-		var (
-			report reporter.OEIReport
-			err    error
-		)
+	JustBeforeEach(func() {
+		report, err = oeiReporter.OverEntitlementInstances()
+	})
 
-		JustBeforeEach(func() {
-			report, err = oeiReporter.OverEntitlementInstances()
-		})
+	It("succeeds", func() {
+		Expect(err).NotTo(HaveOccurred())
+	})
 
-		It("succeeds", func() {
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("returns all instances that are over entitlement", func() {
-			Expect(report).To(Equal(reporter.OEIReport{
-				Org:      "org",
-				Username: "user",
-				SpaceReports: []reporter.SpaceReport{
-					reporter.SpaceReport{
-						SpaceName: "space1",
-						Apps: []string{
-							"app1",
-						},
+	It("returns all instances that are over entitlement", func() {
+		Expect(report).To(Equal(reporter.OEIReport{
+			Org:      "org",
+			Username: "user",
+			SpaceReports: []reporter.SpaceReport{
+				reporter.SpaceReport{
+					SpaceName: "space1",
+					Apps: []string{
+						"app1",
 					},
 				},
-			}))
+			},
+		}))
+	})
+
+	When("fetching the list of apps fails", func() {
+		BeforeEach(func() {
+			fakeCfClient.GetSpacesReturns(nil, errors.New("get-space-error"))
 		})
 
-		When("fetching the list of apps fails", func() {
-			BeforeEach(func() {
-				fakeCfClient.GetSpacesReturns(nil, errors.New("get-space-error"))
-			})
+		It("returns the error", func() {
+			Expect(err).To(MatchError("get-space-error"))
+		})
+	})
 
-			It("returns the error", func() {
-				Expect(err).To(MatchError("get-space-error"))
-			})
+	When("getting the entitlement usage for an app fails", func() {
+		BeforeEach(func() {
+			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns(nil, errors.New("fetch-error"))
 		})
 
-		When("getting the entitlement usage for an app fails", func() {
-			BeforeEach(func() {
-				fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns(nil, errors.New("fetch-error"))
-			})
+		It("returns the error", func() {
+			Expect(err).To(MatchError("fetch-error"))
+		})
+	})
 
-			It("returns the error", func() {
-				Expect(err).To(MatchError("fetch-error"))
-			})
+	When("getting the current org fails", func() {
+		BeforeEach(func() {
+			fakeCfClient.GetCurrentOrgReturns("", errors.New("get-org-error"))
 		})
 
-		When("getting the current org fails", func() {
-			BeforeEach(func() {
-				fakeCfClient.GetCurrentOrgReturns("", errors.New("get-org-error"))
-			})
+		It("returns the error", func() {
+			Expect(err).To(MatchError("get-org-error"))
+		})
+	})
 
-			It("returns the error", func() {
-				Expect(err).To(MatchError("get-org-error"))
-			})
+	When("getting the username fails", func() {
+		BeforeEach(func() {
+			fakeCfClient.UsernameReturns("", errors.New("get-user-error"))
 		})
 
-		When("getting the username fails", func() {
-			BeforeEach(func() {
-				fakeCfClient.UsernameReturns("", errors.New("get-user-error"))
-			})
+		It("returns the error", func() {
+			Expect(err).To(MatchError("get-user-error"))
+		})
+	})
 
-			It("returns the error", func() {
-				Expect(err).To(MatchError("get-user-error"))
-			})
+	When("spaces are not sorted alphabetically", func() {
+		BeforeEach(func() {
+			fakeCfClient.GetSpacesReturns([]cf.Space{
+				{
+					Name: "space2",
+					Applications: []cf.Application{
+						{Name: "app1", Guid: "space2-app1-guid"},
+					},
+				},
+				{
+					Name: "space1",
+					Applications: []cf.Application{
+						{Name: "app1", Guid: "space1-app1-guid"},
+					},
+				},
+			}, nil)
+			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns([]float64{1.5}, nil)
+		})
+
+		It("reports sorted spaces", func() {
+			Expect(len(report.SpaceReports)).To(Equal(2))
+			Expect(report.SpaceReports[0].SpaceName).To(Equal("space1"))
+			Expect(report.SpaceReports[1].SpaceName).To(Equal("space2"))
+		})
+	})
+
+	When("apps in a single space are not sorted alphabetically", func() {
+		BeforeEach(func() {
+			fakeCfClient.GetSpacesReturns([]cf.Space{
+				{
+					Name: "space1",
+					Applications: []cf.Application{
+						{Name: "app2", Guid: "space1-app2-guid"},
+						{Name: "app1", Guid: "space1-app1-guid"},
+					},
+				},
+			}, nil)
+			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns([]float64{1.5}, nil)
+		})
+
+		It("reports sorted apps in the report", func() {
+			Expect(len(report.SpaceReports)).To(Equal(1))
+			Expect(len(report.SpaceReports[0].Apps)).To(Equal(2))
+			Expect(report.SpaceReports[0].Apps[0]).To(Equal("app1"))
+			Expect(report.SpaceReports[0].Apps[1]).To(Equal("app2"))
 		})
 	})
 })

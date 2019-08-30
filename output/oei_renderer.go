@@ -1,8 +1,6 @@
 package output
 
 import (
-	"fmt"
-
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
@@ -22,17 +20,29 @@ func NewOverEntitlementInstancesRenderer(display OverEntitlementInstancesDisplay
 }
 
 func (r *OverEntitlementInstancesRenderer) Render(report reporter.OEIReport) error {
-	r.showReportHeader(report)
 	if len(report.SpaceReports) == 0 {
-		fmt.Printf("No apps over entitlement")
-	} else {
-		fmt.Printf("Report = %+v\n", report)
+		r.display.ShowMessage("No apps over entitlement in org %s.\n", terminal.EntityNameColor(report.Org))
+		return nil
 	}
+
+	r.showReportHeader(report)
+	r.display.ShowTable([]string{"space", "app"}, buildOEITableRows(report))
 	return nil
 }
+
 func (r OverEntitlementInstancesRenderer) showReportHeader(report reporter.OEIReport) {
 	r.display.ShowMessage("Showing over-entitlement apps in org %s as %s...\n",
 		terminal.EntityNameColor(report.Org),
 		terminal.EntityNameColor(report.Username),
 	)
+}
+
+func buildOEITableRows(report reporter.OEIReport) [][]string {
+	var rows [][]string
+	for _, spaceReport := range report.SpaceReports {
+		for _, app := range spaceReport.Apps {
+			rows = append(rows, []string{spaceReport.SpaceName, app})
+		}
+	}
+	return rows
 }

@@ -1,6 +1,10 @@
 package reporter
 
-import "code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+import (
+	"sort"
+
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+)
 
 type OEIReport struct {
 	Org          string
@@ -40,8 +44,6 @@ func NewOverEntitlementInstances(cf CloudFoundryClient, metricsFetcher MetricsFe
 }
 
 func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) {
-	spaceReports := []SpaceReport{}
-
 	org, err := r.cf.GetCurrentOrg()
 	if err != nil {
 		return OEIReport{}, err
@@ -57,20 +59,34 @@ func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) 
 		return OEIReport{}, err
 	}
 
+	spaceReports, err := r.buildSpaceReports(spaces)
+	if err != nil {
+		return OEIReport{}, err
+	}
+
+	return OEIReport{Org: org, Username: user, SpaceReports: spaceReports}, nil
+}
+
+func (r OverEntitlementInstances) buildSpaceReports(spaces []cf.Space) ([]SpaceReport, error) {
+	spaceReports := []SpaceReport{}
 	for _, space := range spaces {
 		apps, err := r.filterApps(space.Applications)
 		if err != nil {
-			return OEIReport{}, err
+			return nil, err
 		}
 
 		if len(apps) == 0 {
 			continue
 		}
-
+		sort.Strings(apps)
 		spaceReports = append(spaceReports, SpaceReport{SpaceName: space.Name, Apps: apps})
 	}
 
-	return OEIReport{Org: org, Username: user, SpaceReports: spaceReports}, nil
+	sort.Slice(spaceReports, func(i, j int) bool {
+		return spaceReports[i].SpaceName < spaceReports[j].SpaceName
+	})
+
+	return spaceReports, nil
 }
 
 func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]string, error) {

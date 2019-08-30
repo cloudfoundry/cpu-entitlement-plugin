@@ -32,6 +32,8 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 		os.Exit(1)
 	}
 
+	ui.Warn("Note: This feature is experimental.")
+
 	fetcher := fetchers.NewCumulativeUsage(createLogClient(logCacheURL, cli.AccessToken))
 	cfClient := cf.NewClient(cli)
 	reporter := reporter.NewOverEntitlementInstances(cfClient, fetcher)
