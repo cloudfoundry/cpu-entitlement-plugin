@@ -36,10 +36,13 @@ run_all_tests_in_parallel() {
   print_message "ctrl-d panes when they are done" $RED
   go vet -mod vendor ./...
 
-  tmux split-window -v -p 90 "/bin/bash -c \"ginkgo -r -race -nodes=8 -failOnPending -randomizeAllSpecs -randomizeSuites -skipPackage e2e,integration; bash --init-file <(echo 'history -s ginkgo -r -race -nodes=8 -failOnPending -randomizeAllSpecs -randomizeSuites -skipPackage e2e,integration')\""
-  tmux split-window -v -p 50 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/integration-test.yml  && ./script/remote-fly ci/e2e-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/integration-test.yml \&\& ./script/remote-fly ci/e2e-test.yml')\""
+  initialTmuxPane=$TMUX_PANE
 
-  tmux select-pane -t 0
+  tmux split-window -v -p 90 "/bin/bash -c \"./script/remote-fly ci/unit-tests.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/unit-tests.yml')\""
+  tmux split-window -v -p 70 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/integration-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/integration-test.yml')\""
+  tmux split-window -v -p 50 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/e2e-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/e2e-test.yml')\""
+
+  tmux select-pane -t "$initialTmuxPane"
 }
 
 run_tests_in_directory() {
