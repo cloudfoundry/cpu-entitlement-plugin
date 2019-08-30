@@ -1,9 +1,8 @@
 package e2e_test
 
 import (
-	"crypto/tls"
-	"net/http"
 	"strings"
+	"time"
 
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	"github.com/google/uuid"
@@ -25,9 +24,9 @@ var _ = Describe("cpu-plugins", func() {
 		org = "org-" + uid
 		space = "space-" + uid
 
-		Expect(Cmd("cf", "create-org", org).WithTimeout("3s").Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "create-org", org).Run()).To(gexec.Exit(0))
 		Expect(Cmd("cf", "target", "-o", org).Run()).To(gexec.Exit(0))
-		Expect(Cmd("cf", "create-space", space).WithTimeout("3s").Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "create-space", space).Run()).To(gexec.Exit(0))
 		Expect(Cmd("cf", "target", "-o", org, "-s", space).Run()).To(gexec.Exit(0))
 	})
 
@@ -46,7 +45,7 @@ var _ = Describe("cpu-plugins", func() {
 		})
 
 		It("prints the application entitlement info", func() {
-			Eventually(Cmd("cf", "cpu-entitlement", appName).Run, "20s", "1s").Should(SatisfyAll(
+			Eventually(Cmd("cf", "cpu-entitlement", appName).Run).Should(SatisfyAll(
 				gbytes.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as", appName, org, space),
 				gbytes.Say("avg usage"),
 				gbytes.Say("#0"),
@@ -69,8 +68,8 @@ var _ = Describe("cpu-plugins", func() {
 			})
 
 			It("prints the list of apps that are over entitlement", func() {
-				httpGet(appURL + "/spin")
-				Eventually(Cmd("cf", "over-entitlement-instances").Run, "20s", "1s").Should(gbytes.Say(appName))
+				SpinFor(appURL, time.Second)
+				Eventually(Cmd("cf", "over-entitlement-instances").Run).Should(gbytes.Say(appName))
 			})
 		})
 
@@ -79,10 +78,3 @@ var _ = Describe("cpu-plugins", func() {
 		})
 	})
 })
-
-func httpGet(url string) {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	resp, err := http.Get(url)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, resp.StatusCode).To(Equal(http.StatusOK))
-}

@@ -3,6 +3,7 @@ package integration_test
 import (
 	"os"
 	"testing"
+	"time"
 
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	. "github.com/onsi/ginkgo"
@@ -12,6 +13,8 @@ import (
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
+	SetDefaultEventuallyTimeout(120 * time.Second)
+	SetDefaultEventuallyPollingInterval(5 * time.Second)
 	RunSpecs(t, "Integration Suite")
 }
 

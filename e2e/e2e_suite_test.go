@@ -13,6 +13,8 @@ import (
 
 func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
+	SetDefaultEventuallyTimeout(120 * time.Second)
+	SetDefaultEventuallyPollingInterval(5 * time.Second)
 	RunSpecs(t, "E2e Suite")
 }
 
@@ -21,7 +23,6 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	SetDefaultEventuallyTimeout(5 * time.Second)
 	Expect(Cmd("make", "install").WithDir("..").WithTimeout("30s").Run()).To(gexec.Exit(0))
 
 	cfApi = GetEnv("CF_API")

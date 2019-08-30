@@ -36,9 +36,9 @@ var _ = Describe("Fetcher", func() {
 		org = "org-" + uid
 		space := "space-" + uid
 
-		Expect(Cmd("cf", "create-org", org).WithTimeout("3s").Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "create-org", org).Run()).To(gexec.Exit(0))
 		Expect(Cmd("cf", "target", "-o", org).Run()).To(gexec.Exit(0))
-		Expect(Cmd("cf", "create-space", space).WithTimeout("3s").Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "create-space", space).Run()).To(gexec.Exit(0))
 		Expect(Cmd("cf", "target", "-o", org, "-s", space).Run()).To(gexec.Exit(0))
 
 		logCacheURL := strings.Replace(cfApi, "https://api.", "http://log-cache.", 1)
@@ -65,8 +65,8 @@ var _ = Describe("Fetcher", func() {
 		})
 
 		It("gets the usages of all instances for each app", func() {
-			Eventually(getUsages("spinner-1-"+uid), "20s", "1s").Should(HaveLen(3))
-			Eventually(getUsages("spinner-2-"+uid), "20s", "1s").Should(HaveLen(1))
+			Eventually(getUsages("spinner-1-" + uid)).Should(HaveLen(3))
+			Eventually(getUsages("spinner-2-" + uid)).Should(HaveLen(1))
 		})
 	})
 

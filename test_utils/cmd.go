@@ -11,42 +11,46 @@ import (
 )
 
 type Command struct {
-	cmd     string
-	args    []string
-	dir     string
-	timeout string
+	cmd          string
+	args         []string
+	dir          string
+	timeout      string
+	pollInterval string
 }
 
 func Cmd(cmd string, args ...string) Command {
 	return Command{
-		cmd:     cmd,
-		args:    args,
-		timeout: "5s",
+		cmd:          cmd,
+		args:         args,
+		timeout:      "30s",
+		pollInterval: "1s",
 	}
 }
 
 func (c Command) WithDir(dir string) Command {
 	return Command{
-		cmd:     c.cmd,
-		args:    c.args,
-		dir:     dir,
-		timeout: c.timeout,
+		cmd:          c.cmd,
+		args:         c.args,
+		dir:          dir,
+		timeout:      c.timeout,
+		pollInterval: c.pollInterval,
 	}
 }
 
 func (c Command) WithTimeout(timeout string) Command {
 	return Command{
-		cmd:     c.cmd,
-		args:    c.args,
-		dir:     c.dir,
-		timeout: timeout,
+		cmd:          c.cmd,
+		args:         c.args,
+		dir:          c.dir,
+		timeout:      timeout,
+		pollInterval: c.pollInterval,
 	}
 }
 
 func (c Command) Run() *gexec.Session {
 	session, err := gexec.Start(c.build(), GinkgoWriter, GinkgoWriter)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	EventuallyWithOffset(1, session, c.timeout).Should(gexec.Exit())
+	EventuallyWithOffset(1, session, c.timeout, c.pollInterval).Should(gexec.Exit())
 	return session
 }
 
