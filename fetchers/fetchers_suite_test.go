@@ -19,16 +19,6 @@ type Metric struct {
 	Age         float64
 }
 
-func instantQueryResult(samples ...*logcache_v1.PromQL_Sample) *logcache_v1.PromQL_InstantQueryResult {
-	return &logcache_v1.PromQL_InstantQueryResult{
-		Result: &logcache_v1.PromQL_InstantQueryResult_Vector{
-			Vector: &logcache_v1.PromQL_Vector{
-				Samples: samples,
-			},
-		},
-	}
-}
-
 func rangeQueryResult(series ...*logcache_v1.PromQL_Series) *logcache_v1.PromQL_RangeQueryResult {
 	return &logcache_v1.PromQL_RangeQueryResult{
 		Result: &logcache_v1.PromQL_RangeQueryResult_Matrix{
