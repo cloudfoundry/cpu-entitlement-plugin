@@ -14,8 +14,8 @@ type CurrentUsageFetcher struct {
 	client LogCacheClient
 }
 
-func NewCurrentUsageFetcher(client LogCacheClient) *CurrentUsageFetcher {
-	return &CurrentUsageFetcher{client: client}
+func NewCurrentUsageFetcher(client LogCacheClient) CurrentUsageFetcher {
+	return CurrentUsageFetcher{client: client}
 }
 
 func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {

@@ -35,8 +35,8 @@ type LogCacheClient interface {
 	PromQLRange(ctx context.Context, query string, opts ...logcache.PromQLOption) (*logcache_v1.PromQL_RangeQueryResult, error)
 }
 
-func NewHistoricalUsageFetcher(client LogCacheClient, from, to time.Time) *HistoricalUsageFetcher {
-	return &HistoricalUsageFetcher{client: client, from: from, to: to}
+func NewHistoricalUsageFetcher(client LogCacheClient, from, to time.Time) HistoricalUsageFetcher {
+	return HistoricalUsageFetcher{client: client, from: from, to: to}
 }
 
 func (f HistoricalUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {

@@ -17,7 +17,7 @@ import (
 var _ = Describe("HistoricalUsageFetcher", func() {
 	var (
 		logCacheClient  *fetchersfakes.FakeLogCacheClient
-		fetcher         *fetchers.HistoricalUsageFetcher
+		fetcher         fetchers.HistoricalUsageFetcher
 		appGuid         string
 		appInstances    map[int]cf.Instance
 		historicalUsage map[int][]fetchers.InstanceData

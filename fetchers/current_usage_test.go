@@ -17,7 +17,7 @@ import (
 var _ = Describe("CurrentUsage", func() {
 	var (
 		logCacheClient *fetchersfakes.FakeLogCacheClient
-		fetcher        *fetchers.CurrentUsageFetcher
+		fetcher        fetchers.CurrentUsageFetcher
 		appGuid        string
 		appInstances   map[int]cf.Instance
 		currentUsage   map[int][]fetchers.InstanceData
