@@ -9,7 +9,6 @@ platform: linux
 
 inputs:
 - name: cpu-entitlement-plugin
-- name: spinner
 
 params:
   CF_API:

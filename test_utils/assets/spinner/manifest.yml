@@ -1,0 +1,5 @@
+---
+applications:
+ - name: spinner
+   env:
+     GOVERSION: go1.12

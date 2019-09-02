@@ -40,7 +40,7 @@ var _ = Describe("cpu-plugins", func() {
 
 		BeforeEach(func() {
 			appName = "spinner-" + uid
-			Expect(Cmd("cf", "push", appName).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+			PushSpinner(appName, 1)
 		})
 
 		It("prints the application entitlement info", func() {
@@ -63,11 +63,11 @@ var _ = Describe("cpu-plugins", func() {
 
 			BeforeEach(func() {
 				overEntitlementApp = "spinner-1-" + uid
-				Expect(Cmd("cf", "push", overEntitlementApp).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+				PushSpinner(overEntitlementApp, 1)
 				overEntitlementAppURL = strings.Replace(cfApi, "api.", overEntitlementApp+".", 1)
 
 				underEntitlementApp = "spinner-2-" + uid
-				Expect(Cmd("cf", "push", underEntitlementApp).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+				PushSpinner(underEntitlementApp, 1)
 				Spin(overEntitlementAppURL)
 			})
 
@@ -97,7 +97,7 @@ var _ = Describe("cpu-plugins", func() {
 					anotherAppURL = strings.Replace(cfApi, "api.", anotherApp+".", 1)
 					Expect(Cmd("cf", "create-space", anotherSpace).Run()).To(gexec.Exit(0))
 					Expect(Cmd("cf", "target", "-o", org, "-s", anotherSpace).Run()).To(gexec.Exit(0))
-					Expect(Cmd("cf", "push", anotherApp).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+					PushSpinner(anotherApp, 1)
 					Spin(anotherAppURL)
 				})
 

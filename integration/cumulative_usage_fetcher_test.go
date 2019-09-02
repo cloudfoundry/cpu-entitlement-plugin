@@ -60,8 +60,8 @@ var _ = Describe("Fetcher", func() {
 
 	When("running multiple apps with various instance counts", func() {
 		BeforeEach(func() {
-			Expect(Cmd("cf", "push", "spinner-1-"+uid, "-i", "3").WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
-			Expect(Cmd("cf", "push", "spinner-2-"+uid).WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+			PushSpinner("spinner-1-"+uid, 3)
+			PushSpinner("spinner-2-"+uid, 1)
 		})
 
 		It("gets the usages of all instances for each app", func() {
@@ -72,7 +72,7 @@ var _ = Describe("Fetcher", func() {
 
 	When("an app has no instances", func() {
 		BeforeEach(func() {
-			Expect(Cmd("cf", "push", "spinner-"+uid, "-i", "0").WithDir("../../spinner").WithTimeout("2m").Run()).To(gexec.Exit(0))
+			PushSpinner("spinner-"+uid, 0)
 		})
 
 		It("returns an empty list of usages", func() {

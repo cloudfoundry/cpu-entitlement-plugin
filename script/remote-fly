@@ -20,6 +20,5 @@ else
 
   fly -t "$GARDEN_REMOTE_ATC_URL" execute \
     -c "$DIR/../$task" \
-    -i cpu-entitlement-plugin="$DIR/.." \
-    -i spinner="$DIR/../../spinner"
+    -i cpu-entitlement-plugin="$DIR/.."
 fi
