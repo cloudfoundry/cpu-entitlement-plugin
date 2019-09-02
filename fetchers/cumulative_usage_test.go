@@ -15,7 +15,7 @@ import (
 var _ = Describe("Fetchers/CumulativeUsage", func() {
 	var (
 		logCacheClient  *fetchersfakes.FakeLogCacheClient
-		fetcher         fetchers.CumulativeUsage
+		fetcher         fetchers.CumulativeUsageFetcher
 		appGuid         string
 		cumulativeUsage []float64
 		fetchErr        error
@@ -23,7 +23,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 
 	BeforeEach(func() {
 		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
-		fetcher = fetchers.NewCumulativeUsage(logCacheClient)
+		fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
 
 		appGuid = "foo"
 

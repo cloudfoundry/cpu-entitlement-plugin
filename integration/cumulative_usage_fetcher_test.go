@@ -18,7 +18,7 @@ var _ = Describe("Fetcher", func() {
 		org string
 		uid string
 
-		fetcher  fetchers.CumulativeUsage
+		fetcher  fetchers.CumulativeUsageFetcher
 		getToken func() (string, error)
 	)
 
@@ -51,7 +51,7 @@ var _ = Describe("Fetcher", func() {
 			logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(getToken))),
 		)
 
-		fetcher = fetchers.NewCumulativeUsage(logCacheClient)
+		fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
 	})
 
 	AfterEach(func() {
@@ -87,7 +87,7 @@ var _ = Describe("Fetcher", func() {
 				logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(getToken))),
 			)
 
-			fetcher = fetchers.NewCumulativeUsage(logCacheClient)
+			fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
 		})
 
 		It("returns an error about the url", func() {

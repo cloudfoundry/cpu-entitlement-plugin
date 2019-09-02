@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-type CumulativeUsage struct {
+type CumulativeUsageFetcher struct {
 	logCacheClient LogCacheClient
 }
 
-func NewCumulativeUsage(logCacheClient LogCacheClient) CumulativeUsage {
-	return CumulativeUsage{logCacheClient: logCacheClient}
+func NewCumulativeUsageFetcher(logCacheClient LogCacheClient) CumulativeUsageFetcher {
+	return CumulativeUsageFetcher{logCacheClient: logCacheClient}
 }
 
-func (f CumulativeUsage) FetchInstanceEntitlementUsages(appGuid string) ([]float64, error) {
+func (f CumulativeUsageFetcher) FetchInstanceEntitlementUsages(appGuid string) ([]float64, error) {
 	promqlResult, err := f.logCacheClient.PromQL(context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid))
 	if err != nil {
