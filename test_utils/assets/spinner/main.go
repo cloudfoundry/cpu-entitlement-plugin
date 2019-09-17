@@ -9,9 +9,10 @@ import (
 )
 
 var spinning int32
-var niceNS int64
+var niceMicros int64
 
 func main() {
+	niceMicros = 1000
 	http.HandleFunc("/spin", func(w http.ResponseWriter, r *http.Request) {
 		myVal := atomic.AddInt32(&spinning, 1)
 		go func() {
@@ -20,8 +21,8 @@ func main() {
 				if isSpinning < myVal {
 					break
 				}
-				nanos := atomic.LoadInt64(&niceNS)
-				time.Sleep(time.Duration(nanos) * time.Nanosecond)
+				micros := atomic.LoadInt64(&niceMicros)
+				time.Sleep(time.Duration(micros) * time.Microsecond)
 				// spin!
 			}
 		}()
@@ -32,15 +33,15 @@ func main() {
 	})
 
 	http.HandleFunc("/nice", func(w http.ResponseWriter, r *http.Request) {
-		nanoVals, ok := r.URL.Query()["nanos"]
-		if !ok || len(nanoVals) < 1 {
+		microVals, ok := r.URL.Query()["micros"]
+		if !ok || len(microVals) < 1 {
 			return
 		}
-		val, err := strconv.Atoi(nanoVals[0])
+		val, err := strconv.Atoi(microVals[0])
 		if err != nil {
 			return
 		}
-		atomic.StoreInt64(&niceNS, int64(val))
+		atomic.StoreInt64(&niceMicros, int64(val))
 	})
 
 	port := os.Getenv("PORT")
