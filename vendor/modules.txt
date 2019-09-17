@@ -1,6 +1,6 @@
 # code.cloudfoundry.org/bytefmt v0.0.0-20190819182555-854d396b647c
 code.cloudfoundry.org/bytefmt
-# code.cloudfoundry.org/cli v6.46.0+incompatible
+# code.cloudfoundry.org/cli v6.46.1+incompatible
 code.cloudfoundry.org/cli/plugin/models
 code.cloudfoundry.org/cli/plugin
 code.cloudfoundry.org/cli/cf/terminal
@@ -94,7 +94,7 @@ github.com/mattn/go-colorable
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
-# github.com/onsi/ginkgo v1.9.0
+# github.com/onsi/ginkgo v1.10.1
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
 github.com/onsi/ginkgo/internal/codelocation
@@ -113,7 +113,7 @@ github.com/onsi/ginkgo/internal/leafnodes
 github.com/onsi/ginkgo/internal/spec
 github.com/onsi/ginkgo/internal/specrunner
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
-# github.com/onsi/gomega v1.6.0
+# github.com/onsi/gomega v1.7.0
 github.com/onsi/gomega
 github.com/onsi/gomega/gexec
 github.com/onsi/gomega/gbytes
