@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/fetchersfakes"
 )
@@ -17,6 +18,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 		logCacheClient  *fetchersfakes.FakeLogCacheClient
 		fetcher         fetchers.CumulativeUsageFetcher
 		appGuid         string
+		appInstances    map[int]cf.Instance
 		cumulativeUsage []float64
 		fetchErr        error
 	)
@@ -38,10 +40,16 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 				point("4", 0.5),
 			),
 		), nil)
+		appInstances = map[int]cf.Instance{
+			0: cf.Instance{InstanceID: 0, ProcessInstanceID: "abc"},
+			1: cf.Instance{InstanceID: 1, ProcessInstanceID: "def"},
+			2: cf.Instance{InstanceID: 2, ProcessInstanceID: "ghi"},
+		}
+
 	})
 
 	JustBeforeEach(func() {
-		cumulativeUsage, fetchErr = fetcher.FetchInstanceEntitlementUsages(appGuid)
+		cumulativeUsage, fetchErr = fetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
 	})
 
 	It("gets the current usage from the log-cache client", func() {
@@ -54,6 +62,62 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 	It("returns the correct accumulated usage", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
 		Expect(cumulativeUsage).To(ConsistOf(0.2, 0.4, 0.5))
+	})
+
+	When("cache returns data for instances that are no longer running (because the app has been scaled down", func() {
+		BeforeEach(func() {
+			appInstances = map[int]cf.Instance{
+				0: cf.Instance{InstanceID: 0, ProcessInstanceID: "abc"},
+			}
+		})
+
+		It("returns current usage for running instances only", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(cumulativeUsage).To(ConsistOf(0.2))
+		})
+	})
+
+	When("cache returns data for instances with same id but different process instance id", func() {
+		BeforeEach(func() {
+			logCacheClient.PromQLReturns(queryResult(
+				sample("0", "def",
+					point("1", 0.2),
+				),
+			), nil)
+		})
+
+		It("ignores that data", func() {
+			Expect(cumulativeUsage).To(BeEmpty())
+		})
+	})
+
+	When("cache returns data for instances with unknown process instance id", func() {
+		BeforeEach(func() {
+			logCacheClient.PromQLReturns(queryResult(
+				sample("0", "xyz",
+					point("1", 0.5),
+				),
+			), nil)
+		})
+
+		It("ignores that data", func() {
+			Expect(cumulativeUsage).To(BeEmpty())
+		})
+	})
+
+	When("fetched data has corrupt instance id", func() {
+		BeforeEach(func() {
+			logCacheClient.PromQLReturns(queryResult(
+				sample("dyado", "def",
+					point("2", 0.4),
+				),
+			), nil)
+		})
+
+		It("ignores the corrupt data point", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(cumulativeUsage).To(BeEmpty())
+		})
 	})
 
 	When("fetching the cumulative usage fails", func() {

@@ -20,7 +20,7 @@ type SpaceReport struct {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchInstanceEntitlementUsages(appGuid string) ([]float64, error)
+	FetchInstanceEntitlementUsages(appGuid string, appInstances map[int]cf.Instance) ([]float64, error)
 }
 
 //go:generate counterfeiter . CloudFoundryClient
@@ -92,7 +92,7 @@ func (r OverEntitlementInstances) buildSpaceReports(spaces []cf.Space) ([]SpaceR
 func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]string, error) {
 	apps := []string{}
 	for _, app := range spaceApps {
-		isOverEntitlement, err := r.isOverEntitlement(app.Guid)
+		isOverEntitlement, err := r.isOverEntitlement(app.Guid, app.Instances)
 		if err != nil {
 			return nil, err
 		}
@@ -103,8 +103,8 @@ func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]stri
 	return apps, nil
 }
 
-func (r OverEntitlementInstances) isOverEntitlement(appGuid string) (bool, error) {
-	appInstancesUsages, err := r.metricsFetcher.FetchInstanceEntitlementUsages(appGuid)
+func (r OverEntitlementInstances) isOverEntitlement(appGuid string, appInstances map[int]cf.Instance) (bool, error) {
+	appInstancesUsages, err := r.metricsFetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
 	if err != nil {
 		return false, err
 	}

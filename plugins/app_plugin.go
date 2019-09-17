@@ -47,7 +47,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	cfClient := cf.NewClient(cli)
+	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken)))
 	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
 		time.Now().Add(-month),

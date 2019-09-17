@@ -62,12 +62,8 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]
 			continue
 		}
 
-		instance, instanceExists := appInstances[instanceID]
-		if !instanceExists {
-			continue
-		}
-
-		if !isCurrentSeries(series, instance) {
+		processInstanceID := series.GetMetric()["process_instance_id"]
+		if appInstances[instanceID].ProcessInstanceID != processInstanceID {
 			continue
 		}
 
@@ -89,18 +85,4 @@ func parseResult(res *logcache_v1.PromQL_RangeQueryResult, appInstances map[int]
 	}
 
 	return dataPerInstance
-}
-
-func isCurrentSeries(series *logcache_v1.PromQL_Series, instance cf.Instance) bool {
-	points := series.GetPoints()
-	if len(points) == 0 {
-		return false
-	}
-
-	timestamp, err := strconv.ParseFloat(points[0].GetTime(), 64)
-	if err != nil {
-		return false
-	}
-	pointTime := time.Unix(int64(timestamp), 0)
-	return pointTime.After(instance.Since) || pointTime.Equal(instance.Since)
 }

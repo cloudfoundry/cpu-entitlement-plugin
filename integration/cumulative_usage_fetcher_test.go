@@ -3,6 +3,7 @@ package integration_test
 import (
 	"strings"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
@@ -18,14 +19,21 @@ var _ = Describe("Fetcher", func() {
 		org string
 		uid string
 
-		fetcher  fetchers.CumulativeUsageFetcher
-		getToken func() (string, error)
+		fetcher       fetchers.CumulativeUsageFetcher
+		procIdFetcher fetchers.ProcessInstanceIDFetcher
+		getToken      func() (string, error)
 	)
 
 	getUsages := func(appName string) func() []float64 {
 		appGuid := getCmdOutput("cf", "app", appName, "--guid")
 		return func() []float64 {
-			usages, err := fetcher.FetchInstanceEntitlementUsages(appGuid)
+			processIds, err := procIdFetcher.Fetch(appGuid)
+			Expect(err).NotTo(HaveOccurred())
+			appInstances := map[int]cf.Instance{}
+			for id, procId := range processIds {
+				appInstances[id] = cf.Instance{InstanceID: id, ProcessInstanceID: procId}
+			}
+			usages, err := fetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
 			Expect(err).NotTo(HaveOccurred())
 			return usages
 		}
@@ -52,6 +60,7 @@ var _ = Describe("Fetcher", func() {
 		)
 
 		fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
+		procIdFetcher = fetchers.NewProcessInstanceIDFetcher(logCacheClient)
 	})
 
 	AfterEach(func() {
@@ -91,7 +100,7 @@ var _ = Describe("Fetcher", func() {
 		})
 
 		It("returns an error about the url", func() {
-			_, err := fetcher.FetchInstanceEntitlementUsages("anything")
+			_, err := fetcher.FetchInstanceEntitlementUsages("anything", nil)
 			Expect(err).To(MatchError(ContainSubstring("dial")))
 		})
 	})

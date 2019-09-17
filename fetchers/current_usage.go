@@ -37,6 +37,11 @@ func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances 
 		if err != nil {
 			continue
 		}
+
+		processInstanceID := sample.GetMetric()["process_instance_id"]
+		if processInstanceID != appInstances[instanceID].ProcessInstanceID {
+			continue
+		}
 		timestamp, err := strconv.ParseFloat(sample.GetPoint().GetTime(), 64)
 		if err != nil {
 			continue
@@ -47,15 +52,8 @@ func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances 
 			Time:       time.Unix(int64(timestamp), 0),
 			Value:      sample.GetPoint().GetValue(),
 		}
-		if isValid(dataPoint, appInstances) {
-			usagePerInstance[instanceID] = []InstanceData{dataPoint}
-		}
+		usagePerInstance[instanceID] = []InstanceData{dataPoint}
 	}
 
 	return usagePerInstance
-}
-
-func isValid(dataPoint InstanceData, appInstances map[int]cf.Instance) bool {
-	instance, instanceExists := appInstances[dataPoint.InstanceID]
-	return instanceExists && (dataPoint.Time.After(instance.Since) || dataPoint.Time.Equal(instance.Since))
 }

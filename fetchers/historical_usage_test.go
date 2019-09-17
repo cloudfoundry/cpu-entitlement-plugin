@@ -46,9 +46,9 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		), nil)
 
 		appInstances = map[int]cf.Instance{
-			0: cf.Instance{InstanceID: 0, Since: time.Unix(0, 0)},
-			1: cf.Instance{InstanceID: 1, Since: time.Unix(0, 0)},
-			2: cf.Instance{InstanceID: 2, Since: time.Unix(0, 0)},
+			0: cf.Instance{InstanceID: 0, ProcessInstanceID: "abc"},
+			1: cf.Instance{InstanceID: 1, ProcessInstanceID: "def"},
+			2: cf.Instance{InstanceID: 2, ProcessInstanceID: "ghi"},
 		}
 	})
 
@@ -100,7 +100,7 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 	When("cache returns data for instances that are no longer running (because the app has been scaled down", func() {
 		BeforeEach(func() {
 			appInstances = map[int]cf.Instance{
-				0: cf.Instance{InstanceID: 0, Since: time.Unix(0, 0)},
+				0: cf.Instance{InstanceID: 0, ProcessInstanceID: "abc"},
 			}
 		})
 
@@ -123,33 +123,32 @@ var _ = Describe("HistoricalUsageFetcher", func() {
 		})
 	})
 
-	When("cache returns data before the instance has been created", func() {
+	When("cache returns data for instances with same id but different process instance id", func() {
 		BeforeEach(func() {
-			appInstances = map[int]cf.Instance{
-				0: cf.Instance{InstanceID: 0, Since: time.Unix(2, 0)},
-				1: cf.Instance{InstanceID: 1, Since: time.Unix(2, 0)},
-				2: cf.Instance{InstanceID: 2, Since: time.Unix(2, 0)},
-			}
+			logCacheClient.PromQLRangeReturns(rangeQueryResult(
+				series("0", "def",
+					point("1", 0.2),
+					point("3", 0.5),
+				),
+			), nil)
 		})
 
-		It("filters out series before the instance has been created", func() {
-			Expect(fetchErr).NotTo(HaveOccurred())
-			Expect(historicalUsage).To(Equal(map[int][]fetchers.InstanceData{
-				1: {
-					{
-						Time:       time.Unix(2, 0),
-						InstanceID: 1,
-						Value:      0.4,
-					},
-				},
-				2: {
-					{
-						Time:       time.Unix(4, 0),
-						InstanceID: 2,
-						Value:      0.5,
-					},
-				},
-			}))
+		It("ignores that data", func() {
+			Expect(historicalUsage).To(BeEmpty())
+		})
+	})
+
+	When("cache returns data for instances with unknown process instance id", func() {
+		BeforeEach(func() {
+			logCacheClient.PromQLRangeReturns(rangeQueryResult(
+				series("0", "xyz",
+					point("1", 0.5),
+				),
+			), nil)
+		})
+
+		It("ignores that data", func() {
+			Expect(historicalUsage).To(BeEmpty())
 		})
 	})
 

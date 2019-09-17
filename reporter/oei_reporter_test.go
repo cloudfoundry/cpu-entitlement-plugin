@@ -41,7 +41,7 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			},
 		}, nil)
 
-		fakeMetricsFetcher.FetchInstanceEntitlementUsagesStub = func(appGuid string) ([]float64, error) {
+		fakeMetricsFetcher.FetchInstanceEntitlementUsagesStub = func(appGuid string, appInstances map[int]cf.Instance) ([]float64, error) {
 			switch appGuid {
 			case "space1-app1-guid":
 				return []float64{1.5, 0.5}, nil

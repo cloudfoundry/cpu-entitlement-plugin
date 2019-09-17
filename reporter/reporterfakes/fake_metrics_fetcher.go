@@ -4,14 +4,16 @@ package reporterfakes
 import (
 	"sync"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 )
 
 type FakeMetricsFetcher struct {
-	FetchInstanceEntitlementUsagesStub        func(string) ([]float64, error)
+	FetchInstanceEntitlementUsagesStub        func(string, map[int]cf.Instance) ([]float64, error)
 	fetchInstanceEntitlementUsagesMutex       sync.RWMutex
 	fetchInstanceEntitlementUsagesArgsForCall []struct {
 		arg1 string
+		arg2 map[int]cf.Instance
 	}
 	fetchInstanceEntitlementUsagesReturns struct {
 		result1 []float64
@@ -25,16 +27,17 @@ type FakeMetricsFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsages(arg1 string) ([]float64, error) {
+func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsages(arg1 string, arg2 map[int]cf.Instance) ([]float64, error) {
 	fake.fetchInstanceEntitlementUsagesMutex.Lock()
 	ret, specificReturn := fake.fetchInstanceEntitlementUsagesReturnsOnCall[len(fake.fetchInstanceEntitlementUsagesArgsForCall)]
 	fake.fetchInstanceEntitlementUsagesArgsForCall = append(fake.fetchInstanceEntitlementUsagesArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("FetchInstanceEntitlementUsages", []interface{}{arg1})
+		arg2 map[int]cf.Instance
+	}{arg1, arg2})
+	fake.recordInvocation("FetchInstanceEntitlementUsages", []interface{}{arg1, arg2})
 	fake.fetchInstanceEntitlementUsagesMutex.Unlock()
 	if fake.FetchInstanceEntitlementUsagesStub != nil {
-		return fake.FetchInstanceEntitlementUsagesStub(arg1)
+		return fake.FetchInstanceEntitlementUsagesStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -49,17 +52,17 @@ func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesCallCount() int {
 	return len(fake.fetchInstanceEntitlementUsagesArgsForCall)
 }
 
-func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesCalls(stub func(string) ([]float64, error)) {
+func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesCalls(stub func(string, map[int]cf.Instance) ([]float64, error)) {
 	fake.fetchInstanceEntitlementUsagesMutex.Lock()
 	defer fake.fetchInstanceEntitlementUsagesMutex.Unlock()
 	fake.FetchInstanceEntitlementUsagesStub = stub
 }
 
-func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesArgsForCall(i int) string {
+func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesArgsForCall(i int) (string, map[int]cf.Instance) {
 	fake.fetchInstanceEntitlementUsagesMutex.RLock()
 	defer fake.fetchInstanceEntitlementUsagesMutex.RUnlock()
 	argsForCall := fake.fetchInstanceEntitlementUsagesArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeMetricsFetcher) FetchInstanceEntitlementUsagesReturns(result1 []float64, result2 error) {

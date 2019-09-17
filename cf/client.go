@@ -1,8 +1,6 @@
 package cf
 
 import (
-	"time"
-
 	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 )
 
@@ -15,6 +13,11 @@ type Cli interface {
 	GetSpace(spaceName string) (plugin_models.GetSpace_Model, error)
 	GetSpaces() ([]plugin_models.GetSpaces_Model, error)
 	Username() (string, error)
+}
+
+//go:generate counterfeiter . ProcessInstanceIDFetcher
+type ProcessInstanceIDFetcher interface {
+	Fetch(appGUID string) (map[int]string, error)
 }
 
 type Space struct {
@@ -30,16 +33,17 @@ type Application struct {
 }
 
 type Instance struct {
-	InstanceID int
-	Since      time.Time
+	InstanceID        int
+	ProcessInstanceID string
 }
 
 type Client struct {
-	cli Cli
+	cli                      Cli
+	processInstanceIDFetcher ProcessInstanceIDFetcher
 }
 
-func NewClient(cli Cli) Client {
-	return Client{cli: cli}
+func NewClient(cli Cli, processInstanceIDFetcher ProcessInstanceIDFetcher) Client {
+	return Client{cli: cli, processInstanceIDFetcher: processInstanceIDFetcher}
 }
 
 func (c Client) GetSpaces() ([]Space, error) {
@@ -58,7 +62,16 @@ func (c Client) GetSpaces() ([]Space, error) {
 
 		var applications []Application
 		for _, cfApp := range cfSpaceDetails.Applications {
-			applications = append(applications, Application{Guid: cfApp.Guid, Name: cfApp.Name, Space: cfSpace.Name})
+			processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(cfApp.Guid)
+			if err != nil {
+				return []Space{}, err
+			}
+
+			instances := map[int]Instance{}
+			for instanceID, processInstanceID := range processInstanceIDs {
+				instances[instanceID] = Instance{InstanceID: instanceID, ProcessInstanceID: processInstanceID}
+			}
+			applications = append(applications, Application{Guid: cfApp.Guid, Name: cfApp.Name, Space: cfSpace.Name, Instances: instances})
 		}
 
 		spaces = append(spaces, Space{Name: cfSpace.Name, Applications: applications})
@@ -78,9 +91,18 @@ func (c Client) GetApplication(appName string) (Application, error) {
 		return Application{}, err
 	}
 
+	processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(app.Guid)
+	if err != nil {
+		return Application{}, err
+	}
+
 	instances := map[int]Instance{}
-	for id, instance := range app.Instances {
-		instances[id] = Instance{InstanceID: id, Since: instance.Since}
+	for id, _ := range app.Instances {
+		processInstanceID, hasProcessInstanceID := processInstanceIDs[id]
+		if !hasProcessInstanceID {
+			continue
+		}
+		instances[id] = Instance{InstanceID: id, ProcessInstanceID: processInstanceID}
 	}
 
 	return Application{Name: app.Name, Guid: app.Guid, Space: space.Name, Instances: instances}, nil

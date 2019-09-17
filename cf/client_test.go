@@ -14,15 +14,16 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		fakeCli  *cffakes.FakeCli
-		cfClient cf.Client
-		err      error
+		fakeCli                      *cffakes.FakeCli
+		fakeProcessInstanceIDFetcher *cffakes.FakeProcessInstanceIDFetcher
+		cfClient                     cf.Client
+		err                          error
 	)
 
 	BeforeEach(func() {
 		fakeCli = new(cffakes.FakeCli)
-		cfClient = cf.NewClient(fakeCli)
-
+		fakeProcessInstanceIDFetcher = new(cffakes.FakeProcessInstanceIDFetcher)
+		cfClient = cf.NewClient(fakeCli, fakeProcessInstanceIDFetcher)
 	})
 
 	Describe("Spaces", func() {
@@ -53,6 +54,18 @@ var _ = Describe("Client", func() {
 				}
 				return plugin_models.GetSpace_Model{}, fmt.Errorf("Space '%s' not found", spaceName)
 			}
+			fakeProcessInstanceIDFetcher.FetchStub = func(appGuid string) (map[int]string, error) {
+				switch appGuid {
+				case "space-1-app-1-guid":
+					return map[int]string{0: "space-1-app-1-process-instance-0"}, nil
+				case "space-1-app-2-guid":
+					return map[int]string{0: "space-1-app-2-process-instance-0"}, nil
+				case "space-2-app-1-guid":
+					return map[int]string{0: "space-2-app-1-process-instance-0"}, nil
+				}
+
+				return nil, errors.New("Unknown appGuid: " + appGuid)
+			}
 		})
 
 		JustBeforeEach(func() {
@@ -65,14 +78,14 @@ var _ = Describe("Client", func() {
 				{
 					Name: "space-1",
 					Applications: []cf.Application{
-						{Name: "app-1", Guid: "space-1-app-1-guid", Space: "space-1"},
-						{Name: "app-2", Guid: "space-1-app-2-guid", Space: "space-1"},
+						{Name: "app-1", Guid: "space-1-app-1-guid", Space: "space-1", Instances: map[int]cf.Instance{0: {InstanceID: 0, ProcessInstanceID: "space-1-app-1-process-instance-0"}}},
+						{Name: "app-2", Guid: "space-1-app-2-guid", Space: "space-1", Instances: map[int]cf.Instance{0: {InstanceID: 0, ProcessInstanceID: "space-1-app-2-process-instance-0"}}},
 					},
 				},
 				{
 					Name: "space-2",
 					Applications: []cf.Application{
-						{Name: "app-1", Guid: "space-2-app-1-guid", Space: "space-2"},
+						{Name: "app-1", Guid: "space-2-app-1-guid", Space: "space-2", Instances: map[int]cf.Instance{0: {InstanceID: 0, ProcessInstanceID: "space-2-app-1-process-instance-0"}}},
 					},
 				},
 			}))
@@ -97,6 +110,16 @@ var _ = Describe("Client", func() {
 				Expect(err).To(MatchError("get-space-error"))
 			})
 		})
+
+		When("fetching process instance ids fails", func() {
+			BeforeEach(func() {
+				fakeProcessInstanceIDFetcher.FetchReturns(nil, errors.New("process-instance-id-err"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("process-instance-id-err"))
+			})
+		})
 	})
 
 	Describe("Application", func() {
@@ -113,6 +136,7 @@ var _ = Describe("Client", func() {
 					plugin_models.GetApp_AppInstanceFields{Since: time.Unix(789, 0)},
 				},
 			}, nil)
+			fakeProcessInstanceIDFetcher.FetchReturns(map[int]string{0: "proc-instance-id-0", 1: "proc-instance-id-1"}, nil)
 		})
 
 		JustBeforeEach(func() {
@@ -131,12 +155,39 @@ var _ = Describe("Client", func() {
 			Expect(application.Space).To(Equal("the-space"))
 		})
 
+		It("gets process instance IDs", func() {
+			Expect(fakeProcessInstanceIDFetcher.FetchCallCount()).To(Equal(1))
+			Expect(fakeProcessInstanceIDFetcher.FetchArgsForCall(0)).To(Equal("qwerty"))
+		})
+
 		It("gets the application instances", func() {
-			Expect(len(application.Instances)).To(Equal(2))
-			Expect(application.Instances[0].InstanceID).To(Equal(0))
-			Expect(application.Instances[0].Since).To(Equal(time.Unix(123, 456)))
-			Expect(application.Instances[1].InstanceID).To(Equal(1))
-			Expect(application.Instances[1].Since).To(Equal(time.Unix(789, 0)))
+			Expect(application.Instances).To(ConsistOf(
+				cf.Instance{InstanceID: 0, ProcessInstanceID: "proc-instance-id-0"},
+				cf.Instance{InstanceID: 1, ProcessInstanceID: "proc-instance-id-1"},
+			))
+		})
+
+		When("process instance id is not available for an instance", func() {
+			BeforeEach(func() {
+				fakeProcessInstanceIDFetcher.FetchReturns(map[int]string{1: "proc-instance-id-1"}, nil)
+			})
+
+			It("ignores the instance", func() {
+				Expect(application.Instances).To(ConsistOf(cf.Instance{InstanceID: 1, ProcessInstanceID: "proc-instance-id-1"}))
+			})
+		})
+
+		When("there are process instance ids for non-existing instances", func() {
+			BeforeEach(func() {
+				fakeProcessInstanceIDFetcher.FetchReturns(map[int]string{0: "proc-instance-id-0", 1: "proc-instance-id-1", 2: "proc-instance-id-2"}, nil)
+			})
+
+			It("ignores the extra process instance ids", func() {
+				Expect(application.Instances).To(ConsistOf(
+					cf.Instance{InstanceID: 0, ProcessInstanceID: "proc-instance-id-0"},
+					cf.Instance{InstanceID: 1, ProcessInstanceID: "proc-instance-id-1"},
+				))
+			})
 		})
 
 		When("get app errors", func() {
@@ -156,6 +207,16 @@ var _ = Describe("Client", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("space error"))
+			})
+		})
+
+		When("get process instance ids errors", func() {
+			BeforeEach(func() {
+				fakeProcessInstanceIDFetcher.FetchReturns(map[int]string{}, errors.New("process-instance-id-err"))
+			})
+
+			It("returns the error", func() {
+				Expect(err).To(MatchError("process-instance-id-err"))
 			})
 		})
 	})
