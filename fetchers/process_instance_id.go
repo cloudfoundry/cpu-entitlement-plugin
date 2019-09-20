@@ -2,57 +2,71 @@ package fetchers
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
+	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
+
+const maxReadTries = 10
 
 type ProcessInstanceIDFetcher struct {
 	client LogCacheClient
+	limit  int
 }
 
-func NewProcessInstanceIDFetcher(logCacheClient LogCacheClient) ProcessInstanceIDFetcher {
+func NewProcessInstanceIDFetcherWithLimit(client LogCacheClient, limit int) ProcessInstanceIDFetcher {
 	return ProcessInstanceIDFetcher{
-		client: logCacheClient,
+		client: client,
+		limit:  limit,
 	}
+}
+
+func NewProcessInstanceIDFetcher(client LogCacheClient) ProcessInstanceIDFetcher {
+	return NewProcessInstanceIDFetcherWithLimit(client, 1000)
 }
 
 func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) {
-	res, err := f.client.PromQLRange(
-		context.Background(),
-		fmt.Sprintf(`absolute_usage{source_id="%s"}`, appGUID),
-		logcache.WithPromQLStart(time.Now().Add(-1*time.Minute)),
-		logcache.WithPromQLEnd(time.Now()),
-		logcache.WithPromQLStep("1m"),
-	)
-	if err != nil {
-		return nil, err
-	}
+	start := time.Now().Add(-30 * time.Second)
+	end := time.Now()
 
 	processInstanceIDs := map[int]string{}
-	latestFirstPointTimes := map[int]float64{}
 
-	for _, series := range res.GetMatrix().GetSeries() {
-		metric := series.GetMetric()
-		instanceID, err := strconv.Atoi(metric["instance_id"])
+	for i := 0; i < maxReadTries; i++ {
+		envelopes, err := f.client.Read(context.Background(), appGUID, start,
+			logcache.WithDescending(),
+			logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
+			logcache.WithNameFilter("absolute_entitlement"),
+			logcache.WithEndTime(end),
+		)
+
 		if err != nil {
-			continue
+			return nil, err
 		}
-		points := series.GetPoints()
-		if len(points) == 0 {
-			continue
+
+		for _, envelope := range envelopes {
+			instanceID, err := strconv.Atoi(envelope.InstanceId)
+			if err != nil {
+				continue
+			}
+
+			processInstanceID := envelope.Tags["process_instance_id"]
+			if len(processInstanceID) == 0 {
+				continue
+			}
+
+			if _, exists := processInstanceIDs[instanceID]; !exists {
+				processInstanceIDs[instanceID] = processInstanceID
+			}
 		}
-		firstPointTime, err := strconv.ParseFloat(points[0].GetTime(), 64)
-		if err != nil {
-			continue
+
+		if len(envelopes) < f.limit {
+			break
 		}
-		instanceFirstPointTime, isPresent := latestFirstPointTimes[instanceID]
-		if !isPresent || firstPointTime > instanceFirstPointTime {
-			latestFirstPointTimes[instanceID] = firstPointTime
-			processInstanceIDs[instanceID] = metric["process_instance_id"]
-		}
+
+		end = time.Unix(0, envelopes[len(envelopes)-1].Timestamp)
 	}
+
 	return processInstanceIDs, nil
 }

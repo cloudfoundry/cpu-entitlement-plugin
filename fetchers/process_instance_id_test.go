@@ -2,119 +2,217 @@ package fetchers_test
 
 import (
 	"errors"
+	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/fetchersfakes"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ProcessInstanceId Fetcher", func() {
+var _ = Describe("Process Instance ID Fetcher", func() {
 
 	var (
-		appGUID            string
-		logCacheClient     *fetchersfakes.FakeLogCacheClient
 		fetcher            fetchers.ProcessInstanceIDFetcher
+		logCacheClient     *fetchersfakes.FakeLogCacheClient
 		processInstanceIDs map[int]string
 		err                error
 	)
 
 	BeforeEach(func() {
-		appGUID = "my-app-guid"
 		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
-		logCacheClient.PromQLRangeReturns(rangeQueryResult(
-			series("0", "abc",
-				point("1.1", 0.2),
-				point("2.2", 0.5),
-			),
-			series("1", "bcd",
-				point("1.3", 0.2),
-				point("2", 0.5),
-			),
-		), nil)
 		fetcher = fetchers.NewProcessInstanceIDFetcher(logCacheClient)
 	})
 
 	JustBeforeEach(func() {
-		processInstanceIDs, err = fetcher.Fetch(appGUID)
+		processInstanceIDs, err = fetcher.Fetch("the-app")
 	})
 
-	It("returns the process instance id map", func() {
-		Expect(err).NotTo(HaveOccurred())
-		Expect(processInstanceIDs).To(HaveKeyWithValue(0, "abc"))
-		Expect(processInstanceIDs).To(HaveKeyWithValue(1, "bcd"))
-		Expect(processInstanceIDs).To(HaveLen(2))
-
-		Expect(logCacheClient.PromQLRangeCallCount()).To(Equal(1))
-		_, actualQuery, _ := logCacheClient.PromQLRangeArgsForCall(0)
-		Expect(actualQuery).To(ContainSubstring("source_id=\"my-app-guid\""))
-	})
-
-	When("there are duplicate series for an instance id", func() {
+	When("some datapoints exist for an app", func() {
 		BeforeEach(func() {
-			logCacheClient.PromQLRangeReturns(rangeQueryResult(
-				series("0", "abc",
-					point("2", 0.2),
-					point("3", 0.5),
-				),
-				series("0", "def",
-					point("3", 0.4),
-				),
-				series("0", "ghi",
-					point("1", 0.2),
-					point("3", 0.5),
-				),
-			), nil)
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0-new",
+					},
+					Timestamp: 10,
+				},
+				{
+					InstanceId: "2",
+					Tags: map[string]string{
+						"process_instance_id": "instance-2",
+					},
+					Timestamp: 2,
+				},
+				{
+					InstanceId: "1",
+					Tags: map[string]string{
+						"process_instance_id": "instance-1",
+					},
+					Timestamp: 1,
+				},
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0-old",
+					},
+					Timestamp: 0,
+				},
+			}, nil)
 		})
 
-		It("returns the series with the most recent first data point", func() {
+		It("invokes the logcache client with the right params", func() {
+			Expect(logCacheClient.ReadCallCount()).To(Equal(1))
+			_, appGuid, startTime, _ := logCacheClient.ReadArgsForCall(0)
+			Expect(appGuid).To(Equal("the-app"))
+			Expect(startTime).To(BeTemporally("~", time.Now().Add(-30*time.Second)))
+
+			// This is untestable. So, dear reader, please verify that the Read() invocation asks for the following options:
+			// * logcache.WithDescending(),
+			// * logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
+			// * logcache.WithNameFilter("absolute_entitlement")
+		})
+
+		It("succeeds", func() {
 			Expect(err).NotTo(HaveOccurred())
-			Expect(processInstanceIDs).To(HaveKeyWithValue(0, "def"))
-			Expect(processInstanceIDs).To(HaveLen(1))
+		})
+
+		It("returns a map from instance id to process instance id", func() {
+			Expect(processInstanceIDs).To(Equal(map[int]string{
+				0: "instance-0-new",
+				1: "instance-1",
+				2: "instance-2",
+			}))
 		})
 	})
 
-	When("a series has no points", func() {
+	When("the first query returns #limit envelopes but doesn't return enough data to build the list of instances", func() {
 		BeforeEach(func() {
-			logCacheClient.PromQLRangeReturns(rangeQueryResult(series("0", "abc")), nil)
+			fetcher = fetchers.NewProcessInstanceIDFetcherWithLimit(logCacheClient, 3)
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0-new",
+					},
+					Timestamp: 10,
+				},
+				{
+					InstanceId: "2",
+					Tags: map[string]string{
+						"process_instance_id": "instance-2",
+					},
+					Timestamp: 9,
+				},
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0-old",
+					},
+					Timestamp: time.Now().Add(-15 * time.Second).UnixNano(),
+				},
+			}, nil)
+
 		})
 
-		It("is ignored", func() {
-			Expect(err).NotTo(HaveOccurred())
-			Expect(processInstanceIDs).To(BeEmpty())
+		It("will exit having called Read 10 times, which is our sanity limit", func() {
+			Expect(logCacheClient.ReadCallCount()).To(Equal(10))
+		})
+
+		Context("When read#9 returns fewer than limit", func() {
+
+			BeforeEach(func() {
+				logCacheClient.ReadReturnsOnCall(8, []*loggregator_v2.Envelope{
+					{
+						InstanceId: "1",
+						Tags: map[string]string{
+							"process_instance_id": "instance-1",
+						},
+						Timestamp: 7,
+					},
+					{
+						InstanceId: "2",
+						Tags: map[string]string{
+							"process_instance_id": "instance-2-old",
+						},
+						Timestamp: 6,
+					},
+				}, nil)
+			})
+
+			It("calls Read() 9 times then stops", func() {
+				Expect(logCacheClient.ReadCallCount()).To(Equal(9))
+				Expect(processInstanceIDs).To(Equal(map[int]string{
+					0: "instance-0-new",
+					1: "instance-1",
+					2: "instance-2",
+				}))
+			})
 		})
 	})
 
-	When("a series has a nonsense instance_id", func() {
+	When("reading from logcache fails", func() {
 		BeforeEach(func() {
-			logCacheClient.PromQLRangeReturns(rangeQueryResult(series("blah", "abc")), nil)
+			logCacheClient.ReadReturns(nil, errors.New("logcache-error"))
 		})
 
-		It("is ignored", func() {
-			Expect(err).NotTo(HaveOccurred())
-			Expect(processInstanceIDs).To(BeEmpty())
+		It("fails", func() {
+			Expect(err).To(MatchError("logcache-error"))
 		})
 	})
 
-	When("a series has first point with a nonsense timestamp", func() {
+	When("the instance id is not an int", func() {
 		BeforeEach(func() {
-			logCacheClient.PromQLRangeReturns(rangeQueryResult(series("0", "abc", point("bcd", 0.1))), nil)
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0f",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0-borked",
+					},
+					Timestamp: 15,
+				},
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0",
+					},
+					Timestamp: 10,
+				},
+			}, nil)
 		})
 
-		It("is ignored", func() {
-			Expect(err).NotTo(HaveOccurred())
-			Expect(processInstanceIDs).To(BeEmpty())
+		It("should ignore the metric with the invalid instance id", func() {
+			Expect(processInstanceIDs).To(Equal(map[int]string{0: "instance-0"}))
 		})
 	})
 
-	When("promql call returns an error", func() {
+	When("the process instance id is empty or not set", func() {
 		BeforeEach(func() {
-			logCacheClient.PromQLRangeReturns(nil, errors.New("log-cache-error"))
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags:       map[string]string{},
+					Timestamp:  15,
+				},
+				{
+					InstanceId: "0",
+					Tags:       map[string]string{"process_instance_id": ""},
+					Timestamp:  13,
+				},
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "instance-0",
+					},
+					Timestamp: 10,
+				},
+			}, nil)
 		})
 
-		It("returns the error", func() {
-			Expect(err).To(MatchError("log-cache-error"))
+		It("should ignore the metric with the missing process instance id", func() {
+			Expect(processInstanceIDs).To(Equal(map[int]string{0: "instance-0"}))
 		})
-
 	})
 })
