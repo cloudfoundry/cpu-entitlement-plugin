@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
@@ -16,17 +15,19 @@ import (
 
 var _ = Describe("CurrentUsage", func() {
 	var (
-		logCacheClient *fetchersfakes.FakeLogCacheClient
-		fetcher        fetchers.CurrentUsageFetcher
-		appGuid        string
-		appInstances   map[int]cf.Instance
-		currentUsage   map[int][]fetchers.InstanceData
-		fetchErr       error
+		logCacheClient    *fetchersfakes.FakeLogCacheClient
+		historicalFetcher *fetchersfakes.FakeHistoricalFetcher
+		fetcher           fetchers.CurrentUsageFetcher
+		appGuid           string
+		appInstances      map[int]cf.Instance
+		currentUsage      map[int][]fetchers.InstanceData
+		fetchErr          error
 	)
 
 	BeforeEach(func() {
 		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
-		fetcher = fetchers.NewCurrentUsageFetcher(logCacheClient)
+		historicalFetcher = new(fetchersfakes.FakeHistoricalFetcher)
+		fetcher = fetchers.NewCurrentUsageFetcherWithHistoricalFetcher(logCacheClient, historicalFetcher)
 
 		appGuid = "foo"
 
@@ -59,26 +60,92 @@ var _ = Describe("CurrentUsage", func() {
 		Expect(query).To(Equal(fmt.Sprintf(`idelta(absolute_usage{source_id="%s"}[1m]) / idelta(absolute_entitlement{source_id="%s"}[1m])`, appGuid, appGuid)))
 	})
 
+	When("result does not contain points for every instance", func() {
+		BeforeEach(func() {
+			logCacheClient.PromQLReturns(queryResult(
+				sample("0", "abc",
+					point("1", 0.2),
+				),
+				sample("1", "def",
+					point("2", 0.4),
+				),
+			), nil)
+			historicalFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				2: {
+					fetchers.InstanceData{InstanceID: 2, Value: 1.1},
+					fetchers.InstanceData{InstanceID: 2, Value: 1.4},
+				},
+			}, nil)
+		})
+
+		It("fetches historical data", func() {
+			Expect(historicalFetcher.FetchInstanceDataCallCount()).To(Equal(1))
+			actualAppGuid, actualAppInstances := historicalFetcher.FetchInstanceDataArgsForCall(0)
+			Expect(actualAppGuid).To(Equal(appGuid))
+			Expect(actualAppInstances).To(Equal(appInstances))
+		})
+
+		It("succeeds", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+		})
+
+		It("returns values for each of the app instances", func() {
+			Expect(len(currentUsage)).To(Equal(3))
+			Expect(currentUsage).To(HaveKey(0))
+			Expect(currentUsage).To(HaveKey(1))
+			Expect(currentUsage).To(HaveKey(2))
+		})
+
+		It("returns the values from the delta query for the instances that have such", func() {
+			Expect(currentUsage[0]).To(ConsistOf(fetchers.InstanceData{
+				InstanceID: 0,
+				Value:      0.2,
+			}))
+
+			Expect(currentUsage[1]).To(ConsistOf(fetchers.InstanceData{
+				InstanceID: 1,
+				Value:      0.4,
+			}))
+		})
+
+		It("returns the values from the range query for the instances that don't have a delta value", func() {
+			Expect(currentUsage[2]).To(Equal([]fetchers.InstanceData{
+				{
+					InstanceID: 2,
+					Value:      1.4,
+				},
+			}))
+		})
+
+		When("fetching historical data fails", func() {
+			BeforeEach(func() {
+				historicalFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-failed"))
+			})
+
+			It("returns the error", func() {
+				Expect(fetchErr).To(MatchError("fetch-failed"))
+			})
+		})
+
+	})
+
 	It("returns the correct current usage", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
 		Expect(currentUsage).To(Equal(map[int][]fetchers.InstanceData{
 			0: {
 				{
-					Time:       time.Unix(1, 0),
 					InstanceID: 0,
 					Value:      0.2,
 				},
 			},
 			1: {
 				{
-					Time:       time.Unix(2, 0),
 					InstanceID: 1,
 					Value:      0.4,
 				},
 			},
 			2: {
 				{
-					Time:       time.Unix(4, 0),
 					InstanceID: 2,
 					Value:      0.5,
 				},
@@ -98,7 +165,6 @@ var _ = Describe("CurrentUsage", func() {
 			Expect(currentUsage).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
-						Time:       time.Unix(1, 0),
 						InstanceID: 0,
 						Value:      0.2,
 					},
@@ -145,47 +211,14 @@ var _ = Describe("CurrentUsage", func() {
 		})
 	})
 
-	When("fetched data has corrupt timestamp", func() {
+	When("fetched data has corrupt instance id", func() {
 		BeforeEach(func() {
 			logCacheClient.PromQLReturns(queryResult(
 				sample("0", "abc",
 					point("1", 0.2),
 				),
 				sample("1", "def",
-					point("baba", 0.4),
-				),
-				sample("2", "ghi",
-					point("4", 0.5),
-				),
-			), nil)
-		})
-
-		It("ignores the corrupt data point", func() {
-			Expect(fetchErr).NotTo(HaveOccurred())
-			Expect(currentUsage).To(Equal(map[int][]fetchers.InstanceData{
-				0: {
-					{
-						Time:       time.Unix(1, 0),
-						InstanceID: 0,
-						Value:      0.2,
-					},
-				},
-				2: {
-					{
-						Time:       time.Unix(4, 0),
-						InstanceID: 2,
-						Value:      0.5,
-					},
-				},
-			}))
-		})
-	})
-
-	When("fetched data has corrupt instance id", func() {
-		BeforeEach(func() {
-			logCacheClient.PromQLReturns(queryResult(
-				sample("0", "abc",
-					point("1", 0.2),
+					point("2", 0.3),
 				),
 				sample("dyado", "def",
 					point("2", 0.4),
@@ -201,14 +234,18 @@ var _ = Describe("CurrentUsage", func() {
 			Expect(currentUsage).To(Equal(map[int][]fetchers.InstanceData{
 				0: {
 					{
-						Time:       time.Unix(1, 0),
 						InstanceID: 0,
 						Value:      0.2,
 					},
 				},
+				1: {
+					{
+						InstanceID: 1,
+						Value:      0.3,
+					},
+				},
 				2: {
 					{
-						Time:       time.Unix(4, 0),
 						InstanceID: 2,
 						Value:      0.5,
 					},

@@ -55,6 +55,7 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 	)
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken),
+		time.Now().Add(-1*time.Minute), time.Now(),
 	)
 	metricsReporter := reporter.NewAppReporter(cfClient, historicalUsageFetcher, currentUsageFetcher)
 	display := output.NewTerminalDisplay(ui)

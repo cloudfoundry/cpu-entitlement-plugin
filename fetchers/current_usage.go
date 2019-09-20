@@ -10,12 +10,28 @@ import (
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
-type CurrentUsageFetcher struct {
-	client LogCacheClient
+//go:generate counterfeiter . HistoricalFetcher
+type HistoricalFetcher interface {
+	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error)
 }
 
-func NewCurrentUsageFetcher(client LogCacheClient) CurrentUsageFetcher {
-	return CurrentUsageFetcher{client: client}
+type CurrentUsageFetcher struct {
+	client            LogCacheClient
+	historicalFetcher HistoricalFetcher
+}
+
+func NewCurrentUsageFetcher(client LogCacheClient, from, to time.Time) CurrentUsageFetcher {
+	return CurrentUsageFetcher{
+		client:            client,
+		historicalFetcher: NewHistoricalUsageFetcher(client, from, to),
+	}
+}
+
+func NewCurrentUsageFetcherWithHistoricalFetcher(client LogCacheClient, historicalFetcher HistoricalFetcher) CurrentUsageFetcher {
+	return CurrentUsageFetcher{
+		client:            client,
+		historicalFetcher: historicalFetcher,
+	}
 }
 
 func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {
@@ -27,7 +43,27 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 		return nil, err
 	}
 
-	return parseCurrentUsage(res, appInstances), nil
+	deltaResult := parseCurrentUsage(res, appInstances)
+	if len(deltaResult) == len(appInstances) {
+		return deltaResult, nil
+	}
+
+	historicalResult, err := f.historicalFetcher.FetchInstanceData(appGUID, appInstances)
+	if err != nil {
+		return nil, err
+	}
+
+	for instanceID, _ := range appInstances {
+		if _, has := deltaResult[instanceID]; !has {
+			if result, ok := historicalResult[instanceID]; ok {
+				deltaResult[instanceID] = []InstanceData{result[len(result)-1]}
+				continue
+			}
+			return nil, fmt.Errorf("could not find historical usage for instance ID %d", instanceID)
+		}
+	}
+
+	return deltaResult, nil
 }
 
 func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances map[int]cf.Instance) map[int][]InstanceData {
@@ -42,14 +78,9 @@ func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances 
 		if processInstanceID != appInstances[instanceID].ProcessInstanceID {
 			continue
 		}
-		timestamp, err := strconv.ParseFloat(sample.GetPoint().GetTime(), 64)
-		if err != nil {
-			continue
-		}
 
 		dataPoint := InstanceData{
 			InstanceID: instanceID,
-			Time:       time.Unix(int64(timestamp), 0),
 			Value:      sample.GetPoint().GetValue(),
 		}
 		usagePerInstance[instanceID] = []InstanceData{dataPoint}
