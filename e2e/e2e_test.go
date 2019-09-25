@@ -62,13 +62,13 @@ var _ = Describe("cpu-plugins", func() {
 			)
 
 			BeforeEach(func() {
-				overEntitlementApp = "spinner-1-" + uid
+				overEntitlementApp = "overentitled-app-" + uid
 				PushSpinner(overEntitlementApp, 1)
 				overEntitlementAppURL = strings.Replace(cfApi, "api.", overEntitlementApp+".", 1)
-
-				underEntitlementApp = "spinner-2-" + uid
-				PushSpinner(underEntitlementApp, 1)
 				Spin(overEntitlementAppURL)
+
+				underEntitlementApp = "underentitled-app-" + uid
+				PushSpinner(underEntitlementApp, 1)
 			})
 
 			AfterEach(func() {
