@@ -9,33 +9,34 @@ import (
 )
 
 //go:generate counterfeiter . GetToken
+
 type GetToken func() (string, error)
 
-type Getter struct {
+type TokenGetter struct {
 	getToken            GetToken
 	currentToken        string
 	tokenExpirationTime time.Time
 }
 
-func NewGetter(getToken GetToken) *Getter {
-	return &Getter{
+func NewTokenGetter(getToken GetToken) *TokenGetter {
+	return &TokenGetter{
 		getToken:            getToken,
 		tokenExpirationTime: time.Now(),
 	}
 }
 
-func (t *Getter) Token() (string, error) {
+func (t *TokenGetter) Token() (string, error) {
 	if t.tokenExpired() {
 		return t.refreshToken()
 	}
 	return t.currentToken, nil
 }
 
-func (t *Getter) tokenExpired() bool {
+func (t *TokenGetter) tokenExpired() bool {
 	return time.Now().After(t.tokenExpirationTime)
 }
 
-func (t *Getter) refreshToken() (string, error) {
+func (t *TokenGetter) refreshToken() (string, error) {
 	token, err := t.getToken()
 	if err != nil {
 		return "", err

@@ -5,8 +5,8 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
+	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
@@ -56,7 +56,7 @@ var _ = Describe("Fetcher", func() {
 
 		logCacheClient := logcache.NewClient(
 			logCacheURL,
-			logcache.WithHTTPClient(httpclient.AuthenticatedBy(httpclient.NewGetter(getToken))),
+			logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
 		)
 
 		fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
@@ -93,7 +93,7 @@ var _ = Describe("Fetcher", func() {
 		BeforeEach(func() {
 			logCacheClient := logcache.NewClient(
 				"http://1.2.3:123",
-				logcache.WithHTTPClient(httpclient.AuthenticatedBy(httpclient.NewGetter(getToken))),
+				logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
 			)
 
 			fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)

@@ -17,7 +17,7 @@ import (
 var _ = Describe("Token", func() {
 	var (
 		fakeGetToken       *httpclientfakes.FakeGetToken
-		tokenGetter        *httpclient.Getter
+		tokenGetter        *httpclient.TokenGetter
 		tenMinutesToken    string
 		twentyMinutesToken string
 	)
@@ -36,7 +36,7 @@ var _ = Describe("Token", func() {
 	})
 
 	JustBeforeEach(func() {
-		tokenGetter = httpclient.NewGetter(fakeGetToken.Spy)
+		tokenGetter = httpclient.NewTokenGetter(fakeGetToken.Spy)
 	})
 
 	It("returns a token", func() {

@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"errors"
-	"net/url"
+	"fmt"
 	"os"
 	"regexp"
 	"time"
@@ -12,9 +12,9 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
@@ -47,14 +47,19 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 
-	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken)))
+	sslIsDisabled, err := cli.IsSSLDisabled()
+	if err != nil {
+		ui.Failed(err.Error())
+		os.Exit(1)
+	}
+	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled)))
 	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
-		createLogClient(logCacheURL, cli.AccessToken),
+		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
 		time.Now().Add(-month),
 		time.Now(),
 	)
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
-		createLogClient(logCacheURL, cli.AccessToken),
+		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
 		time.Now().Add(-1*time.Minute), time.Now(),
 	)
 	metricsReporter := reporter.NewAppReporter(cfClient, historicalUsageFetcher, currentUsageFetcher)
@@ -99,40 +104,35 @@ func (p CPUEntitlementPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func getLogCacheURL(cli plugin.CliConnection) (string, error) {
-	dopplerURL, err := cli.DopplerEndpoint()
+	hasAPISet, err := cli.HasAPIEndpoint()
+	if err != nil {
+		return "", err
+	}
+	if !hasAPISet {
+		return "", errors.New("No API endpoint set. Use 'cf login' or 'cf api' to target an endpoint.")
+	}
+	apiURL, err := cli.ApiEndpoint()
 	if err != nil {
 		return "", err
 	}
 
-	return buildLogCacheURL(dopplerURL)
+	re := regexp.MustCompile(`(https?://)[^.]+(\..*)`)
+	match := re.FindStringSubmatch(apiURL)
+	if len(match) != 3 {
+		return "", fmt.Errorf("Unable to parse CF_API to get log-cache endpoint: %s", apiURL)
+	}
+
+	return match[1] + "log-cache" + match[2], nil
+
 }
 
-func buildLogCacheURL(dopplerURL string) (string, error) {
-	logStreamURL, err := url.Parse(dopplerURL)
-	if err != nil {
-		return "", err
+func createLogClient(logCacheURL string, accessTokenFunc func() (string, error), skipSSLValidation bool) *logcache.Client {
+	httpClient := httpclient.NewAuthClient(accessTokenFunc)
+	if skipSSLValidation {
+		httpClient.SkipSSLValidation()
 	}
-
-	regex, err := regexp.Compile("doppler(\\S+):443")
-	if err != nil {
-		return "", err
-	}
-
-	match := regex.FindStringSubmatch(logStreamURL.Host)
-
-	if len(match) != 2 {
-		return "", errors.New("Unable to parse log-stream endpoint from doppler URL")
-	}
-
-	logStreamURL.Scheme = "http"
-	logStreamURL.Host = "log-cache" + match[1]
-
-	return logStreamURL.String(), nil
-}
-
-func createLogClient(logCacheURL string, accessTokenFunc func() (string, error)) *logcache.Client {
 	return logcache.NewClient(
 		logCacheURL,
-		logcache.WithHTTPClient(httpclient.AuthenticatedBy(httpclient.NewGetter(accessTokenFunc))),
+		logcache.WithHTTPClient(httpClient),
 	)
 }

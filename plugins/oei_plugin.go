@@ -34,8 +34,14 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 
 	ui.Warn("Note: This feature is experimental.")
 
-	fetcher := fetchers.NewCumulativeUsageFetcher(createLogClient(logCacheURL, cli.AccessToken))
-	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken)))
+	sslIsDisabled, err := cli.IsSSLDisabled()
+	if err != nil {
+		ui.Failed(err.Error())
+		os.Exit(1)
+	}
+
+	fetcher := fetchers.NewCumulativeUsageFetcher(createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled))
+	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled)))
 	reporter := reporter.NewOverEntitlementInstances(cfClient, fetcher)
 	renderer := output.NewOverEntitlementInstancesRenderer(output.NewTerminalDisplay(ui))
 	runner := NewOverEntitlementInstancesRunner(reporter, renderer)

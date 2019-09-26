@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
@@ -13,12 +15,22 @@ import (
 
 var _ = Describe("cpu-plugins", func() {
 	var (
-		org   string
-		space string
-		uid   string
+		cfApi      string
+		cfUsername string
+		org        string
+		space      string
+		uid        string
 	)
 
 	BeforeEach(func() {
+		cfApi = GetEnv("CF_API")
+		cfUsername = GetEnv("CF_USERNAME")
+		cfPassword := GetEnv("CF_PASSWORD")
+
+		Expect(Cmd("cf", "api", "--unset").Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "api", cfApi, "--skip-ssl-validation").Run()).To(gexec.Exit(0))
+
+		Expect(Cmd("cf", "auth", cfUsername, cfPassword).Run()).To(gexec.Exit(0))
 		uid = uuid.New().String()
 		org = "org-" + uid
 		space = "space-" + uid
@@ -119,5 +131,66 @@ var _ = Describe("cpu-plugins", func() {
 		It("prints a no apps over messages if no apps over entitlement", func() {
 			Consistently(Cmd("cf", "over-entitlement-instances").Run).Should(gbytes.Say("No apps over entitlement"))
 		})
+	})
+})
+
+var _ = Describe("providing a CA cert rather than using --skip-ssl-validation", func() {
+	var (
+		cfApi      string
+		cfUsername string
+		org        string
+		uid        string
+		certFile   string
+	)
+
+	BeforeEach(func() {
+		var err error
+		certFile, err = filepath.Abs("../ca-cert.pem")
+		Expect(err).NotTo(HaveOccurred())
+		os.Setenv("SSL_CERT_FILE", certFile)
+
+		cfApi = GetEnv("CF_API")
+		cfUsername = GetEnv("CF_USERNAME")
+		cfPassword := GetEnv("CF_PASSWORD")
+
+		Expect(Cmd("cf", "api", cfApi).Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "auth", cfUsername, cfPassword).Run()).To(gexec.Exit(0))
+
+		uid = uuid.New().String()
+		org = "org-" + uid
+		space := "space-" + uid
+
+		Expect(Cmd("cf", "create-org", org).Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "target", "-o", org).Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "create-space", space).Run()).To(gexec.Exit(0))
+		Expect(Cmd("cf", "target", "-o", org, "-s", space).Run()).To(gexec.Exit(0))
+
+	})
+
+	AfterEach(func() {
+		os.Setenv("SSL_CERT_FILE", certFile)
+		Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
+		os.Unsetenv("SSL_CERT_FILE")
+	})
+
+	It("should successfully run when SSL_CERT_FILE is set to a valid cert file", func() {
+		os.Setenv("SSL_CERT_FILE", certFile)
+
+		appName := "spinner-" + uid
+		PushSpinner(appName, 1)
+
+		Expect(Cmd("cf", "cpu-entitlement", appName).Run()).To(SatisfyAll(
+			gexec.Exit(0),
+			gbytes.Say(appName),
+		))
+	})
+
+	It("should exit with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
+		os.Unsetenv("SSL_CERT_FILE")
+
+		Expect(Cmd("cf", "cpu-entitlement", "myapp").Run()).To(SatisfyAll(
+			gexec.Exit(1),
+			gbytes.Say("unknown authority"),
+		))
 	})
 })

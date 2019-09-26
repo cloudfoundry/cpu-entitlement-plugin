@@ -56,6 +56,7 @@ func (c Command) Run() *gexec.Session {
 
 func (c Command) build() *exec.Cmd {
 	command := exec.Command(c.cmd, c.args...)
+	command.Env = os.Environ()
 	if c.dir != "" {
 		cwd, err := os.Getwd()
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())

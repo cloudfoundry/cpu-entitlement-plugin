@@ -18,22 +18,9 @@ func TestE2e(t *testing.T) {
 	RunSpecs(t, "E2e Suite")
 }
 
-var (
-	cfApi      string
-	cfUsername string
-)
-
 var _ = BeforeSuite(func() {
 	Expect(Cmd("make", "install").WithDir("..").WithTimeout("30s").Run()).To(gexec.Exit(0))
 
-	cfApi = GetEnv("CF_API")
-
-	Expect(Cmd("cf", "api", cfApi, "--skip-ssl-validation").Run()).To(gexec.Exit(0))
-
-	cfUsername = GetEnv("CF_USERNAME")
-	cfPassword := GetEnv("CF_PASSWORD")
-
-	Expect(Cmd("cf", "login", "-u", cfUsername, "-p", cfPassword).Run()).To(gexec.Exit(0))
 })
 
 func GetEnv(varName string) string {

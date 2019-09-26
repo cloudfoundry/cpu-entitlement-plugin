@@ -17,6 +17,8 @@ else
   export CF_USERNAME=admin
   export CF_PASSWORD
   CF_PASSWORD="$(bosh int --path=/cf_admin_password "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
+  export ROUTER_CA_CERT
+  ROUTER_CA_CERT="$(bosh int --path=/router_ca/ca "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
 
   fly -t "$GARDEN_REMOTE_ATC_URL" execute \
     -c "$DIR/../$task" \

@@ -14,6 +14,7 @@ params:
   CF_API:
   CF_USERNAME:
   CF_PASSWORD:
+  ROUTER_CA_CERT:
 
 run:
   path: cpu-entitlement-plugin/ci/e2e-test.sh
