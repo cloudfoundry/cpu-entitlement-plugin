@@ -1,4 +1,4 @@
-package token
+package httpclient
 
 import (
 	"encoding/base64"

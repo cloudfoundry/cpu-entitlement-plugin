@@ -14,7 +14,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 )
 
@@ -133,6 +133,6 @@ func buildLogCacheURL(dopplerURL string) (string, error) {
 func createLogClient(logCacheURL string, accessTokenFunc func() (string, error)) *logcache.Client {
 	return logcache.NewClient(
 		logCacheURL,
-		logcache.WithHTTPClient(token.AuthenticatedBy(token.NewGetter(accessTokenFunc))),
+		logcache.WithHTTPClient(httpclient.AuthenticatedBy(httpclient.NewGetter(accessTokenFunc))),
 	)
 }

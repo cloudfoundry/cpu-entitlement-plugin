@@ -1,4 +1,4 @@
-package token_test
+package httpclient_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestToken(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Token Suite")
+	RunSpecs(t, "HTTP Client Suite")
 }

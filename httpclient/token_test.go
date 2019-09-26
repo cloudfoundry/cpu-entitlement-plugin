@@ -1,4 +1,4 @@
-package token_test
+package httpclient_test
 
 import (
 	"encoding/base64"
@@ -10,20 +10,20 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"code.cloudfoundry.org/cpu-entitlement-plugin/token"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/token/tokenfakes"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient/httpclientfakes"
 )
 
 var _ = Describe("Token", func() {
 	var (
-		fakeGetToken       *tokenfakes.FakeGetToken
-		tokenGetter        *token.Getter
+		fakeGetToken       *httpclientfakes.FakeGetToken
+		tokenGetter        *httpclient.Getter
 		tenMinutesToken    string
 		twentyMinutesToken string
 	)
 
 	BeforeEach(func() {
-		fakeGetToken = new(tokenfakes.FakeGetToken)
+		fakeGetToken = new(httpclientfakes.FakeGetToken)
 
 		var err error
 		tenMinutesToken, err = aTokenExpiringIn(10 * time.Minute)
@@ -36,7 +36,7 @@ var _ = Describe("Token", func() {
 	})
 
 	JustBeforeEach(func() {
-		tokenGetter = token.NewGetter(fakeGetToken.Spy)
+		tokenGetter = httpclient.NewGetter(fakeGetToken.Spy)
 	})
 
 	It("returns a token", func() {
