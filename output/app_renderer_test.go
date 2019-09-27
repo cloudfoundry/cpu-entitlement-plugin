@@ -109,7 +109,7 @@ var _ = Describe("Renderer", func() {
 			It("prints a tip about overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(cyan("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
+				Expect(message).To(Equal(cyan("WARNING: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
 			})
 		})
 
@@ -154,7 +154,7 @@ var _ = Describe("Renderer", func() {
 			It("prints a tip about over overentitlement and not about near overentitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
 				message, _ := display.ShowMessageArgsForCall(1)
-				Expect(message).To(Equal(cyan("TIP: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
+				Expect(message).To(Equal(cyan("WARNING: Some instances are over their CPU entitlement. Consider scaling your memory or instances.")))
 			})
 		})
 

@@ -34,30 +34,27 @@ func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport)
 		return nil
 	}
 
-	var rows [][]string
+	if err := r.showTable(appReport); err != nil {
+		return err
+	}
+	r.showMessage(appReport)
+	r.showPastSpikes(appReport)
 
-	var status string
-	var reportsWithSpikes []reporter.InstanceReport
+	return nil
+}
+
+func (r AppRenderer) showTable(appReport reporter.ApplicationReport) error {
+	var rows [][]string
 	for _, report := range appReport.InstanceReports {
 		rowColor := noColor
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)
 		avgEntitlementRatio := fmt.Sprintf("%.2f%%", report.HistoricalUsage.Value*100)
 		if report.HistoricalUsage.Value > 1 {
-			status = "over"
 			rowColor = color.FgRed
 		} else if report.HistoricalUsage.Value > 0.95 {
-			if status == "" {
-				status = "near"
-			}
 			rowColor = color.FgYellow
 		}
-
-		if report.HasRecordedSpike() && report.HistoricalUsage.Value <= 1 {
-			reportsWithSpikes = append(reportsWithSpikes, report)
-		}
-
 		currEntitlementRatio := fmt.Sprintf("%.2f%%", report.CurrentUsage.Value*100)
-
 		rows = append(rows, colorizeRow([]string{instanceID, avgEntitlementRatio, currEntitlementRatio}, rowColor))
 	}
 
@@ -66,8 +63,35 @@ func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport)
 		return err
 	}
 
+	return nil
+}
+
+func (r AppRenderer) showMessage(appReport reporter.ApplicationReport) {
+	var status string
+	var level string
+	for _, report := range appReport.InstanceReports {
+		if report.HistoricalUsage.Value > 1 {
+			status = "over"
+			level = "WARNING"
+		} else if report.HistoricalUsage.Value > 0.95 {
+			if status == "" {
+				status = "near"
+				level = "TIP"
+			}
+		}
+	}
+
 	if status != "" {
-		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("TIP: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", status), color.FgCyan))
+		r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("%s: Some instances are %s their CPU entitlement. Consider scaling your memory or instances.", level, status), color.FgCyan))
+	}
+}
+
+func (r AppRenderer) showPastSpikes(appReport reporter.ApplicationReport) {
+	var reportsWithSpikes []reporter.InstanceReport
+	for _, report := range appReport.InstanceReports {
+		if report.HasRecordedSpike() && report.HistoricalUsage.Value <= 1 {
+			reportsWithSpikes = append(reportsWithSpikes, report)
+		}
 	}
 
 	for _, reportWithSpike := range reportsWithSpikes {
@@ -78,8 +102,6 @@ func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport)
 			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, historicalUsage.LastSpikeFrom.Format(DateFmt), historicalUsage.LastSpikeTo.Format(DateFmt)), color.FgYellow))
 		}
 	}
-
-	return nil
 }
 
 func (r AppRenderer) showAppInfoHeader(appReport reporter.ApplicationReport) {
