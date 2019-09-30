@@ -178,7 +178,7 @@ var _ = Describe("cpu-plugins", func() {
 			os.Unsetenv("SSL_CERT_FILE")
 		})
 
-		It("should successfully run when SSL_CERT_FILE is set to a valid cert file", func() {
+		It("should successfully run entitlement plugin when SSL_CERT_FILE is set to a valid cert file", func() {
 			appName := "spinner-" + uid
 			PushSpinner(appName, 1)
 
@@ -188,10 +188,31 @@ var _ = Describe("cpu-plugins", func() {
 			))
 		})
 
-		It("should exit with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
+		It("should successfully run oei plugin when SSL_CERT_FILE is set to a valid cert file", func() {
+			Expect(Cmd("cf", "over-entitlement-instances").Run()).To(SatisfyAll(
+				gexec.Exit(0),
+				gbytes.Say(org),
+			))
+		})
+
+		It("should exit entitlement plugin with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
 			os.Unsetenv("SSL_CERT_FILE")
 
 			Expect(Cmd("cf", "cpu-entitlement", "myapp").Run()).To(SatisfyAll(
+				gexec.Exit(1),
+				gbytes.Say("unknown authority"),
+			))
+		})
+
+		// skipping while the plugin cli object silently ignores certificate errors
+		// see https://github.com/cloudfoundry/cli/issues/1803
+		XIt("should exit oei plugin with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
+			appName := "spinner-" + uid
+			PushSpinner(appName, 1)
+
+			os.Unsetenv("SSL_CERT_FILE")
+
+			Expect(Cmd("cf", "over-entitlement-instances").Run()).To(SatisfyAll(
 				gexec.Exit(1),
 				gbytes.Say("unknown authority"),
 			))
