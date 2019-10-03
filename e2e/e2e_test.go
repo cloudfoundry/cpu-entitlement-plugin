@@ -203,19 +203,5 @@ var _ = Describe("cpu-plugins", func() {
 				gbytes.Say("unknown authority"),
 			))
 		})
-
-		// skipping while the plugin cli object silently ignores certificate errors
-		// see https://github.com/cloudfoundry/cli/issues/1803
-		XIt("should exit oei plugin with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
-			appName := "spinner-" + uid
-			PushSpinner(appName, 1)
-
-			os.Unsetenv("SSL_CERT_FILE")
-
-			Expect(Cmd("cf", "over-entitlement-instances").Run()).To(SatisfyAll(
-				gexec.Exit(1),
-				gbytes.Say("unknown authority"),
-			))
-		})
 	})
 })
