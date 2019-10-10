@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
 	. "github.com/onsi/ginkgo"
@@ -41,14 +42,29 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			},
 		}, nil)
 
-		fakeMetricsFetcher.FetchInstanceEntitlementUsagesStub = func(appGuid string, appInstances map[int]cf.Instance) ([]float64, error) {
+		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int][]fetchers.InstanceData, error) {
 			switch appGuid {
 			case "space1-app1-guid":
-				return []float64{1.5, 0.5}, nil
+				return map[int][]fetchers.InstanceData{
+					0: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 1.5},
+					},
+					1: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 0.5},
+					},
+				}, nil
 			case "space1-app2-guid":
-				return []float64{0.3}, nil
+				return map[int][]fetchers.InstanceData{
+					0: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 0.3},
+					},
+				}, nil
 			case "space2-app1-guid":
-				return []float64{0.2}, nil
+				return map[int][]fetchers.InstanceData{
+					0: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 0.2},
+					},
+				}, nil
 			}
 
 			return nil, nil
@@ -92,7 +108,7 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 	When("getting the entitlement usage for an app fails", func() {
 		BeforeEach(func() {
-			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns(nil, errors.New("fetch-error"))
+			fakeMetricsFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-error"))
 		})
 
 		It("returns the error", func() {
@@ -136,7 +152,12 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 					},
 				},
 			}, nil)
-			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns([]float64{1.5}, nil)
+			fakeMetricsFetcher.FetchInstanceDataReturns(
+				map[int][]fetchers.InstanceData{
+					0: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 1.5},
+					},
+				}, nil)
 		})
 
 		It("reports sorted spaces", func() {
@@ -157,7 +178,12 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 					},
 				},
 			}, nil)
-			fakeMetricsFetcher.FetchInstanceEntitlementUsagesReturns([]float64{1.5}, nil)
+			fakeMetricsFetcher.FetchInstanceDataReturns(
+				map[int][]fetchers.InstanceData{
+					0: []fetchers.InstanceData{
+						fetchers.InstanceData{Value: 1.5},
+					},
+				}, nil)
 		})
 
 		It("reports sorted apps in the report", func() {

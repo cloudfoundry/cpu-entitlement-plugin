@@ -14,7 +14,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Fetcher", func() {
+var _ = Describe("Cumulative Usage Fetcher", func() {
 	var (
 		org string
 		uid string
@@ -24,16 +24,16 @@ var _ = Describe("Fetcher", func() {
 		getToken      func() (string, error)
 	)
 
-	getUsages := func(appName string) func() []float64 {
+	getUsages := func(appName string) func() map[int][]fetchers.InstanceData {
 		appGuid := getCmdOutput("cf", "app", appName, "--guid")
-		return func() []float64 {
+		return func() map[int][]fetchers.InstanceData {
 			processIds, err := procIdFetcher.Fetch(appGuid)
 			Expect(err).NotTo(HaveOccurred())
 			appInstances := map[int]cf.Instance{}
 			for id, procId := range processIds {
 				appInstances[id] = cf.Instance{InstanceID: id, ProcessInstanceID: procId}
 			}
-			usages, err := fetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
+			usages, err := fetcher.FetchInstanceData(appGuid, appInstances)
 			Expect(err).NotTo(HaveOccurred())
 			return usages
 		}
@@ -100,7 +100,7 @@ var _ = Describe("Fetcher", func() {
 		})
 
 		It("returns an error about the url", func() {
-			_, err := fetcher.FetchInstanceEntitlementUsages("anything", nil)
+			_, err := fetcher.FetchInstanceData("anything", nil)
 			Expect(err).To(MatchError(ContainSubstring("dial")))
 		})
 	})

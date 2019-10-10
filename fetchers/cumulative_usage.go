@@ -16,14 +16,14 @@ func NewCumulativeUsageFetcher(logCacheClient LogCacheClient) CumulativeUsageFet
 	return CumulativeUsageFetcher{logCacheClient: logCacheClient}
 }
 
-func (f CumulativeUsageFetcher) FetchInstanceEntitlementUsages(appGuid string, appInstances map[int]cf.Instance) ([]float64, error) {
+func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {
 	promqlResult, err := f.logCacheClient.PromQL(context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid))
 	if err != nil {
 		return nil, err
 	}
 
-	var instanceUsages []float64
+	instanceUsages := map[int][]InstanceData{}
 	for _, sample := range promqlResult.GetVector().GetSamples() {
 		instanceID, err := strconv.Atoi(sample.GetMetric()["instance_id"])
 		if err != nil {
@@ -33,7 +33,13 @@ func (f CumulativeUsageFetcher) FetchInstanceEntitlementUsages(appGuid string, a
 		if appInstances[instanceID].ProcessInstanceID != processInstanceID {
 			continue
 		}
-		instanceUsages = append(instanceUsages, sample.GetPoint().GetValue())
+
+		instanceUsages[instanceID] = []InstanceData{
+			InstanceData{
+				InstanceID: instanceID,
+				Value:      sample.GetPoint().GetValue(),
+			},
+		}
 	}
 
 	return instanceUsages, nil

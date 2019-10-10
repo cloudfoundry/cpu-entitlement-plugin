@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 )
 
 type OEIReport struct {
@@ -20,7 +21,7 @@ type SpaceReport struct {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchInstanceEntitlementUsages(appGuid string, appInstances map[int]cf.Instance) ([]float64, error)
+	FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)
 }
 
 //go:generate counterfeiter . CloudFoundryClient
@@ -104,14 +105,14 @@ func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]stri
 }
 
 func (r OverEntitlementInstances) isOverEntitlement(appGuid string, appInstances map[int]cf.Instance) (bool, error) {
-	appInstancesUsages, err := r.metricsFetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
+	appInstancesUsages, err := r.metricsFetcher.FetchInstanceData(appGuid, appInstances)
 	if err != nil {
 		return false, err
 	}
 
 	isOverEntitlement := false
 	for _, usage := range appInstancesUsages {
-		if usage > 1 {
+		if usage[0].Value > 1 {
 			isOverEntitlement = true
 		}
 	}

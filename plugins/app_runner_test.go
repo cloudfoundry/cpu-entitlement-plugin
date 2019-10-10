@@ -30,19 +30,19 @@ var _ = Describe("App Runner", func() {
 			InstanceReports: []reporter.InstanceReport{
 				{
 					InstanceID: 0,
-					HistoricalUsage: reporter.HistoricalUsage{
+					CumulativeUsage: reporter.CumulativeUsage{
 						Value: 0.5,
 					},
 				},
 				{
 					InstanceID: 1,
-					HistoricalUsage: reporter.HistoricalUsage{
+					CumulativeUsage: reporter.CumulativeUsage{
 						Value: 0.8,
 					},
 				},
 				{
 					InstanceID: 2,
-					HistoricalUsage: reporter.HistoricalUsage{
+					CumulativeUsage: reporter.CumulativeUsage{
 						Value: 0.875,
 					},
 				},

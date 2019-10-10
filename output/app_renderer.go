@@ -48,10 +48,10 @@ func (r AppRenderer) showTable(appReport reporter.ApplicationReport) error {
 	for _, report := range appReport.InstanceReports {
 		rowColor := noColor
 		instanceID := fmt.Sprintf("#%d", report.InstanceID)
-		avgEntitlementRatio := fmt.Sprintf("%.2f%%", report.HistoricalUsage.Value*100)
-		if report.HistoricalUsage.Value > 1 {
+		avgEntitlementRatio := fmt.Sprintf("%.2f%%", report.CumulativeUsage.Value*100)
+		if report.CumulativeUsage.Value > 1 {
 			rowColor = color.FgRed
-		} else if report.HistoricalUsage.Value > 0.95 {
+		} else if report.CumulativeUsage.Value > 0.95 {
 			rowColor = color.FgYellow
 		}
 		currEntitlementRatio := fmt.Sprintf("%.2f%%", report.CurrentUsage.Value*100)
@@ -70,10 +70,10 @@ func (r AppRenderer) showMessage(appReport reporter.ApplicationReport) {
 	var status string
 	var level string
 	for _, report := range appReport.InstanceReports {
-		if report.HistoricalUsage.Value > 1 {
+		if report.CumulativeUsage.Value > 1 {
 			status = "over"
 			level = "WARNING"
-		} else if report.HistoricalUsage.Value > 0.95 {
+		} else if report.CumulativeUsage.Value > 0.95 {
 			if status == "" {
 				status = "near"
 				level = "TIP"
@@ -89,18 +89,16 @@ func (r AppRenderer) showMessage(appReport reporter.ApplicationReport) {
 func (r AppRenderer) showPastSpikes(appReport reporter.ApplicationReport) {
 	var reportsWithSpikes []reporter.InstanceReport
 	for _, report := range appReport.InstanceReports {
-		if report.HasRecordedSpike() && report.HistoricalUsage.Value <= 1 {
+		if (report.LastSpike != reporter.LastSpike{}) && (report.CumulativeUsage.Value <= 1) {
 			reportsWithSpikes = append(reportsWithSpikes, report)
 		}
 	}
 
 	for _, reportWithSpike := range reportsWithSpikes {
-		historicalUsage := reportWithSpike.HistoricalUsage
-		if historicalUsage.LastSpikeFrom.Equal(historicalUsage.LastSpikeTo) {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement at %s", reportWithSpike.InstanceID, historicalUsage.LastSpikeFrom.Format(DateFmt)), color.FgYellow))
-		} else {
-			r.display.ShowMessage(terminal.Colorize(fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, historicalUsage.LastSpikeFrom.Format(DateFmt), historicalUsage.LastSpikeTo.Format(DateFmt)), color.FgYellow))
-		}
+		r.display.ShowMessage(terminal.Colorize(
+			fmt.Sprintf("WARNING: Instance #%d was over entitlement from %s to %s", reportWithSpike.InstanceID, reportWithSpike.LastSpike.From.Format(DateFmt), reportWithSpike.LastSpike.To.Format(DateFmt)),
+			color.FgYellow,
+		))
 	}
 }
 

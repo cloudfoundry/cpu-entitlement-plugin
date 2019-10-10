@@ -19,7 +19,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 		fetcher         fetchers.CumulativeUsageFetcher
 		appGuid         string
 		appInstances    map[int]cf.Instance
-		cumulativeUsage []float64
+		cumulativeUsage map[int][]fetchers.InstanceData
 		fetchErr        error
 	)
 
@@ -49,7 +49,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 	})
 
 	JustBeforeEach(func() {
-		cumulativeUsage, fetchErr = fetcher.FetchInstanceEntitlementUsages(appGuid, appInstances)
+		cumulativeUsage, fetchErr = fetcher.FetchInstanceData(appGuid, appInstances)
 	})
 
 	It("gets the current usage from the log-cache client", func() {
@@ -61,7 +61,10 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 
 	It("returns the correct accumulated usage", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
-		Expect(cumulativeUsage).To(ConsistOf(0.2, 0.4, 0.5))
+		Expect(cumulativeUsage).To(SatisfyAll(HaveLen(3), HaveKey(0), HaveKey(1), HaveKey(2)))
+		Expect(cumulativeUsage[0][0].Value).To(Equal(0.2))
+		Expect(cumulativeUsage[1][0].Value).To(Equal(0.4))
+		Expect(cumulativeUsage[2][0].Value).To(Equal(0.5))
 	})
 
 	When("cache returns data for instances that are no longer running (because the app has been scaled down", func() {
@@ -73,7 +76,8 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 
 		It("returns current usage for running instances only", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
-			Expect(cumulativeUsage).To(ConsistOf(0.2))
+			Expect(cumulativeUsage).To(SatisfyAll(HaveLen(1), HaveKey(0)))
+			Expect(cumulativeUsage[0][0].Value).To(Equal(0.2))
 		})
 	})
 

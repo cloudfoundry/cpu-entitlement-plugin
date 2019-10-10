@@ -25,7 +25,7 @@ var _ = Describe("Renderer", func() {
 		instanceReports = []reporter.InstanceReport{
 			{
 				InstanceID: 123,
-				HistoricalUsage: reporter.HistoricalUsage{
+				CumulativeUsage: reporter.CumulativeUsage{
 					Value: 0.5,
 				},
 				CurrentUsage: reporter.CurrentUsage{
@@ -34,7 +34,7 @@ var _ = Describe("Renderer", func() {
 			},
 			{
 				InstanceID: 432,
-				HistoricalUsage: reporter.HistoricalUsage{
+				CumulativeUsage: reporter.CumulativeUsage{
 					Value: 0.75,
 				},
 				CurrentUsage: reporter.CurrentUsage{
@@ -94,7 +94,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one or more of the instances is above entitlement", func() {
 			BeforeEach(func() {
-				instanceReports[1].HistoricalUsage.Value = 1.5
+				instanceReports[1].CumulativeUsage.Value = 1.5
 			})
 
 			It("highlights the overentitled row", func() {
@@ -115,7 +115,7 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement", func() {
 			BeforeEach(func() {
-				instanceReports[1].HistoricalUsage.Value = 0.96
+				instanceReports[1].CumulativeUsage.Value = 0.96
 			})
 
 			It("highlights the near overentitled row", func() {
@@ -136,8 +136,8 @@ var _ = Describe("Renderer", func() {
 
 		When("one of the instances is between 95% and 100% entitlement, and one is over 100%", func() {
 			BeforeEach(func() {
-				instanceReports[0].HistoricalUsage.Value = 0.96
-				instanceReports[1].HistoricalUsage.Value = 1.5
+				instanceReports[0].CumulativeUsage.Value = 0.96
+				instanceReports[1].CumulativeUsage.Value = 1.5
 				instanceReports = append(instanceReports, instanceReports[0])
 			})
 
@@ -162,18 +162,22 @@ var _ = Describe("Renderer", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
-						Value:         0.5,
-						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
-						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					CumulativeUsage: reporter.CumulativeUsage{
+						Value: 0.5,
+					},
+					LastSpike: reporter.LastSpike{
+						From: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+						To:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 					},
 				},
 					reporter.InstanceReport{
 						InstanceID: 345,
-						HistoricalUsage: reporter.HistoricalUsage{
-							Value:         0.5,
-							LastSpikeFrom: time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
-							LastSpikeTo:   time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
+						CumulativeUsage: reporter.CumulativeUsage{
+							Value: 0.5,
+						},
+						LastSpike: reporter.LastSpike{
+							From: time.Date(2019, 6, 15, 10, 0, 0, 0, time.UTC),
+							To:   time.Date(2019, 6, 21, 5, 0, 0, 0, time.UTC),
 						},
 					})
 			})
@@ -191,35 +195,18 @@ var _ = Describe("Renderer", func() {
 			BeforeEach(func() {
 				instanceReports = append(instanceReports, reporter.InstanceReport{
 					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
-						Value:         1.5,
-						LastSpikeFrom: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
-						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
+					CumulativeUsage: reporter.CumulativeUsage{
+						Value: 1.5,
+					},
+					LastSpike: reporter.LastSpike{
+						From: time.Date(2019, 7, 30, 9, 0, 0, 0, time.UTC),
+						To:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
 					},
 				})
 			})
 
 			It("suppresses warning about instance having been over entitlement", func() {
 				Expect(display.ShowMessageCallCount()).To(Equal(2))
-			})
-		})
-
-		When("spike was instantaneous", func() {
-			BeforeEach(func() {
-				instanceReports = append(instanceReports, reporter.InstanceReport{
-					InstanceID: 234,
-					HistoricalUsage: reporter.HistoricalUsage{
-						Value:         0.5,
-						LastSpikeFrom: time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
-						LastSpikeTo:   time.Date(2019, 7, 31, 12, 0, 0, 0, time.UTC),
-					},
-				})
-			})
-
-			It("says 'at', not 'from'...'to' in the warning message", func() {
-				Expect(display.ShowMessageCallCount()).To(Equal(2))
-				warning, _ := display.ShowMessageArgsForCall(1)
-				Expect(warning).To(Equal(yellow(fmt.Sprintf("WARNING: Instance #234 was over entitlement at 2019-07-31 12:00:00"))))
 			})
 		})
 	})

@@ -22,8 +22,9 @@ func NewUnsupportedCFDeploymentError(appName string) error {
 }
 
 type AppReporter struct {
-	historicalUsageFetcher InstanceDataFetcher
 	currentUsageFetcher    InstanceDataFetcher
+	lastSpikeFetcher       InstanceDataFetcher
+	cumulativeUsageFetcher InstanceDataFetcher
 	cfClient               AppReporterCloudFoundryClient
 }
 
@@ -51,29 +52,30 @@ type ApplicationReport struct {
 
 type InstanceReport struct {
 	InstanceID      int
-	HistoricalUsage HistoricalUsage
+	CumulativeUsage CumulativeUsage
 	CurrentUsage    CurrentUsage
+	LastSpike       LastSpike
 }
 
-type HistoricalUsage struct {
-	Value         float64
-	LastSpikeFrom time.Time
-	LastSpikeTo   time.Time
+type LastSpike struct {
+	From time.Time
+	To   time.Time
 }
 
 type CurrentUsage struct {
 	Value float64
 }
 
-func (r InstanceReport) HasRecordedSpike() bool {
-	return !r.HistoricalUsage.LastSpikeTo.IsZero()
+type CumulativeUsage struct {
+	Value float64
 }
 
-func NewAppReporter(cfClient AppReporterCloudFoundryClient, historicalUsageFetcher, currentUsageFetcher InstanceDataFetcher) AppReporter {
+func NewAppReporter(cfClient AppReporterCloudFoundryClient, currentUsageFetcher, lastSpikeFetcher, cumulativeUsageFetcher InstanceDataFetcher) AppReporter {
 	return AppReporter{
 		cfClient:               cfClient,
-		historicalUsageFetcher: historicalUsageFetcher,
 		currentUsageFetcher:    currentUsageFetcher,
+		lastSpikeFetcher:       lastSpikeFetcher,
+		cumulativeUsageFetcher: cumulativeUsageFetcher,
 	}
 }
 
@@ -121,22 +123,32 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 		latestReports[instanceID] = currentReport
 	}
 
-	historicalUsagePerInstance, err := r.historicalUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
+	lastSpikePerInstance, err := r.lastSpikeFetcher.FetchInstanceData(application.Guid, application.Instances)
 	if err != nil {
 		return ApplicationReport{}, err
 	}
 
-	for instanceID, historicalUsage := range historicalUsagePerInstance {
-		spikeFrom, spikeTo := findLatestSpike(historicalUsage)
+	for instanceID, lastSpike := range lastSpikePerInstance {
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
-		currentReport.HistoricalUsage = HistoricalUsage{
-			Value:         historicalUsage[len(historicalUsage)-1].Value,
-			LastSpikeFrom: spikeFrom,
-			LastSpikeTo:   spikeTo,
+		currentReport.LastSpike = LastSpike{
+			From: lastSpike[0].From,
+			To:   lastSpike[0].To,
 		}
 		latestReports[instanceID] = currentReport
 	}
 
+	cumulativeUsagePerInstance, err := r.cumulativeUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
+	if err != nil {
+		return ApplicationReport{}, err
+	}
+
+	for instanceID, cumulativeUsage := range cumulativeUsagePerInstance {
+		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
+		currentReport.CumulativeUsage = CumulativeUsage{
+			Value: cumulativeUsage[0].Value,
+		}
+		latestReports[instanceID] = currentReport
+	}
 	instanceReports := buildReportsSlice(latestReports)
 
 	return ApplicationReport{Org: org, Space: space, Username: user, ApplicationName: appName, InstanceReports: instanceReports}, nil

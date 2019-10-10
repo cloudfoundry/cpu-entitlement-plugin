@@ -53,16 +53,20 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 		os.Exit(1)
 	}
 	cfClient := cf.NewClient(cli, fetchers.NewProcessInstanceIDFetcher(createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled)))
-	historicalUsageFetcher := fetchers.NewHistoricalUsageFetcher(
+	lastSpikeFetcher := fetchers.NewLastSpikeFetcher(
 		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
 		time.Now().Add(-month),
-		time.Now(),
 	)
+
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
 		time.Now().Add(-1*time.Minute), time.Now(),
 	)
-	metricsReporter := reporter.NewAppReporter(cfClient, historicalUsageFetcher, currentUsageFetcher)
+
+	cumulativeUsageFetcher := fetchers.NewCumulativeUsageFetcher(
+		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
+	)
+	metricsReporter := reporter.NewAppReporter(cfClient, currentUsageFetcher, lastSpikeFetcher, cumulativeUsageFetcher)
 	display := output.NewTerminalDisplay(ui)
 	metricsRenderer := output.NewAppRenderer(display)
 
