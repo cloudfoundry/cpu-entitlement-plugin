@@ -21,7 +21,7 @@ func NewLastSpikeFetcher(client LogCacheClient, since time.Time) *LastSpikeFetch
 }
 
 func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {
-	res, err := f.client.Read(context.Background(), appGUID, f.since, logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE), logcache.WithLimit(1), logcache.WithDescending(), logcache.WithNameFilter("spike"))
+	res, err := f.client.Read(context.Background(), appGUID, f.since, logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE), logcache.WithDescending(), logcache.WithNameFilter("spike"))
 	if err != nil {
 		return nil, err
 	}

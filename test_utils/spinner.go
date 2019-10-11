@@ -2,6 +2,7 @@ package test_utils
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,8 +11,12 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-func Spin(appURL string) {
-	httpGet(appURL + "/spin")
+func Spin(appURL string, spinSeconds int) {
+	url := appURL + "/spin"
+	if spinSeconds > 0 {
+		url += fmt.Sprintf("?spinTime=%d", spinSeconds*1000)
+	}
+	httpGet(url)
 }
 
 func Unspin(appURL string) {
@@ -19,7 +24,7 @@ func Unspin(appURL string) {
 }
 
 func SpinFor(appURL string, duration time.Duration) {
-	Spin(appURL)
+	Spin(appURL, 0)
 	defer Unspin(appURL)
 	time.Sleep(duration)
 }

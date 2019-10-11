@@ -1,10 +1,17 @@
 package e2e_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo"
@@ -20,6 +27,8 @@ var _ = Describe("cpu-plugins", func() {
 		org        string
 		space      string
 		uid        string
+
+		skipSSLValidation bool
 	)
 
 	getCFDetails := func() {
@@ -50,107 +59,157 @@ var _ = Describe("cpu-plugins", func() {
 		Expect(Cmd("cf", "target", "-o", org, "-s", space).Run()).To(gexec.Exit(0))
 	}
 
-	When("skipping SSL validation", func() {
+	getAppUrl := func(appName string) string {
+		return strings.Replace(cfApi, "api.", appName+".", 1)
+	}
+
+	BeforeEach(func() {
+		skipSSLValidation = true
+	})
+
+	JustBeforeEach(func() {
+		cfLogin(skipSSLValidation)
+		createAndTargetOrgAndSpace()
+	})
+
+	AfterEach(func() {
+		Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
+		os.Unsetenv("SSL_CERT_FILE")
+	})
+
+	Describe("cpu-entitlement-plugin", func() {
+		var (
+			appName   string
+			appStart  time.Time
+			instances int
+		)
 
 		BeforeEach(func() {
-			cfLogin(true)
-			createAndTargetOrgAndSpace()
+			instances = 1
 		})
 
-		AfterEach(func() {
-			Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
+		JustBeforeEach(func() {
+			appName = "spinner-" + uid
+			appStart = time.Now()
+			PushSpinner(appName, instances)
 		})
 
-		Describe("cpu-entitlement-plugin", func() {
-			var (
-				appName string
-			)
+		It("prints the application entitlement info", func() {
+			Eventually(Cmd("cf", "cpu-entitlement", appName).Run).Should(SatisfyAll(
+				gbytes.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s...", appName, org, space, cfUsername),
+				gbytes.Say("avg usage"),
+				gbytes.Say("#0"),
+			))
+		})
+
+		Describe("spikes", func() {
+			var waitgroup sync.WaitGroup
+
+			getAvgUsageFunc := func(idx int) func() (float64, error) {
+				return func() (float64, error) {
+					return getAvgUsage(appName, idx)
+				}
+			}
+
+			waitForSpike := func(instanceId int) {
+				defer GinkgoRecover()
+				defer waitgroup.Done()
+
+				Eventually(getAvgUsageFunc(instanceId)).Should(BeNumerically(">", 100))
+				Eventually(getAvgUsageFunc(instanceId)).Should(BeNumerically("<", 100))
+			}
 
 			BeforeEach(func() {
-				appName = "spinner-" + uid
-				PushSpinner(appName, 1)
+				instances = 2
 			})
 
-			It("prints the application entitlement info", func() {
-				Eventually(Cmd("cf", "cpu-entitlement", appName).Run).Should(SatisfyAll(
-					gbytes.Say("Showing CPU usage against entitlement for app %s in org %s / space %s as %s...", appName, org, space, cfUsername),
-					gbytes.Say("avg usage"),
-					gbytes.Say("#0"),
-				))
+			JustBeforeEach(func() {
+				Spin(getAppUrl(appName), 2)
+				Spin(getAppUrl(appName), 2)
+
+				waitgroup.Add(2)
+
+				go waitForSpike(0)
+				go waitForSpike(1)
+
+				waitgroup.Wait()
 			})
 
-		})
-
-		Describe("cpu-overentitlement-instances-plugin", func() {
-			Describe("with an app", func() {
-				var (
-					overEntitlementApp    string
-					overEntitlementAppURL string
-					underEntitlementApp   string
-				)
-
-				BeforeEach(func() {
-					overEntitlementApp = "overentitled-app-" + uid
-					PushSpinner(overEntitlementApp, 1)
-					overEntitlementAppURL = strings.Replace(cfApi, "api.", overEntitlementApp+".", 1)
-					Spin(overEntitlementAppURL)
-
-					underEntitlementApp = "underentitled-app-" + uid
-					PushSpinner(underEntitlementApp, 1)
-				})
-
-				AfterEach(func() {
-					Unspin(overEntitlementAppURL)
-				})
-
-				It("prints the application over entitlement", func() {
-					Eventually(Cmd("cf", "over-entitlement-instances").Run).Should(SatisfyAll(
-						gbytes.Say("Showing over-entitlement apps in org %s as %s...", org, cfUsername),
-						gbytes.Say("space *app"),
-						gbytes.Say("%s *%s", space, overEntitlementApp),
-					))
-					Eventually(Cmd("cf", "over-entitlement-instances").Run).ShouldNot(gbytes.Say(underEntitlementApp))
-				})
-
-				When("over entitlement apps are in different spaces", func() {
-					var (
-						anotherSpace  string
-						anotherApp    string
-						anotherAppURL string
-					)
-
-					BeforeEach(func() {
-						anotherApp = "anotherspinner-1-" + uid
-						anotherSpace = "anotherspace" + uid
-						anotherAppURL = strings.Replace(cfApi, "api.", anotherApp+".", 1)
-						Expect(Cmd("cf", "create-space", anotherSpace).Run()).To(gexec.Exit(0))
-						Expect(Cmd("cf", "target", "-o", org, "-s", anotherSpace).Run()).To(gexec.Exit(0))
-						PushSpinner(anotherApp, 1)
-						Spin(anotherAppURL)
-					})
-
-					AfterEach(func() {
-						Unspin(anotherAppURL)
-					})
-
-					It("prints apps over entitlement from different spaces", func() {
-						Eventually(Cmd("cf", "over-entitlement-instances").Run).Should(SatisfyAll(
-							gbytes.Say("Showing over-entitlement apps in org %s as %s...", org, cfUsername),
-							gbytes.Say("space *app"),
-							gbytes.Say("%s *%s", anotherSpace, anotherApp),
-							gbytes.Say("%s *%s", space, overEntitlementApp),
-						))
-					})
-				})
-			})
-
-			It("prints a no apps over messages if no apps over entitlement", func() {
-				Consistently(Cmd("cf", "over-entitlement-instances").Run).Should(gbytes.Say("No apps over entitlement"))
+			It("shows last spike", func() {
+				for i := 0; i < 2; i++ {
+					start, end := getLastSpike(appName, i)
+					Expect(start).To(BeTemporally(">", appStart), fmt.Sprintf("instance %d", i))
+					Expect(end).To(BeTemporally("<", time.Now()), fmt.Sprintf("instance %d", i))
+				}
 			})
 		})
 	})
 
-	When("providing a CA cert rather than using --skip-ssl-validation", func() {
+	Describe("cpu-overentitlement-instances-plugin", func() {
+		Describe("with an app", func() {
+			var (
+				overEntitlementApp  string
+				underEntitlementApp string
+			)
+
+			JustBeforeEach(func() {
+				overEntitlementApp = "overentitled-app-" + uid
+				PushSpinner(overEntitlementApp, 1)
+				Spin(getAppUrl(overEntitlementApp), 0)
+
+				underEntitlementApp = "underentitled-app-" + uid
+				PushSpinner(underEntitlementApp, 1)
+			})
+
+			AfterEach(func() {
+				Unspin(getAppUrl(overEntitlementApp))
+			})
+
+			It("prints the application over entitlement", func() {
+				Eventually(Cmd("cf", "over-entitlement-instances").Run).Should(SatisfyAll(
+					gbytes.Say("Showing over-entitlement apps in org %s as %s...", org, cfUsername),
+					gbytes.Say("space *app"),
+					gbytes.Say("%s *%s", space, overEntitlementApp),
+				))
+				Eventually(Cmd("cf", "over-entitlement-instances").Run).ShouldNot(gbytes.Say(underEntitlementApp))
+			})
+
+			When("over entitlement apps are in different spaces", func() {
+				var (
+					anotherSpace string
+					anotherApp   string
+				)
+
+				JustBeforeEach(func() {
+					anotherApp = "anotherspinner-1-" + uid
+					anotherSpace = "anotherspace" + uid
+					Expect(Cmd("cf", "create-space", anotherSpace).Run()).To(gexec.Exit(0))
+					Expect(Cmd("cf", "target", "-o", org, "-s", anotherSpace).Run()).To(gexec.Exit(0))
+					PushSpinner(anotherApp, 1)
+					Spin(getAppUrl(anotherApp), 0)
+				})
+
+				AfterEach(func() {
+					Unspin(getAppUrl(anotherApp))
+				})
+
+				It("prints apps over entitlement from different spaces", func() {
+					Eventually(Cmd("cf", "over-entitlement-instances").Run).Should(SatisfyAll(
+						gbytes.Say("Showing over-entitlement apps in org %s as %s...", org, cfUsername),
+						gbytes.Say("space *app"),
+						gbytes.Say("%s *%s", anotherSpace, anotherApp),
+						gbytes.Say("%s *%s", space, overEntitlementApp),
+					))
+				})
+			})
+		})
+
+		It("prints a no apps over messages if no apps over entitlement", func() {
+			Consistently(Cmd("cf", "over-entitlement-instances").Run).Should(gbytes.Say("No apps over entitlement"))
+		})
+	})
+
+	Describe("providing a CA cert rather than using --skip-ssl-validation", func() {
 		var (
 			certFile string
 		)
@@ -167,15 +226,7 @@ var _ = Describe("cpu-plugins", func() {
 		BeforeEach(func() {
 			certFile = writeCertFile()
 			os.Setenv("SSL_CERT_FILE", certFile)
-
-			cfLogin(false)
-			createAndTargetOrgAndSpace()
-		})
-
-		AfterEach(func() {
-			os.Setenv("SSL_CERT_FILE", certFile)
-			Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
-			os.Unsetenv("SSL_CERT_FILE")
+			skipSSLValidation = false
 		})
 
 		It("should successfully run entitlement plugin when SSL_CERT_FILE is set to a valid cert file", func() {
@@ -195,13 +246,46 @@ var _ = Describe("cpu-plugins", func() {
 			))
 		})
 
-		It("should exit entitlement plugin with non-zero status if SSL_CERT_FILE not set and --skip-ssl-validation not passed", func() {
-			os.Unsetenv("SSL_CERT_FILE")
+		When("SSL_CERT_FILE not set", func() {
+			JustBeforeEach(func() {
+				os.Unsetenv("SSL_CERT_FILE")
+			})
 
-			Expect(Cmd("cf", "cpu-entitlement", "myapp").Run()).To(SatisfyAll(
-				gexec.Exit(1),
-				gbytes.Say("unknown authority"),
-			))
+			AfterEach(func() {
+				os.Setenv("SSL_CERT_FILE", certFile)
+			})
+
+			It("should exit entitlement plugin with non-zero status", func() {
+				Expect(Cmd("cf", "cpu-entitlement", "myapp").Run()).To(SatisfyAll(
+					gexec.Exit(1),
+					gbytes.Say("unknown authority"),
+				))
+			})
 		})
 	})
 })
+
+func getAvgUsage(appName string, instanceIndex int) (float64, error) {
+	cmd := fmt.Sprintf(`cf cpu %s | grep "^#%d" | awk '{ print $2 }' | tr -d '\n, ,%%'`, appName, instanceIndex)
+	out, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+	Expect(err).NotTo(HaveOccurred(), "Error reading cpu usage: %s", string(out))
+
+	return strconv.ParseFloat(string(out), 64)
+}
+
+func getLastSpike(appName string, instanceIndex int) (time.Time, time.Time) {
+	out, err := exec.Command("/bin/bash", "-c",
+		fmt.Sprintf(`cf cpu %s | grep "WARNING: Instance #%d was over entitlement"`, appName, instanceIndex)).CombinedOutput()
+	Expect(err).NotTo(HaveOccurred(), "Error getting last spike: %s, instance:%d", string(out), instanceIndex)
+
+	r := regexp.MustCompile(fmt.Sprintf("WARNING: Instance #%d was over entitlement from (.*) to (.*)", instanceIndex))
+	matches := r.FindStringSubmatch(string(out))
+	Expect(matches).To(HaveLen(3))
+
+	spikeStart, err := time.Parse(output.DateFmt, matches[1])
+	Expect(err).NotTo(HaveOccurred())
+	spikeEnd, err := time.Parse(output.DateFmt, matches[2])
+	Expect(err).NotTo(HaveOccurred())
+
+	return spikeStart, spikeEnd
+}

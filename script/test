@@ -22,7 +22,7 @@ usage() {
   print_message "    test <directory>  --- run tests in a given directory" "$colour"
 }
 
-export ENV_NAME=mel-b
+export ENV_NAME=${ENV_NAME:-mel-b}
 
 fly_login() {
   which flightattendant &>/dev/null || wget -qO- bit.ly/fa_xip | tar xz -C /usr/local/bin

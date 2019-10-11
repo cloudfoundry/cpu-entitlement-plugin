@@ -8,40 +8,33 @@ import (
 	"time"
 )
 
-var spinning int32
-var niceMicros int64
+var spinFlag int32
+var niceMillis int64 = 1
 
 func main() {
-	niceMicros = 1000
 	http.HandleFunc("/spin", func(w http.ResponseWriter, r *http.Request) {
-		myVal := atomic.AddInt32(&spinning, 1)
+
 		go func() {
+			markSpinning()
 			for {
-				isSpinning := atomic.LoadInt32(&spinning)
-				if isSpinning < myVal {
-					break
+				if !isSpinning() {
+					return
 				}
-				micros := atomic.LoadInt64(&niceMicros)
-				time.Sleep(time.Duration(micros) * time.Microsecond)
+				// be nice!
+				time.Sleep(time.Millisecond)
 				// spin!
 			}
 		}()
+
+		if spinTime, ok := getSpinTime(r); ok {
+			time.AfterFunc(time.Duration(spinTime)*time.Millisecond, func() {
+				atomic.StoreInt32(&spinFlag, 0)
+			})
+		}
 	})
 
 	http.HandleFunc("/unspin", func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&spinning, -1)
-	})
-
-	http.HandleFunc("/nice", func(w http.ResponseWriter, r *http.Request) {
-		microVals, ok := r.URL.Query()["micros"]
-		if !ok || len(microVals) < 1 {
-			return
-		}
-		val, err := strconv.Atoi(microVals[0])
-		if err != nil {
-			return
-		}
-		atomic.StoreInt64(&niceMicros, int64(val))
+		markNotSpinning()
 	})
 
 	port := os.Getenv("PORT")
@@ -50,4 +43,29 @@ func main() {
 	}
 
 	http.ListenAndServe(":"+port, nil)
+}
+
+func getSpinTime(r *http.Request) (int, bool) {
+	millis, ok := r.URL.Query()["spinTime"]
+	if !ok || len(millis) == 0 {
+		return 0, false
+	}
+	ms, err := strconv.Atoi(millis[0])
+	if err != nil {
+		return 0, false
+	}
+
+	return ms, true
+}
+
+func markSpinning() {
+	atomic.StoreInt32(&spinFlag, 1)
+}
+
+func markNotSpinning() {
+	atomic.StoreInt32(&spinFlag, 0)
+}
+
+func isSpinning() bool {
+	return atomic.LoadInt32(&spinFlag) == 1
 }
