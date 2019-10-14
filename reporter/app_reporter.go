@@ -31,7 +31,7 @@ type AppReporter struct {
 //go:generate counterfeiter . InstanceDataFetcher
 
 type InstanceDataFetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)
+	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]fetchers.InstanceData, error)
 }
 
 //go:generate counterfeiter . AppReporterCloudFoundryClient
@@ -115,11 +115,8 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 	}
 
 	for instanceID, currentUsage := range currentUsagePerInstance {
-		if len(currentUsage) != 1 {
-			continue
-		}
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
-		currentReport.CurrentUsage = CurrentUsage{Value: currentUsage[0].Value}
+		currentReport.CurrentUsage = CurrentUsage{Value: currentUsage.Value}
 		latestReports[instanceID] = currentReport
 	}
 
@@ -131,8 +128,8 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 	for instanceID, lastSpike := range lastSpikePerInstance {
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
 		currentReport.LastSpike = LastSpike{
-			From: lastSpike[0].From,
-			To:   lastSpike[0].To,
+			From: lastSpike.From,
+			To:   lastSpike.To,
 		}
 		latestReports[instanceID] = currentReport
 	}
@@ -145,7 +142,7 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 	for instanceID, cumulativeUsage := range cumulativeUsagePerInstance {
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
 		currentReport.CumulativeUsage = CumulativeUsage{
-			Value: cumulativeUsage[0].Value,
+			Value: cumulativeUsage.Value,
 		}
 		latestReports[instanceID] = currentReport
 	}

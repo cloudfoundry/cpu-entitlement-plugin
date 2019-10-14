@@ -42,28 +42,20 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			},
 		}, nil)
 
-		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int][]fetchers.InstanceData, error) {
+		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]fetchers.InstanceData, error) {
 			switch appGuid {
 			case "space1-app1-guid":
-				return map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 1.5},
-					},
-					1: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 0.5},
-					},
+				return map[int]fetchers.InstanceData{
+					0: {Value: 1.5},
+					1: {Value: 0.5},
 				}, nil
 			case "space1-app2-guid":
-				return map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 0.3},
-					},
+				return map[int]fetchers.InstanceData{
+					0: {Value: 0.3},
 				}, nil
 			case "space2-app1-guid":
-				return map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 0.2},
-					},
+				return map[int]fetchers.InstanceData{
+					0: {Value: 0.2},
 				}, nil
 			}
 
@@ -153,10 +145,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 				},
 			}, nil)
 			fakeMetricsFetcher.FetchInstanceDataReturns(
-				map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 1.5},
-					},
+				map[int]fetchers.InstanceData{
+					0: {Value: 1.5},
 				}, nil)
 		})
 
@@ -179,10 +169,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 				},
 			}, nil)
 			fakeMetricsFetcher.FetchInstanceDataReturns(
-				map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{
-						fetchers.InstanceData{Value: 1.5},
-					},
+				map[int]fetchers.InstanceData{
+					0: {Value: 1.5},
 				}, nil)
 		})
 

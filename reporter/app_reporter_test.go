@@ -41,13 +41,12 @@ var _ = Describe("Reporter", func() {
 		cfClient.GetCurrentSpaceReturns("the-space", nil)
 		cfClient.UsernameReturns("the-user", nil)
 
-		currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+		currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 			0: {
-				{
-					InstanceID: 0,
-					Value:      0.5,
-				},
-			}}, nil)
+				InstanceID: 0,
+				Value:      0.5,
+			},
+		}, nil)
 
 		instanceReporter = reporter.NewAppReporter(cfClient, currentUsageFetcher, lastSpikeFetcher, cumulativeUsageFetcher)
 	})
@@ -58,29 +57,23 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Report", func() {
 		BeforeEach(func() {
-			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 				0: {
-					{
-						InstanceID: 0,
-						Value:      0.5,
-					},
+					InstanceID: 0,
+					Value:      0.5,
 				},
 			}, nil)
-			currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 				0: {
-					{
-						InstanceID: 0,
-						Value:      1.5,
-					},
+					InstanceID: 0,
+					Value:      1.5,
 				},
 			}, nil)
-			lastSpikeFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 				0: {
-					{
-						InstanceID: 0,
-						From:       time.Unix(5, 0),
-						To:         time.Unix(10, 0),
-					},
+					InstanceID: 0,
+					From:       time.Unix(5, 0),
+					To:         time.Unix(10, 0),
 				},
 			}, nil)
 		})
@@ -152,29 +145,23 @@ var _ = Describe("Reporter", func() {
 
 		When("current usage data, historical usage data and last spike data cannot be matched by instance id", func() {
 			BeforeEach(func() {
-				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 					0: {
-						{
-							InstanceID: 0,
-							Value:      0.5,
-						},
+						InstanceID: 0,
+						Value:      0.5,
 					},
 				}, nil)
-				currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 					1: {
-						{
-							InstanceID: 1,
-							Value:      1.5,
-						},
+						InstanceID: 1,
+						Value:      1.5,
 					},
 				}, nil)
-				lastSpikeFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+				lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 					2: {
-						{
-							InstanceID: 2,
-							From:       time.Unix(5, 0),
-							To:         time.Unix(10, 0),
-						},
+						InstanceID: 2,
+						From:       time.Unix(5, 0),
+						To:         time.Unix(10, 0),
 					},
 				}, nil)
 			})
@@ -202,18 +189,14 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Cumulative CPU usage", func() {
 		BeforeEach(func() {
-			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 				0: {
-					{
-						InstanceID: 0,
-						Value:      0.5,
-					},
+					InstanceID: 0,
+					Value:      0.5,
 				},
 				1: {
-					{
-						InstanceID: 1,
-						Value:      0.7,
-					},
+					InstanceID: 1,
+					Value:      0.7,
 				},
 			}, nil)
 		})
@@ -266,12 +249,12 @@ var _ = Describe("Reporter", func() {
 
 		When("some instances have spiked", func() {
 			BeforeEach(func() {
-				lastSpikeFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
-					0: []fetchers.InstanceData{fetchers.InstanceData{
+				lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
+					0: {
 						InstanceID: 0,
 						From:       time.Unix(3, 0),
 						To:         time.Unix(5, 0),
-					}},
+					},
 				}, nil)
 			})
 
@@ -285,18 +268,14 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Current CPU usage", func() {
 		BeforeEach(func() {
-			currentUsageFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
 				0: {
-					{
-						InstanceID: 0,
-						Value:      1.5,
-					},
+					InstanceID: 0,
+					Value:      1.5,
 				},
 				1: {
-					{
-						InstanceID: 1,
-						Value:      1.7,
-					},
+					InstanceID: 1,
+					Value:      1.7,
 				},
 			}, nil)
 		})

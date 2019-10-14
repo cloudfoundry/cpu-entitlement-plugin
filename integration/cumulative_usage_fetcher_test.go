@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"strings"
+	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
@@ -24,9 +25,9 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 		getToken      func() (string, error)
 	)
 
-	getUsages := func(appName string) func() map[int][]fetchers.InstanceData {
+	getUsages := func(appName string) func() map[int]fetchers.InstanceData {
 		appGuid := getCmdOutput("cf", "app", appName, "--guid")
-		return func() map[int][]fetchers.InstanceData {
+		return func() map[int]fetchers.InstanceData {
 			processIds, err := procIdFetcher.Fetch(appGuid)
 			Expect(err).NotTo(HaveOccurred())
 			appInstances := map[int]cf.Instance{}
@@ -69,8 +70,22 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 
 	When("running multiple apps with various instance counts", func() {
 		BeforeEach(func() {
-			PushSpinner("spinner-1-"+uid, 3)
-			PushSpinner("spinner-2-"+uid, 1)
+			var wg sync.WaitGroup
+			wg.Add(2)
+
+			go func() {
+				defer GinkgoRecover()
+				defer wg.Done()
+				PushSpinner("spinner-1-"+uid, 3)
+			}()
+
+			go func() {
+				defer GinkgoRecover()
+				defer wg.Done()
+				PushSpinner("spinner-2-"+uid, 1)
+			}()
+
+			wg.Wait()
 		})
 
 		It("gets the usages of all instances for each app", func() {

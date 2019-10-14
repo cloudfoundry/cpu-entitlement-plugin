@@ -11,7 +11,7 @@ import (
 
 //go:generate counterfeiter . Fetcher
 type Fetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error)
+	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]InstanceData, error)
 }
 
 type CurrentUsageFetcher struct {
@@ -33,7 +33,7 @@ func NewCurrentUsageFetcherWithFallbackFetcher(client LogCacheClient, fallbackFe
 	}
 }
 
-func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error) {
+func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]InstanceData, error) {
 	res, err := f.client.PromQL(
 		context.Background(),
 		fmt.Sprintf(`idelta(absolute_usage{source_id="%s"}[1m]) / idelta(absolute_entitlement{source_id="%s"}[1m])`, appGUID, appGUID),
@@ -55,7 +55,7 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 	for instanceID, _ := range appInstances {
 		if _, has := deltaResult[instanceID]; !has {
 			if result, ok := fallbackResult[instanceID]; ok {
-				deltaResult[instanceID] = []InstanceData{result[len(result)-1]}
+				deltaResult[instanceID] = result
 				continue
 			}
 			return nil, fmt.Errorf("could not find historical usage for instance ID %d", instanceID)
@@ -65,8 +65,8 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 	return deltaResult, nil
 }
 
-func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances map[int]cf.Instance) map[int][]InstanceData {
-	usagePerInstance := map[int][]InstanceData{}
+func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances map[int]cf.Instance) map[int]InstanceData {
+	usagePerInstance := map[int]InstanceData{}
 	for _, sample := range res.GetVector().GetSamples() {
 		instanceID, err := strconv.Atoi(sample.GetMetric()["instance_id"])
 		if err != nil {
@@ -82,7 +82,7 @@ func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances 
 			InstanceID: instanceID,
 			Value:      sample.GetPoint().GetValue(),
 		}
-		usagePerInstance[instanceID] = []InstanceData{dataPoint}
+		usagePerInstance[instanceID] = dataPoint
 	}
 
 	return usagePerInstance

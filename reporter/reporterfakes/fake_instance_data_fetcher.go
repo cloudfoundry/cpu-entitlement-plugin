@@ -10,25 +10,25 @@ import (
 )
 
 type FakeInstanceDataFetcher struct {
-	FetchInstanceDataStub        func(string, map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)
+	FetchInstanceDataStub        func(string, map[int]cf.Instance) (map[int]fetchers.InstanceData, error)
 	fetchInstanceDataMutex       sync.RWMutex
 	fetchInstanceDataArgsForCall []struct {
 		arg1 string
 		arg2 map[int]cf.Instance
 	}
 	fetchInstanceDataReturns struct {
-		result1 map[int][]fetchers.InstanceData
+		result1 map[int]fetchers.InstanceData
 		result2 error
 	}
 	fetchInstanceDataReturnsOnCall map[int]struct {
-		result1 map[int][]fetchers.InstanceData
+		result1 map[int]fetchers.InstanceData
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 string, arg2 map[int]cf.Instance) (map[int][]fetchers.InstanceData, error) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 string, arg2 map[int]cf.Instance) (map[int]fetchers.InstanceData, error) {
 	fake.fetchInstanceDataMutex.Lock()
 	ret, specificReturn := fake.fetchInstanceDataReturnsOnCall[len(fake.fetchInstanceDataArgsForCall)]
 	fake.fetchInstanceDataArgsForCall = append(fake.fetchInstanceDataArgsForCall, struct {
@@ -53,7 +53,7 @@ func (fake *FakeInstanceDataFetcher) FetchInstanceDataCallCount() int {
 	return len(fake.fetchInstanceDataArgsForCall)
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(string, map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(string, map[int]cf.Instance) (map[int]fetchers.InstanceData, error)) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = stub
@@ -66,28 +66,28 @@ func (fake *FakeInstanceDataFetcher) FetchInstanceDataArgsForCall(i int) (string
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturns(result1 map[int][]fetchers.InstanceData, result2 error) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturns(result1 map[int]fetchers.InstanceData, result2 error) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = nil
 	fake.fetchInstanceDataReturns = struct {
-		result1 map[int][]fetchers.InstanceData
+		result1 map[int]fetchers.InstanceData
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturnsOnCall(i int, result1 map[int][]fetchers.InstanceData, result2 error) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturnsOnCall(i int, result1 map[int]fetchers.InstanceData, result2 error) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = nil
 	if fake.fetchInstanceDataReturnsOnCall == nil {
 		fake.fetchInstanceDataReturnsOnCall = make(map[int]struct {
-			result1 map[int][]fetchers.InstanceData
+			result1 map[int]fetchers.InstanceData
 			result2 error
 		})
 	}
 	fake.fetchInstanceDataReturnsOnCall[i] = struct {
-		result1 map[int][]fetchers.InstanceData
+		result1 map[int]fetchers.InstanceData
 		result2 error
 	}{result1, result2}
 }
