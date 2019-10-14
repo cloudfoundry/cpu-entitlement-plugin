@@ -4,33 +4,32 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
-//go:generate counterfeiter . HistoricalFetcher
-type HistoricalFetcher interface {
+//go:generate counterfeiter . Fetcher
+type Fetcher interface {
 	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int][]InstanceData, error)
 }
 
 type CurrentUsageFetcher struct {
-	client            LogCacheClient
-	historicalFetcher HistoricalFetcher
+	client          LogCacheClient
+	fallbackFetcher Fetcher
 }
 
-func NewCurrentUsageFetcher(client LogCacheClient, from, to time.Time) CurrentUsageFetcher {
+func NewCurrentUsageFetcher(client LogCacheClient) CurrentUsageFetcher {
 	return CurrentUsageFetcher{
-		client:            client,
-		historicalFetcher: NewHistoricalUsageFetcher(client, from, to),
+		client:          client,
+		fallbackFetcher: NewCumulativeUsageFetcher(client),
 	}
 }
 
-func NewCurrentUsageFetcherWithHistoricalFetcher(client LogCacheClient, historicalFetcher HistoricalFetcher) CurrentUsageFetcher {
+func NewCurrentUsageFetcherWithFallbackFetcher(client LogCacheClient, fallbackFetcher Fetcher) CurrentUsageFetcher {
 	return CurrentUsageFetcher{
-		client:            client,
-		historicalFetcher: historicalFetcher,
+		client:          client,
+		fallbackFetcher: fallbackFetcher,
 	}
 }
 
@@ -48,14 +47,14 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 		return deltaResult, nil
 	}
 
-	historicalResult, err := f.historicalFetcher.FetchInstanceData(appGUID, appInstances)
+	fallbackResult, err := f.fallbackFetcher.FetchInstanceData(appGUID, appInstances)
 	if err != nil {
 		return nil, err
 	}
 
 	for instanceID, _ := range appInstances {
 		if _, has := deltaResult[instanceID]; !has {
-			if result, ok := historicalResult[instanceID]; ok {
+			if result, ok := fallbackResult[instanceID]; ok {
 				deltaResult[instanceID] = []InstanceData{result[len(result)-1]}
 				continue
 			}

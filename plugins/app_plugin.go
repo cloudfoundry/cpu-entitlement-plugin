@@ -60,7 +60,6 @@ func (p CPUEntitlementPlugin) Run(cli plugin.CliConnection, args []string) {
 
 	currentUsageFetcher := fetchers.NewCurrentUsageFetcher(
 		createLogClient(logCacheURL, cli.AccessToken, sslIsDisabled),
-		time.Now().Add(-1*time.Minute), time.Now(),
 	)
 
 	cumulativeUsageFetcher := fetchers.NewCumulativeUsageFetcher(

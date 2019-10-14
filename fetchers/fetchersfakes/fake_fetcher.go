@@ -8,7 +8,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 )
 
-type FakeHistoricalFetcher struct {
+type FakeFetcher struct {
 	FetchInstanceDataStub        func(string, map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)
 	fetchInstanceDataMutex       sync.RWMutex
 	fetchInstanceDataArgsForCall []struct {
@@ -27,7 +27,7 @@ type FakeHistoricalFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceData(arg1 string, arg2 map[int]cf.Instance) (map[int][]fetchers.InstanceData, error) {
+func (fake *FakeFetcher) FetchInstanceData(arg1 string, arg2 map[int]cf.Instance) (map[int][]fetchers.InstanceData, error) {
 	fake.fetchInstanceDataMutex.Lock()
 	ret, specificReturn := fake.fetchInstanceDataReturnsOnCall[len(fake.fetchInstanceDataArgsForCall)]
 	fake.fetchInstanceDataArgsForCall = append(fake.fetchInstanceDataArgsForCall, struct {
@@ -46,26 +46,26 @@ func (fake *FakeHistoricalFetcher) FetchInstanceData(arg1 string, arg2 map[int]c
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceDataCallCount() int {
+func (fake *FakeFetcher) FetchInstanceDataCallCount() int {
 	fake.fetchInstanceDataMutex.RLock()
 	defer fake.fetchInstanceDataMutex.RUnlock()
 	return len(fake.fetchInstanceDataArgsForCall)
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceDataCalls(stub func(string, map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)) {
+func (fake *FakeFetcher) FetchInstanceDataCalls(stub func(string, map[int]cf.Instance) (map[int][]fetchers.InstanceData, error)) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = stub
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceDataArgsForCall(i int) (string, map[int]cf.Instance) {
+func (fake *FakeFetcher) FetchInstanceDataArgsForCall(i int) (string, map[int]cf.Instance) {
 	fake.fetchInstanceDataMutex.RLock()
 	defer fake.fetchInstanceDataMutex.RUnlock()
 	argsForCall := fake.fetchInstanceDataArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceDataReturns(result1 map[int][]fetchers.InstanceData, result2 error) {
+func (fake *FakeFetcher) FetchInstanceDataReturns(result1 map[int][]fetchers.InstanceData, result2 error) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = nil
@@ -75,7 +75,7 @@ func (fake *FakeHistoricalFetcher) FetchInstanceDataReturns(result1 map[int][]fe
 	}{result1, result2}
 }
 
-func (fake *FakeHistoricalFetcher) FetchInstanceDataReturnsOnCall(i int, result1 map[int][]fetchers.InstanceData, result2 error) {
+func (fake *FakeFetcher) FetchInstanceDataReturnsOnCall(i int, result1 map[int][]fetchers.InstanceData, result2 error) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = nil
@@ -91,7 +91,7 @@ func (fake *FakeHistoricalFetcher) FetchInstanceDataReturnsOnCall(i int, result1
 	}{result1, result2}
 }
 
-func (fake *FakeHistoricalFetcher) Invocations() map[string][][]interface{} {
+func (fake *FakeFetcher) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.fetchInstanceDataMutex.RLock()
@@ -103,7 +103,7 @@ func (fake *FakeHistoricalFetcher) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeHistoricalFetcher) recordInvocation(key string, args []interface{}) {
+func (fake *FakeFetcher) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -115,4 +115,4 @@ func (fake *FakeHistoricalFetcher) recordInvocation(key string, args []interface
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ fetchers.HistoricalFetcher = new(FakeHistoricalFetcher)
+var _ fetchers.Fetcher = new(FakeFetcher)

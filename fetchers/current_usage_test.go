@@ -15,19 +15,19 @@ import (
 
 var _ = Describe("CurrentUsage", func() {
 	var (
-		logCacheClient    *fetchersfakes.FakeLogCacheClient
-		historicalFetcher *fetchersfakes.FakeHistoricalFetcher
-		fetcher           fetchers.CurrentUsageFetcher
-		appGuid           string
-		appInstances      map[int]cf.Instance
-		currentUsage      map[int][]fetchers.InstanceData
-		fetchErr          error
+		logCacheClient      *fetchersfakes.FakeLogCacheClient
+		fakeFallbackFetcher *fetchersfakes.FakeFetcher
+		fetcher             fetchers.CurrentUsageFetcher
+		appGuid             string
+		appInstances        map[int]cf.Instance
+		currentUsage        map[int][]fetchers.InstanceData
+		fetchErr            error
 	)
 
 	BeforeEach(func() {
 		logCacheClient = new(fetchersfakes.FakeLogCacheClient)
-		historicalFetcher = new(fetchersfakes.FakeHistoricalFetcher)
-		fetcher = fetchers.NewCurrentUsageFetcherWithHistoricalFetcher(logCacheClient, historicalFetcher)
+		fakeFallbackFetcher = new(fetchersfakes.FakeFetcher)
+		fetcher = fetchers.NewCurrentUsageFetcherWithFallbackFetcher(logCacheClient, fakeFallbackFetcher)
 
 		appGuid = "foo"
 
@@ -70,17 +70,16 @@ var _ = Describe("CurrentUsage", func() {
 					point("2", 0.4),
 				),
 			), nil)
-			historicalFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
+			fakeFallbackFetcher.FetchInstanceDataReturns(map[int][]fetchers.InstanceData{
 				2: {
-					fetchers.InstanceData{InstanceID: 2, Value: 1.1},
 					fetchers.InstanceData{InstanceID: 2, Value: 1.4},
 				},
 			}, nil)
 		})
 
 		It("fetches historical data", func() {
-			Expect(historicalFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			actualAppGuid, actualAppInstances := historicalFetcher.FetchInstanceDataArgsForCall(0)
+			Expect(fakeFallbackFetcher.FetchInstanceDataCallCount()).To(Equal(1))
+			actualAppGuid, actualAppInstances := fakeFallbackFetcher.FetchInstanceDataArgsForCall(0)
 			Expect(actualAppGuid).To(Equal(appGuid))
 			Expect(actualAppInstances).To(Equal(appInstances))
 		})
@@ -119,7 +118,7 @@ var _ = Describe("CurrentUsage", func() {
 
 		When("fetching historical data fails", func() {
 			BeforeEach(func() {
-				historicalFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-failed"))
+				fakeFallbackFetcher.FetchInstanceDataReturns(nil, errors.New("fetch-failed"))
 			})
 
 			It("returns the error", func() {
