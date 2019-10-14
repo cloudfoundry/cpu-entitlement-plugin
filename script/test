@@ -49,7 +49,8 @@ run_all_tests_in_parallel() {
 }
 
 run_unit_tests() {
-    "$DIR/remote-fly" ci/unit-tests.yml -- "$ARGS"
+  ARGS=$*
+  "$DIR/remote-fly" ci/unit-tests.yml -- "$ARGS"
 }
 
 run_tests_in_directory() {
