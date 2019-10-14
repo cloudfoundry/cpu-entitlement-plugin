@@ -1,6 +1,7 @@
 package test_utils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +17,7 @@ type Command struct {
 	dir          string
 	timeout      string
 	pollInterval string
+	env          map[string]string
 }
 
 func Cmd(cmd string, args ...string) Command {
@@ -24,6 +26,7 @@ func Cmd(cmd string, args ...string) Command {
 		args:         args,
 		timeout:      "30s",
 		pollInterval: "1s",
+		env:          map[string]string{},
 	}
 }
 
@@ -34,6 +37,7 @@ func (c Command) WithDir(dir string) Command {
 		dir:          dir,
 		timeout:      c.timeout,
 		pollInterval: c.pollInterval,
+		env:          c.env,
 	}
 }
 
@@ -44,6 +48,23 @@ func (c Command) WithTimeout(timeout string) Command {
 		dir:          c.dir,
 		timeout:      timeout,
 		pollInterval: c.pollInterval,
+		env:          c.env,
+	}
+}
+
+func (c Command) WithEnv(key, val string) Command {
+	newEnv := map[string]string{}
+	for k, v := range c.env {
+		newEnv[k] = v
+	}
+	newEnv[key] = val
+	return Command{
+		cmd:          c.cmd,
+		args:         c.args,
+		dir:          c.dir,
+		timeout:      c.timeout,
+		pollInterval: c.pollInterval,
+		env:          newEnv,
 	}
 }
 
@@ -57,6 +78,9 @@ func (c Command) Run() *gexec.Session {
 func (c Command) build() *exec.Cmd {
 	command := exec.Command(c.cmd, c.args...)
 	command.Env = os.Environ()
+	for k, v := range c.env {
+		command.Env = append(command.Env, fmt.Sprintf("%s=%s", k, v))
+	}
 	if c.dir != "" {
 		cwd, err := os.Getwd()
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())

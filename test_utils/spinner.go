@@ -30,7 +30,17 @@ func SpinFor(appURL string, duration time.Duration) {
 }
 
 func PushSpinner(appName string, instances int) {
-	ExpectWithOffset(1, Cmd("cf", "push", appName, "-i", strconv.Itoa(instances)).WithDir("../test_utils/assets/spinner").WithTimeout("3m").Run()).To(gexec.Exit(0))
+	ExpectWithOffset(1, pushSpinnerCmd(appName, instances).Run()).To(gexec.Exit(0))
+}
+
+func PushSpinnerWithCert(appName string, instances int, certFile string) {
+	ExpectWithOffset(1, pushSpinnerCmd(appName, instances).WithEnv("SSL_CERT_FILE", certFile).Run()).To(gexec.Exit(0))
+}
+
+func pushSpinnerCmd(appName string, instances int) Command {
+	return Cmd("cf", "push", appName, "-i", strconv.Itoa(instances)).
+		WithDir("../test_utils/assets/spinner").
+		WithTimeout("3m")
 }
 
 func httpGet(url string) {
