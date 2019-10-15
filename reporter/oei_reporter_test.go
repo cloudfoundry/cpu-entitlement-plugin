@@ -42,20 +42,20 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			},
 		}, nil)
 
-		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]fetchers.InstanceData, error) {
+		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 			switch appGuid {
 			case "space1-app1-guid":
-				return map[int]fetchers.InstanceData{
-					0: {Value: 1.5},
-					1: {Value: 0.5},
+				return map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{Usage: 1.5},
+					1: fetchers.CumulativeInstanceData{Usage: 0.5},
 				}, nil
 			case "space1-app2-guid":
-				return map[int]fetchers.InstanceData{
-					0: {Value: 0.3},
+				return map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{Usage: 0.3},
 				}, nil
 			case "space2-app1-guid":
-				return map[int]fetchers.InstanceData{
-					0: {Value: 0.2},
+				return map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{Usage: 0.2},
 				}, nil
 			}
 
@@ -128,6 +128,31 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		})
 	})
 
+	When("the fetcher returns the wrong type", func() {
+		BeforeEach(func() {
+			fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+				switch appGuid {
+				case "space1-app1-guid":
+					return map[int]interface{}{
+						0: "hello",
+					}, nil
+				case "space1-app2-guid":
+					return map[int]interface{}{
+						0: fetchers.CumulativeInstanceData{Usage: 1.3},
+					}, nil
+				}
+
+				return nil, nil
+			}
+		})
+
+		It("skips the instance with the wrong type", func() {
+			Expect(len(report.SpaceReports)).To(Equal(1))
+			Expect(len(report.SpaceReports[0].Apps)).To(Equal(1))
+			Expect(report.SpaceReports[0].Apps[0]).To(Equal("app2"))
+		})
+	})
+
 	When("spaces are not sorted alphabetically", func() {
 		BeforeEach(func() {
 			fakeCfClient.GetSpacesReturns([]cf.Space{
@@ -145,8 +170,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 				},
 			}, nil)
 			fakeMetricsFetcher.FetchInstanceDataReturns(
-				map[int]fetchers.InstanceData{
-					0: {Value: 1.5},
+				map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{Usage: 1.5},
 				}, nil)
 		})
 
@@ -169,8 +194,8 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 				},
 			}, nil)
 			fakeMetricsFetcher.FetchInstanceDataReturns(
-				map[int]fetchers.InstanceData{
-					0: {Value: 1.5},
+				map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{Usage: 1.5},
 				}, nil)
 		})
 

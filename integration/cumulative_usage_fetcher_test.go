@@ -25,9 +25,9 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 		getToken      func() (string, error)
 	)
 
-	getUsages := func(appName string) func() map[int]fetchers.InstanceData {
+	getUsages := func(appName string) func() map[int]interface{} {
 		appGuid := getCmdOutput("cf", "app", appName, "--guid")
-		return func() map[int]fetchers.InstanceData {
+		return func() map[int]interface{} {
 			processIds, err := procIdFetcher.Fetch(appGuid)
 			Expect(err).NotTo(HaveOccurred())
 			appInstances := map[int]cf.Instance{}

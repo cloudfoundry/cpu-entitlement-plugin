@@ -11,6 +11,12 @@ import (
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
+type LastSpikeInstanceData struct {
+	InstanceID int
+	From       time.Time
+	To         time.Time
+}
+
 type LastSpikeFetcher struct {
 	client LogCacheClient
 	since  time.Time
@@ -20,7 +26,7 @@ func NewLastSpikeFetcher(client LogCacheClient, since time.Time) *LastSpikeFetch
 	return &LastSpikeFetcher{client: client, since: since}
 }
 
-func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]InstanceData, error) {
+func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 	res, err := f.client.Read(context.Background(), appGUID, f.since, logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE), logcache.WithDescending(), logcache.WithNameFilter("spike"))
 	if err != nil {
 		return nil, err
@@ -29,8 +35,8 @@ func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int
 	return parseLastSpike(res, appInstances)
 }
 
-func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Instance) (map[int]InstanceData, error) {
-	lastSpikePerInstance := map[int]InstanceData{}
+func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+	lastSpikePerInstance := make(map[int]interface{})
 	for _, envelope := range res {
 		instanceID, err := strconv.Atoi(envelope.InstanceId)
 		if err != nil {
@@ -50,7 +56,7 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 			continue
 		}
 
-		lastSpikePerInstance[instanceID] = InstanceData{
+		lastSpikePerInstance[instanceID] = LastSpikeInstanceData{
 			InstanceID: instanceID,
 			From:       spikeStart,
 			To:         spikeEnd,

@@ -31,7 +31,7 @@ type AppReporter struct {
 //go:generate counterfeiter . InstanceDataFetcher
 
 type InstanceDataFetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]fetchers.InstanceData, error)
+	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
 }
 
 //go:generate counterfeiter . AppReporterCloudFoundryClient
@@ -114,9 +114,14 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 		return ApplicationReport{}, NewUnsupportedCFDeploymentError(appName)
 	}
 
-	for instanceID, currentUsage := range currentUsagePerInstance {
+	for instanceID, instanceData := range currentUsagePerInstance {
+		currentInstanceData, ok := instanceData.(fetchers.CurrentInstanceData)
+		if !ok {
+			continue
+		}
+
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
-		currentReport.CurrentUsage = CurrentUsage{Value: currentUsage.Value}
+		currentReport.CurrentUsage = CurrentUsage{Value: currentInstanceData.Usage}
 		latestReports[instanceID] = currentReport
 	}
 
@@ -125,11 +130,15 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 		return ApplicationReport{}, err
 	}
 
-	for instanceID, lastSpike := range lastSpikePerInstance {
+	for instanceID, data := range lastSpikePerInstance {
+		lastSpikeInstanceData, ok := data.(fetchers.LastSpikeInstanceData)
+		if !ok {
+			continue
+		}
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
 		currentReport.LastSpike = LastSpike{
-			From: lastSpike.From,
-			To:   lastSpike.To,
+			From: lastSpikeInstanceData.From,
+			To:   lastSpikeInstanceData.To,
 		}
 		latestReports[instanceID] = currentReport
 	}
@@ -139,10 +148,14 @@ func (r AppReporter) CreateApplicationReport(appName string) (ApplicationReport,
 		return ApplicationReport{}, err
 	}
 
-	for instanceID, cumulativeUsage := range cumulativeUsagePerInstance {
+	for instanceID, data := range cumulativeUsagePerInstance {
+		cumulativeUsageInstanceData, ok := data.(fetchers.CumulativeInstanceData)
+		if !ok {
+			continue
+		}
 		currentReport := getOrCreateInstanceReport(latestReports, instanceID)
 		currentReport.CumulativeUsage = CumulativeUsage{
-			Value: cumulativeUsage.Value,
+			Value: cumulativeUsageInstanceData.Usage,
 		}
 		latestReports[instanceID] = currentReport
 	}
@@ -157,31 +170,6 @@ func getOrCreateInstanceReport(reports map[int]InstanceReport, instanceID int) I
 		reports[instanceID] = InstanceReport{InstanceID: instanceID}
 	}
 	return reports[instanceID]
-}
-
-func findLatestSpike(instanceData []fetchers.InstanceData) (time.Time, time.Time) {
-	var from, to time.Time
-
-	for i := len(instanceData) - 1; i >= 0; i-- {
-		dataPoint := instanceData[i]
-
-		if isSpiking(dataPoint) {
-			if to.IsZero() {
-				to = dataPoint.Time
-			}
-			from = dataPoint.Time
-		}
-
-		if !isSpiking(dataPoint) && !to.IsZero() {
-			break
-		}
-	}
-
-	return from, to
-}
-
-func isSpiking(dataPoint fetchers.InstanceData) bool {
-	return dataPoint.Value > 1
 }
 
 func buildReportsSlice(reportsMap map[int]InstanceReport) []InstanceReport {

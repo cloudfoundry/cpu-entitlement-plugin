@@ -20,7 +20,7 @@ var _ = Describe("CurrentUsage", func() {
 		fetcher             fetchers.CurrentUsageFetcher
 		appGuid             string
 		appInstances        map[int]cf.Instance
-		currentUsage        map[int]fetchers.InstanceData
+		currentUsage        map[int]interface{}
 		fetchErr            error
 	)
 
@@ -70,8 +70,8 @@ var _ = Describe("CurrentUsage", func() {
 					point("2", 0.4),
 				),
 			), nil)
-			fakeFallbackFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				2: fetchers.InstanceData{InstanceID: 2, Value: 1.4},
+			fakeFallbackFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				2: fetchers.CumulativeInstanceData{InstanceID: 2, Usage: 1.4},
 			}, nil)
 		})
 
@@ -94,21 +94,21 @@ var _ = Describe("CurrentUsage", func() {
 		})
 
 		It("returns the values from the delta query for the instances that have such", func() {
-			Expect(currentUsage[0]).To(Equal(fetchers.InstanceData{
+			Expect(currentUsage[0].(fetchers.CurrentInstanceData)).To(Equal(fetchers.CurrentInstanceData{
 				InstanceID: 0,
-				Value:      0.2,
+				Usage:      0.2,
 			}))
 
-			Expect(currentUsage[1]).To(Equal(fetchers.InstanceData{
+			Expect(currentUsage[1].(fetchers.CurrentInstanceData)).To(Equal(fetchers.CurrentInstanceData{
 				InstanceID: 1,
-				Value:      0.4,
+				Usage:      0.4,
 			}))
 		})
 
 		It("returns the values from the range query for the instances that don't have a delta value", func() {
-			Expect(currentUsage[2]).To(Equal(fetchers.InstanceData{
+			Expect(currentUsage[2].(fetchers.CurrentInstanceData)).To(Equal(fetchers.CurrentInstanceData{
 				InstanceID: 2,
-				Value:      1.4,
+				Usage:      1.4,
 			}))
 		})
 
@@ -126,18 +126,18 @@ var _ = Describe("CurrentUsage", func() {
 
 	It("returns the correct current usage", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
-		Expect(currentUsage).To(Equal(map[int]fetchers.InstanceData{
-			0: {
+		Expect(currentUsage).To(Equal(map[int]interface{}{
+			0: fetchers.CurrentInstanceData{
 				InstanceID: 0,
-				Value:      0.2,
+				Usage:      0.2,
 			},
-			1: {
+			1: fetchers.CurrentInstanceData{
 				InstanceID: 1,
-				Value:      0.4,
+				Usage:      0.4,
 			},
-			2: {
+			2: fetchers.CurrentInstanceData{
 				InstanceID: 2,
-				Value:      0.5,
+				Usage:      0.5,
 			},
 		}))
 	})
@@ -151,10 +151,10 @@ var _ = Describe("CurrentUsage", func() {
 
 		It("returns current usage for running instances only", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
-			Expect(currentUsage).To(Equal(map[int]fetchers.InstanceData{
-				0: {
+			Expect(currentUsage).To(Equal(map[int]interface{}{
+				0: fetchers.CurrentInstanceData{
 					InstanceID: 0,
-					Value:      0.2,
+					Usage:      0.2,
 				},
 			}))
 		})
@@ -218,18 +218,18 @@ var _ = Describe("CurrentUsage", func() {
 
 		It("ignores the corrupt data point", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
-			Expect(currentUsage).To(Equal(map[int]fetchers.InstanceData{
-				0: {
+			Expect(currentUsage).To(Equal(map[int]interface{}{
+				0: fetchers.CurrentInstanceData{
 					InstanceID: 0,
-					Value:      0.2,
+					Usage:      0.2,
 				},
-				1: {
+				1: fetchers.CurrentInstanceData{
 					InstanceID: 1,
-					Value:      0.3,
+					Usage:      0.3,
 				},
-				2: {
+				2: fetchers.CurrentInstanceData{
 					InstanceID: 2,
-					Value:      0.5,
+					Usage:      0.5,
 				},
 			}))
 		})

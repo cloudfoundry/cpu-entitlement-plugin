@@ -41,10 +41,10 @@ var _ = Describe("Reporter", func() {
 		cfClient.GetCurrentSpaceReturns("the-space", nil)
 		cfClient.UsernameReturns("the-user", nil)
 
-		currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-			0: {
+		currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+			0: fetchers.CurrentInstanceData{
 				InstanceID: 0,
-				Value:      0.5,
+				Usage:      0.5,
 			},
 		}, nil)
 
@@ -57,20 +57,20 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Report", func() {
 		BeforeEach(func() {
-			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				0: {
+			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				0: fetchers.CumulativeInstanceData{
 					InstanceID: 0,
-					Value:      0.5,
+					Usage:      0.5,
 				},
 			}, nil)
-			currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				0: {
+			currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				0: fetchers.CurrentInstanceData{
 					InstanceID: 0,
-					Value:      1.5,
+					Usage:      1.5,
 				},
 			}, nil)
-			lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				0: {
+			lastSpikeFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				0: fetchers.LastSpikeInstanceData{
 					InstanceID: 0,
 					From:       time.Unix(5, 0),
 					To:         time.Unix(10, 0),
@@ -145,20 +145,20 @@ var _ = Describe("Reporter", func() {
 
 		When("current usage data, historical usage data and last spike data cannot be matched by instance id", func() {
 			BeforeEach(func() {
-				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-					0: {
+				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					0: fetchers.CumulativeInstanceData{
 						InstanceID: 0,
-						Value:      0.5,
+						Usage:      0.5,
 					},
 				}, nil)
-				currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-					1: {
+				currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					1: fetchers.CurrentInstanceData{
 						InstanceID: 1,
-						Value:      1.5,
+						Usage:      1.5,
 					},
 				}, nil)
-				lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-					2: {
+				lastSpikeFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					2: fetchers.LastSpikeInstanceData{
 						InstanceID: 2,
 						From:       time.Unix(5, 0),
 						To:         time.Unix(10, 0),
@@ -189,14 +189,14 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Cumulative CPU usage", func() {
 		BeforeEach(func() {
-			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				0: {
+			cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				0: fetchers.CumulativeInstanceData{
 					InstanceID: 0,
-					Value:      0.5,
+					Usage:      0.5,
 				},
-				1: {
+				1: fetchers.CumulativeInstanceData{
 					InstanceID: 1,
-					Value:      0.7,
+					Usage:      0.7,
 				},
 			}, nil)
 		})
@@ -215,6 +215,31 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-historical-error"))
+			})
+		})
+
+		When("the fetcher does not return any data", func() {
+			BeforeEach(func() {
+				currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{}, nil)
+			})
+
+			It("returns an UnsupportedCFDeploymentError", func() {
+				Expect(err).To(MatchError(reporter.NewUnsupportedCFDeploymentError(appName)))
+			})
+		})
+
+		When("the fetcher returns the wrong type of instance data", func() {
+			BeforeEach(func() {
+				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					0: "hello",
+					1: fetchers.CumulativeInstanceData{Usage: 0.1},
+				}, nil)
+			})
+
+			It("skips the instance with the wrong type", func() {
+				Expect(len(reports.InstanceReports)).To(Equal(2))
+				Expect(reports.InstanceReports[0].CumulativeUsage).To(Equal(reporter.CumulativeUsage{}))
+				Expect(reports.InstanceReports[1].CumulativeUsage).To(Equal(reporter.CumulativeUsage{Value: 0.1}))
 			})
 		})
 
@@ -247,10 +272,31 @@ var _ = Describe("Reporter", func() {
 			})
 		})
 
+		When("the fetcher returns the wrong type of instance data", func() {
+			BeforeEach(func() {
+				lastSpikeFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					0: "hello",
+					1: fetchers.LastSpikeInstanceData{
+						InstanceID: 1,
+						From:       time.Unix(1, 0),
+						To:         time.Unix(2, 0),
+					},
+				}, nil)
+			})
+
+			It("skips the instance with the wrong type", func() {
+				Expect(reports.InstanceReports).To(HaveLen(2))
+				Expect(reports.InstanceReports[0].LastSpike.From).To(Equal(time.Time{}))
+				Expect(reports.InstanceReports[0].LastSpike.To).To(Equal(time.Time{}))
+				Expect(reports.InstanceReports[1].LastSpike.From).To(Equal(time.Unix(1, 0)))
+				Expect(reports.InstanceReports[1].LastSpike.To).To(Equal(time.Unix(2, 0)))
+			})
+		})
+
 		When("some instances have spiked", func() {
 			BeforeEach(func() {
-				lastSpikeFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-					0: {
+				lastSpikeFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					0: fetchers.LastSpikeInstanceData{
 						InstanceID: 0,
 						From:       time.Unix(3, 0),
 						To:         time.Unix(5, 0),
@@ -268,14 +314,14 @@ var _ = Describe("Reporter", func() {
 
 	Describe("Current CPU usage", func() {
 		BeforeEach(func() {
-			currentUsageFetcher.FetchInstanceDataReturns(map[int]fetchers.InstanceData{
-				0: {
+			currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+				0: fetchers.CurrentInstanceData{
 					InstanceID: 0,
-					Value:      1.5,
+					Usage:      1.5,
 				},
-				1: {
+				1: fetchers.CurrentInstanceData{
 					InstanceID: 1,
-					Value:      1.7,
+					Usage:      1.7,
 				},
 			}, nil)
 		})
@@ -294,6 +340,20 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-current-error"))
+			})
+		})
+
+		When("the fetcher returns the wrong type of instance data", func() {
+			BeforeEach(func() {
+				currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
+					0: "hello",
+					1: fetchers.CurrentInstanceData{Usage: 1.7},
+				}, nil)
+			})
+
+			It("skips the instance with the wrong type", func() {
+				Expect(len(reports.InstanceReports)).To(Equal(1))
+				Expect(reports.InstanceReports[0].CurrentUsage).To(Equal(reporter.CurrentUsage{Value: 1.7}))
 			})
 		})
 

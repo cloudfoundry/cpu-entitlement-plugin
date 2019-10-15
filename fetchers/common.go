@@ -9,14 +9,6 @@ import (
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
-type InstanceData struct {
-	Time       time.Time
-	InstanceID int
-	Value      float64
-	From       time.Time
-	To         time.Time
-}
-
 //go:generate counterfeiter . LogCacheClient
 
 type LogCacheClient interface {

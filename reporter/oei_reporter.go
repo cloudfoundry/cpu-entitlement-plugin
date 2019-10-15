@@ -21,7 +21,7 @@ type SpaceReport struct {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]fetchers.InstanceData, error)
+	FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
 }
 
 //go:generate counterfeiter . CloudFoundryClient
@@ -111,8 +111,13 @@ func (r OverEntitlementInstances) isOverEntitlement(appGuid string, appInstances
 	}
 
 	isOverEntitlement := false
-	for _, usage := range appInstancesUsages {
-		if usage.Value > 1 {
+	for _, instanceData := range appInstancesUsages {
+		cumulativeInstanceData, ok := instanceData.(fetchers.CumulativeInstanceData)
+		if !ok {
+			continue
+		}
+
+		if cumulativeInstanceData.Usage > 1 {
 			isOverEntitlement = true
 		}
 	}

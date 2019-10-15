@@ -19,7 +19,7 @@ var _ = Describe("LastSpikeFetcher", func() {
 		fetcher        fetchers.LastSpikeFetcher
 		appGuid        string
 		appInstances   map[int]cf.Instance
-		spikes         map[int]fetchers.InstanceData
+		spikes         map[int]interface{}
 		fetchErr       error
 		since          time.Time
 	)
@@ -84,14 +84,14 @@ var _ = Describe("LastSpikeFetcher", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
 
 		Expect(spikes).To(HaveKey(0))
-		Expect(spikes[0]).To(Equal(fetchers.InstanceData{
+		Expect(spikes[0].(fetchers.LastSpikeInstanceData)).To(Equal(fetchers.LastSpikeInstanceData{
 			InstanceID: 0,
 			From:       time.Unix(3, 0),
 			To:         time.Unix(4, 0),
 		}))
 
 		Expect(spikes).To(HaveKey(1))
-		Expect(spikes[1]).To(Equal(fetchers.InstanceData{
+		Expect(spikes[1].(fetchers.LastSpikeInstanceData)).To(Equal(fetchers.LastSpikeInstanceData{
 			InstanceID: 1,
 			From:       time.Unix(5, 0),
 			To:         time.Unix(6, 0),
@@ -187,7 +187,7 @@ var _ = Describe("LastSpikeFetcher", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
 
 			Expect(spikes).To(HaveKey(0))
-			Expect(spikes[0]).To(Equal(fetchers.InstanceData{
+			Expect(spikes[0].(fetchers.LastSpikeInstanceData)).To(Equal(fetchers.LastSpikeInstanceData{
 				InstanceID: 0,
 				From:       time.Unix(3, 0),
 				To:         time.Unix(4, 0),

@@ -19,7 +19,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 		fetcher         fetchers.CumulativeUsageFetcher
 		appGuid         string
 		appInstances    map[int]cf.Instance
-		cumulativeUsage map[int]fetchers.InstanceData
+		cumulativeUsage map[int]interface{}
 		fetchErr        error
 	)
 
@@ -62,9 +62,9 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 	It("returns the correct accumulated usage", func() {
 		Expect(fetchErr).NotTo(HaveOccurred())
 		Expect(cumulativeUsage).To(SatisfyAll(HaveLen(3), HaveKey(0), HaveKey(1), HaveKey(2)))
-		Expect(cumulativeUsage[0].Value).To(Equal(0.2))
-		Expect(cumulativeUsage[1].Value).To(Equal(0.4))
-		Expect(cumulativeUsage[2].Value).To(Equal(0.5))
+		Expect(cumulativeUsage[0].(fetchers.CumulativeInstanceData).Usage).To(Equal(0.2))
+		Expect(cumulativeUsage[1].(fetchers.CumulativeInstanceData).Usage).To(Equal(0.4))
+		Expect(cumulativeUsage[2].(fetchers.CumulativeInstanceData).Usage).To(Equal(0.5))
 	})
 
 	When("cache returns data for instances that are no longer running (because the app has been scaled down", func() {
@@ -77,7 +77,7 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 		It("returns current usage for running instances only", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
 			Expect(cumulativeUsage).To(SatisfyAll(HaveLen(1), HaveKey(0)))
-			Expect(cumulativeUsage[0].Value).To(Equal(0.2))
+			Expect(cumulativeUsage[0].(fetchers.CumulativeInstanceData).Usage).To(Equal(0.2))
 		})
 	})
 

@@ -8,6 +8,11 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 )
 
+type CumulativeInstanceData struct {
+	InstanceID int
+	Usage      float64
+}
+
 type CumulativeUsageFetcher struct {
 	logCacheClient LogCacheClient
 }
@@ -16,14 +21,14 @@ func NewCumulativeUsageFetcher(logCacheClient LogCacheClient) CumulativeUsageFet
 	return CumulativeUsageFetcher{logCacheClient: logCacheClient}
 }
 
-func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]InstanceData, error) {
+func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 	promqlResult, err := f.logCacheClient.PromQL(context.Background(),
 		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid))
 	if err != nil {
 		return nil, err
 	}
 
-	instanceUsages := map[int]InstanceData{}
+	instanceUsages := make(map[int]interface{})
 	for _, sample := range promqlResult.GetVector().GetSamples() {
 		instanceID, err := strconv.Atoi(sample.GetMetric()["instance_id"])
 		if err != nil {
@@ -34,9 +39,9 @@ func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances m
 			continue
 		}
 
-		instanceUsages[instanceID] = InstanceData{
+		instanceUsages[instanceID] = CumulativeInstanceData{
 			InstanceID: instanceID,
-			Value:      sample.GetPoint().GetValue(),
+			Usage:      sample.GetPoint().GetValue(),
 		}
 	}
 
