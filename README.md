@@ -20,6 +20,8 @@ Collect CPU metrics for existing Cloud Foundry applications by running:
 $ cf cpu-entitlement $APP_NAME
 ```
 
+_Note: Getting information about previous spikes requires cf-deployment version >v12.1.0!_
+
 ## Building
 
 _Note: Dependencies for cpu-entitlement-plugin are managed using `go modules`. You do not need
