@@ -14,7 +14,7 @@ import (
 func Spin(appURL string, spinSeconds int) {
 	url := appURL + "/spin"
 	if spinSeconds > 0 {
-		url += fmt.Sprintf("?spinTime=%d", spinSeconds*1000)
+		url += fmt.Sprintf("?spin_time=%d", spinSeconds)
 	}
 	httpGet(url)
 }
