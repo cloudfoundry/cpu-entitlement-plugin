@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BINARY_PATH="${PWD}/plugin-binaries/cpu-entitlement-plugin-$(cat version/number)"
-
 cd cpu-entitlement-plugin
-GOOS=linux   GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.linux64
-GOOS=linux   GOARCH=386   go build -mod vendor -o ${BINARY_PATH}.linux32
-GOOS=windows GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.win64
-GOOS=windows GOARCH=386   go build -mod vendor -o ${BINARY_PATH}.win32
-GOOS=darwin  GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.osx
+
+for plug in entitlement overentitlement-instances; do
+  BINARY_PATH="${PWD}/plugin-binaries/cpu-${plug}-plugin-$(cat version/number)"
+
+  GOOS=linux   GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.linux64 ./cmd/cpu-${plug}
+  GOOS=linux   GOARCH=386   go build -mod vendor -o ${BINARY_PATH}.linux32 ./cmd/cpu-${plug}
+  GOOS=windows GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.win64   ./cmd/cpu-${plug}
+  GOOS=windows GOARCH=386   go build -mod vendor -o ${BINARY_PATH}.win32   ./cmd/cpu-${plug}
+  GOOS=darwin  GOARCH=amd64 go build -mod vendor -o ${BINARY_PATH}.osx     ./cmd/cpu-${plug}
+done
