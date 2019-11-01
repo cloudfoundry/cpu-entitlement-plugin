@@ -2,7 +2,6 @@ package fetchers
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -42,20 +41,17 @@ func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int
 
 func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 	lastSpikePerInstance := make(map[int]interface{})
-	fmt.Printf("Response size: %d\n", len(res))
 	for _, envelope := range res {
 		instanceID, err := strconv.Atoi(envelope.InstanceId)
 		if err != nil {
-			fmt.Println("failed to parse instance id")
 			continue
 		}
-		if _, set := lastSpikePerInstance[instanceID]; set {
+		if _, alreadySet := lastSpikePerInstance[instanceID]; alreadySet {
 			continue
 		}
 
 		envelopeGauge, ok := envelope.Message.(*loggregator_v2.Envelope_Gauge)
 		if !ok {
-			fmt.Println("this is not an envelope gauge")
 			continue
 		}
 		gaugeValues := envelopeGauge.Gauge.Metrics
@@ -64,7 +60,6 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 
 		processInstanceID := envelope.Tags["process_instance_id"]
 		if appInstances[instanceID].ProcessInstanceID != processInstanceID {
-			fmt.Printf("process_instance_id: %q, expected_process_instance_id: %q\n", appInstances[instanceID].ProcessInstanceID, processInstanceID)
 			continue
 		}
 

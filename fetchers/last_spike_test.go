@@ -61,6 +61,21 @@ var _ = Describe("LastSpikeFetcher", func() {
 					},
 				},
 			},
+			{
+				InstanceId: "0",
+				Tags: map[string]string{
+					"process_instance_id": "abc",
+				},
+				Timestamp: 8,
+				Message: &loggregator_v2.Envelope_Gauge{
+					Gauge: &loggregator_v2.Gauge{
+						Metrics: map[string]*loggregator_v2.GaugeValue{
+							"spike_start": &loggregator_v2.GaugeValue{Value: 1},
+							"spike_end":   &loggregator_v2.GaugeValue{Value: 3},
+						},
+					},
+				},
+			},
 		}, nil)
 
 		appInstances = map[int]cf.Instance{

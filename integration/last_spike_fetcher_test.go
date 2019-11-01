@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -41,8 +40,7 @@ var _ = FDescribe("Last Spike Fetcher", func() {
 		fetcher = fetchers.NewLastSpikeFetcher(logCacheClient, time.Now().Add(-30*24*time.Hour))
 	})
 
-	It("returns the last spike", func() {
-		fmt.Printf("appGuid = %+v\n", appGuid)
+	It("returns the most recent spike", func() {
 
 		firstSpike := map[string]string{
 			"source_id":           appGuid,
@@ -84,7 +82,7 @@ var _ = FDescribe("Last Spike Fetcher", func() {
 func emitSpike(spike map[string]string) {
 	spikeBytes, err := json.Marshal(spike)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	response, err := logEmitterHttpClient.Post(getTestLogEmitterURL()+"/spike", "application/json", bytes.NewBuffer(spikeBytes))
+	response, err := logEmitterHttpClient.Post(getTestLogEmitterURL()+"/spike", "application/json", bytes.NewReader(spikeBytes))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	defer response.Body.Close()
 
