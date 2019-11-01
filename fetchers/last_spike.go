@@ -27,7 +27,11 @@ func NewLastSpikeFetcher(client LogCacheClient, since time.Time) *LastSpikeFetch
 }
 
 func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
-	res, err := f.client.Read(context.Background(), appGUID, f.since, logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE), logcache.WithDescending(), logcache.WithNameFilter("spike"))
+	res, err := f.client.Read(context.Background(), appGUID, f.since,
+		logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
+		logcache.WithDescending(),
+		logcache.WithNameFilter("spike"),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +44,9 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 	for _, envelope := range res {
 		instanceID, err := strconv.Atoi(envelope.InstanceId)
 		if err != nil {
+			continue
+		}
+		if _, alreadySet := lastSpikePerInstance[instanceID]; alreadySet {
 			continue
 		}
 

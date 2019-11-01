@@ -1,7 +1,9 @@
 package integration_test
 
 import (
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,7 +20,10 @@ func TestIntegration(t *testing.T) {
 	RunSpecs(t, "Integration Suite")
 }
 
-var cfApi string
+var (
+	cfApi                string
+	logEmitterHttpClient *http.Client
+)
 
 var _ = BeforeSuite(func() {
 	cfApi = GetEnv("CF_API")
@@ -29,10 +34,32 @@ var _ = BeforeSuite(func() {
 	cfPassword := GetEnv("CF_PASSWORD")
 
 	Expect(Cmd("cf", "login", "-u", cfUsername, "-p", cfPassword).Run()).To(gexec.Exit(0))
+
+	logEmitterHttpClient = createInsecureHttpClient()
+	Eventually(pingTestLogEmitter).Should(BeTrue())
 })
+
+func createInsecureHttpClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig.InsecureSkipVerify = true
+	return &http.Client{Transport: transport}
+}
 
 func GetEnv(varName string) string {
 	value := os.Getenv(varName)
 	Expect(value).NotTo(BeEmpty())
 	return value
+}
+
+func pingTestLogEmitter() bool {
+	response, err := logEmitterHttpClient.Get(getTestLogEmitterURL())
+	if err != nil {
+		return false
+	}
+	defer response.Body.Close()
+	return response.StatusCode == http.StatusOK
+}
+
+func getTestLogEmitterURL() string {
+	return strings.Replace(cfApi, "api.", "test-log-emitter.", 1)
 }
