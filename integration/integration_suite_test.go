@@ -47,7 +47,7 @@ func createInsecureHttpClient() *http.Client {
 
 func GetEnv(varName string) string {
 	value := os.Getenv(varName)
-	Expect(value).NotTo(BeEmpty())
+	ExpectWithOffset(1, value).NotTo(BeEmpty())
 	return value
 }
 

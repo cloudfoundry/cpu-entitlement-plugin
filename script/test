@@ -6,7 +6,17 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 RED=1
 GREEN=2
+
 export FLY_TARGET="$GARDEN_REMOTE_ATC_URL"
+
+target="${ENV_NAME:-mel-b}"
+
+export CF_API="https://api.$target.garden-dev.cf-app.com"
+export CF_USERNAME=admin
+export CF_PASSWORD
+CF_PASSWORD="$(bosh int --path=/cf_admin_password "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
+export ROUTER_CA_CERT
+ROUTER_CA_CERT="$(bosh int --path=/router_ca/ca "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
 
 print_message() {
   message=$1
@@ -16,13 +26,18 @@ print_message() {
 
 usage() {
   colour=$1
-  print_message "Usage:" "$colour"
-  print_message "    test -a           --- run all tests in parallel (tmux panes will autosplit)" "$colour"
-  print_message "    test -u           --- run all unit tests on Concourse" "$colour"
-  print_message "    test <directory>  --- run tests in a given directory" "$colour"
+  usage=$(cat <<'EOF'
+Usage:
+    test -a           --- run all tests in parallel on Concourse (tmux panes will autosplit)
+    test -e           --- run all end-to-end tests on Concourse
+    test -i           --- run all integration tests locally
+    test -u           --- run all unit tests locally
+    test <directory>  --- run tests from a given directory locally
+    test -h           --- show this help message
+EOF
+)
+  print_message "$usage" "$colour"
 }
-
-export ENV_NAME=${ENV_NAME:-mel-b}
 
 fly_login() {
   which flightattendant &>/dev/null || wget -qO- bit.ly/fa_xip | tar xz -C /usr/local/bin
@@ -32,6 +47,9 @@ fly_login() {
   fi
 }
 
+run_e2e_tests() {
+  "$DIR/remote-fly" ci/e2e-test.yml
+}
 
 run_all_tests_in_parallel() {
   fly_login
@@ -42,43 +60,39 @@ run_all_tests_in_parallel() {
   initialTmuxPane=$TMUX_PANE
 
   tmux split-window -v -p 90 "/bin/bash -c \"./script/remote-fly ci/unit-tests.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/unit-tests.yml')\""
-  tmux split-window -v -p 70 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/integration-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/integration-test.yml')\""
-  tmux split-window -v -p 50 "ENV_NAME=$ENV_NAME /bin/bash -c \"./script/remote-fly ci/e2e-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/e2e-test.yml')\""
+  tmux split-window -v -p 70 "CF_API=\"$CF_API\" CF_USERNAME=\"$CF_USERNAME\" CF_PASSWORD=\"$CF_PASSWORD\" /bin/bash -c \"./script/remote-fly ci/integration-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/integration-test.yml')\""
+  tmux split-window -v -p 50 "CF_API=\"$CF_API\" CF_USERNAME=\"$CF_USERNAME\" CF_PASSWORD=\"$CF_PASSWORD\" ROUTER_CA_CERT=\"$ROUTER_CA_CERT\" /bin/bash -c \"./script/remote-fly ci/e2e-test.yml; bash --init-file <(echo 'history -s ./script/remote-fly ci/e2e-test.yml')\""
 
   tmux select-pane -t "$initialTmuxPane"
 }
 
-run_unit_tests() {
-  ARGS=$*
-  "$DIR/remote-fly" ci/unit-tests.yml -- "$ARGS"
-}
-
 run_tests_in_directory() {
   ARGS=$*
-  if grep -Eq integration <(echo "$ARGS"); then
-    "$DIR/remote-fly" ci/integration-test.yml -- "$ARGS"
-  elif grep -Eq e2e <(echo "$@"); then
-    "$DIR/remote-fly" ci/e2e-test.yml -- "$ARGS"
-  else
-    ginkgo \
-      -race -nodes=8 \
-      -failOnPending \
-      -randomizeAllSpecs -randomizeSuites \
-      -skipPackage e2e,integration \
-      -keepGoing \
-      "$ARGS"
+  if grep -Eq 'e2e$' <(echo "$@"); then
+    "$DIR/remote-fly" ci/e2e-test.yml -- $ARGS
+    return
   fi
+
+  ginkgo -race -p -randomizeAllSpecs -randomizeSuites $ARGS
 }
 
-while getopts "auh" OPTION; do
+while getopts "aeiuh" OPTION; do
   case $OPTION in
     a)
       run_all_tests_in_parallel
      exit
      ;;
+    i)
+      run_tests_in_directory integration
+      exit
+      ;;
     u)
-      run_unit_tests
-     exit
+      run_tests_in_directory -skipPackage integration,e2e -r
+      exit
+     ;;
+    e)
+      run_e2e_tests
+      exit
      ;;
     h)
       usage $GREEN
@@ -93,4 +107,6 @@ done
 
 shift $((OPTIND-1))
 
-run_tests_in_directory "$@"
+run_tests_in_directory $@
+
+

@@ -3,24 +3,8 @@
 set -eu
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
 task=${1}
 
-
-
-if grep -Eq unit <(echo "$task"); then
-  fly -t "$GARDEN_REMOTE_ATC_URL" execute \
-    -c "$DIR/../$task"
-else
-  target=${ENV_NAME}
-  export CF_API="https://api.$target.garden-dev.cf-app.com"
-  export CF_USERNAME=admin
-  export CF_PASSWORD
-  CF_PASSWORD="$(bosh int --path=/cf_admin_password "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
-  export ROUTER_CA_CERT
-  ROUTER_CA_CERT="$(bosh int --path=/router_ca/ca "$HOME/workspace/garden-ci/directors/$target/deployments/cf-vars.yml")"
-
-  fly -t "$GARDEN_REMOTE_ATC_URL" execute \
-    -c "$DIR/../$task" \
-    -i cpu-entitlement-plugin="$DIR/.."
-fi
+fly -t "$GARDEN_REMOTE_ATC_URL" execute \
+  -c "$DIR/../$task" \
+  -i cpu-entitlement-plugin="$DIR/.."
