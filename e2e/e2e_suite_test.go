@@ -18,13 +18,13 @@ func TestE2e(t *testing.T) {
 	RunSpecs(t, "E2e Suite")
 }
 
-var _ = BeforeSuite(func() {
-	Expect(Cmd("make", "install").WithDir("..").WithTimeout("30s").Run()).To(gexec.Exit(0))
-
-})
+var _ = SynchronizedBeforeSuite(func() []byte {
+	Expect(Cmd("make", "install").WithDir("..").WithTimeout("60s").Run()).To(gexec.Exit(0))
+	return []byte{}
+}, func(_ []byte) {})
 
 func GetEnv(varName string) string {
 	value := os.Getenv(varName)
-	Expect(value).NotTo(BeEmpty())
+	ExpectWithOffset(1, value).NotTo(BeEmpty())
 	return value
 }
