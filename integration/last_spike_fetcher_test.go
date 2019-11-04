@@ -77,12 +77,39 @@ var _ = FDescribe("Last Spike Fetcher", func() {
 		Expect(spike.From).To(BeTemporally("==", expectedFrom))
 		Expect(spike.To).To(BeTemporally("==", expectedTo))
 	})
+
+	It("doesn't return anything when we emit a spoke rather than a spike", func() {
+		spoke := map[string]string{
+			"source_id":           appGuid,
+			"instance_id":         "0",
+			"process_instance_id": "1",
+			"spike_start":         "2019-11-01T00:02:00Z",
+			"spike_end":           "2019-11-01T00:03:00Z",
+		}
+
+		emitSpoke(spoke)
+		spikes, err := fetcher.FetchInstanceData(appGuid, map[int]cf.Instance{0: cf.Instance{InstanceID: 0, ProcessInstanceID: "1"}})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(spikes).To(BeEmpty())
+	})
 })
 
 func emitSpike(spike map[string]string) {
 	spikeBytes, err := json.Marshal(spike)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	response, err := logEmitterHttpClient.Post(getTestLogEmitterURL()+"/spike", "application/json", bytes.NewReader(spikeBytes))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	defer response.Body.Close()
+
+	responseBody, err := ioutil.ReadAll(response.Body)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, response.StatusCode).To(Equal(http.StatusOK), string(responseBody))
+}
+
+func emitSpoke(spike map[string]string) {
+	spikeBytes, err := json.Marshal(spike)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	response, err := logEmitterHttpClient.Post(getTestLogEmitterURL()+"/spoke", "application/json", bytes.NewReader(spikeBytes))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	defer response.Body.Close()
 
