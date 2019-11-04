@@ -46,6 +46,7 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 		if err != nil {
 			continue
 		}
+
 		if _, alreadySet := lastSpikePerInstance[instanceID]; alreadySet {
 			continue
 		}
@@ -54,14 +55,15 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 		if !ok {
 			continue
 		}
-		gaugeValues := envelopeGauge.Gauge.Metrics
-		spikeStart := time.Unix(int64(gaugeValues["spike_start"].Value), 0)
-		spikeEnd := time.Unix(int64(gaugeValues["spike_end"].Value), 0)
 
 		processInstanceID := envelope.Tags["process_instance_id"]
 		if appInstances[instanceID].ProcessInstanceID != processInstanceID {
 			continue
 		}
+
+		gaugeValues := envelopeGauge.Gauge.Metrics
+		spikeStart := time.Unix(int64(gaugeValues["spike_start"].Value), 0)
+		spikeEnd := time.Unix(int64(gaugeValues["spike_end"].Value), 0)
 
 		lastSpikePerInstance[instanceID] = LastSpikeInstanceData{
 			InstanceID: instanceID,
