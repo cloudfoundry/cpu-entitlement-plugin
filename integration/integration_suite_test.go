@@ -27,12 +27,10 @@ var (
 
 var _ = BeforeSuite(func() {
 	cfApi = GetEnv("CF_API")
-
-	Expect(Cmd("cf", "api", cfApi, "--skip-ssl-validation").Run()).To(gexec.Exit(0))
-
 	cfUsername := GetEnv("CF_USERNAME")
 	cfPassword := GetEnv("CF_PASSWORD")
 
+	Expect(Cmd("cf", "api", cfApi, "--skip-ssl-validation").Run()).To(gexec.Exit(0))
 	Expect(Cmd("cf", "login", "-u", cfUsername, "-p", cfPassword).Run()).To(gexec.Exit(0))
 
 	logEmitterHttpClient = createInsecureHttpClient()
