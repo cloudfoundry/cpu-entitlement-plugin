@@ -5,13 +5,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
-	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"github.com/google/uuid"
 	"github.com/masters-of-cats/test-log-emitter/emitters"
 	. "github.com/onsi/ginkgo"
@@ -27,16 +24,6 @@ var _ = Describe("Last Spike Fetcher", func() {
 	BeforeEach(func() {
 		uid := uuid.New().String()
 		appGuid = "test-app-" + uid
-
-		logCacheURL := strings.Replace(cfApi, "https://api.", "http://log-cache.", 1)
-		getToken := func() (string, error) {
-			return getCmdOutput("cf", "oauth-token"), nil
-		}
-
-		logCacheClient := logcache.NewClient(
-			logCacheURL,
-			logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
-		)
 
 		fetcher = fetchers.NewLastSpikeFetcher(logCacheClient, time.Now().Add(-30*24*time.Hour))
 	})

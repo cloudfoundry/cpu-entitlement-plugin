@@ -1,8 +1,8 @@
 package integration_test
 
 import (
+	"fmt"
 	"strings"
-	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
@@ -10,97 +10,107 @@ import (
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"github.com/google/uuid"
+	"github.com/masters-of-cats/test-log-emitter/emitters"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Cumulative Usage Fetcher", func() {
 	var (
-		org string
-		uid string
+		uid    string
+		app1ID string
+		app2ID string
 
-		fetcher       fetchers.CumulativeUsageFetcher
-		procIdFetcher fetchers.ProcessInstanceIDFetcher
-		getToken      func() (string, error)
+		fetcher fetchers.CumulativeUsageFetcher
 	)
 
-	getUsages := func(appName string) func() map[int]interface{} {
-		appGuid := getCmdOutput("cf", "app", appName, "--guid")
-		return func() map[int]interface{} {
-			processIds, err := procIdFetcher.Fetch(appGuid)
-			Expect(err).NotTo(HaveOccurred())
-			appInstances := map[int]cf.Instance{}
-			for id, procId := range processIds {
-				appInstances[id] = cf.Instance{InstanceID: id, ProcessInstanceID: procId}
-			}
-			usages, err := fetcher.FetchInstanceData(appGuid, appInstances)
-			Expect(err).NotTo(HaveOccurred())
-			return usages
-		}
+	getUsages := func(appGUID string, appInstances map[int]cf.Instance) map[int]interface{} {
+		usages, err := fetcher.FetchInstanceData(appGUID, appInstances)
+		Expect(err).NotTo(HaveOccurred())
+		return usages
 	}
 
 	BeforeEach(func() {
 		uid = uuid.New().String()
-		org = "org-" + uid
-		space := "space-" + uid
-
-		Expect(Cmd("cf", "create-org", org).Run()).To(gexec.Exit(0))
-		Expect(Cmd("cf", "target", "-o", org).Run()).To(gexec.Exit(0))
-		Expect(Cmd("cf", "create-space", space).Run()).To(gexec.Exit(0))
-		Expect(Cmd("cf", "target", "-o", org, "-s", space).Run()).To(gexec.Exit(0))
-
-		logCacheURL := strings.Replace(cfApi, "https://api.", "http://log-cache.", 1)
-		getToken = func() (string, error) {
-			return getCmdOutput("cf", "oauth-token"), nil
-		}
-
-		logCacheClient := logcache.NewClient(
-			logCacheURL,
-			logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
-		)
+		app1ID = fmt.Sprintf("app-%s-1", uid)
+		app2ID = fmt.Sprintf("app-%s-2", uid)
 
 		fetcher = fetchers.NewCumulativeUsageFetcher(logCacheClient)
-		procIdFetcher = fetchers.NewProcessInstanceIDFetcher(logCacheClient)
-	})
-
-	AfterEach(func() {
-		Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
 	})
 
 	When("running multiple apps with various instance counts", func() {
 		BeforeEach(func() {
-			var wg sync.WaitGroup
-			wg.Add(2)
+			app1inst1 := emitters.GaugeMetric{
+				SourceId:   app1ID,
+				InstanceId: "1",
+				Tags: map[string]string{
+					"process_instance_id": "1",
+				},
+				Values: []emitters.GaugeValue{
+					{Name: "absolute_usage", Value: 134, Unit: "nanoseconds"},
+					{Name: "absolute_entitlement", Value: 186, Unit: "nanoseconds"},
+				},
+			}
 
-			go func() {
-				defer GinkgoRecover()
-				defer wg.Done()
-				PushSpinner("spinner-1-"+uid, 3)
-			}()
+			app1inst2 := emitters.GaugeMetric{
+				SourceId:   app1ID,
+				InstanceId: "2",
+				Tags: map[string]string{
+					"process_instance_id": "2",
+				},
+				Values: []emitters.GaugeValue{
+					{Name: "absolute_usage", Value: 135, Unit: "nanoseconds"},
+					{Name: "absolute_entitlement", Value: 137, Unit: "nanoseconds"},
+				},
+			}
 
-			go func() {
-				defer GinkgoRecover()
-				defer wg.Done()
-				PushSpinner("spinner-2-"+uid, 1)
-			}()
+			app1inst3 := emitters.GaugeMetric{
+				SourceId:   app1ID,
+				InstanceId: "3",
+				Tags: map[string]string{
+					"process_instance_id": "3",
+				},
+				Values: []emitters.GaugeValue{
+					{Name: "absolute_usage", Value: 136, Unit: "nanoseconds"},
+					{Name: "absolute_entitlement", Value: 138, Unit: "nanoseconds"},
+				},
+			}
 
-			wg.Wait()
+			app2inst1 := emitters.GaugeMetric{
+				SourceId:   app2ID,
+				InstanceId: "1",
+				Tags: map[string]string{
+					"process_instance_id": "10",
+				},
+				Values: []emitters.GaugeValue{
+					{Name: "absolute_usage", Value: 236, Unit: "nanoseconds"},
+					{Name: "absolute_entitlement", Value: 238, Unit: "nanoseconds"},
+				},
+			}
+
+			emitGauge(app1inst1)
+			emitGauge(app1inst2)
+			emitGauge(app1inst3)
+			emitGauge(app2inst1)
 		})
 
 		It("gets the usages of all instances for each app", func() {
-			Eventually(getUsages("spinner-1-" + uid)).Should(HaveLen(3))
-			Eventually(getUsages("spinner-2-" + uid)).Should(HaveLen(1))
-		})
-	})
+			instances1 := map[int]cf.Instance{
+				1: {InstanceID: 1, ProcessInstanceID: "1"},
+				2: {InstanceID: 2, ProcessInstanceID: "2"},
+				3: {InstanceID: 3, ProcessInstanceID: "3"},
+			}
+			instances2 := map[int]cf.Instance{
+				1: {InstanceID: 1, ProcessInstanceID: "10"},
+			}
+			app1Usages := getUsages(app1ID, instances1)
+			app2Usages := getUsages(app2ID, instances2)
+			Expect(app1Usages).To(HaveLen(3))
+			Expect(app2Usages).To(HaveLen(1))
 
-	When("an app has no instances", func() {
-		BeforeEach(func() {
-			PushSpinner("spinner-"+uid, 0)
-		})
-
-		It("returns an empty list of usages", func() {
-			Consistently(getUsages("spinner-"+uid), "20s", "1s").Should(BeEmpty())
+			app1Inst1Usage, ok := app1Usages[1].(fetchers.CumulativeInstanceData)
+			Expect(ok).To(BeTrue(), "couldn't cast fetcher result to CumulativeInstanceData")
+			Expect(app1Inst1Usage.Usage).To(BeNumerically("~", 0.72043, 0.00001))
 		})
 	})
 

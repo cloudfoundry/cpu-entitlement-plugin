@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
+	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -23,6 +25,8 @@ func TestIntegration(t *testing.T) {
 var (
 	cfApi                string
 	logEmitterHttpClient *http.Client
+	logCacheClient       *logcache.Client
+	getToken             func() (string, error)
 )
 
 var _ = BeforeSuite(func() {
@@ -35,6 +39,15 @@ var _ = BeforeSuite(func() {
 
 	logEmitterHttpClient = createInsecureHttpClient()
 	Eventually(pingTestLogEmitter).Should(BeTrue())
+
+	logCacheURL := getLogCacheURL()
+	getToken = func() (string, error) {
+		return getCmdOutput("cf", "oauth-token"), nil
+	}
+	logCacheClient = logcache.NewClient(
+		logCacheURL,
+		logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
+	)
 })
 
 func createInsecureHttpClient() *http.Client {
@@ -60,4 +73,8 @@ func pingTestLogEmitter() bool {
 
 func getTestLogEmitterURL() string {
 	return strings.Replace(cfApi, "api.", "test-log-emitter.", 1)
+}
+
+func getLogCacheURL() string {
+	return strings.Replace(cfApi, "https://api.", "http://log-cache.", 1)
 }
