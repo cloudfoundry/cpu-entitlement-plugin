@@ -43,8 +43,8 @@ var _ = Describe("ProcessInstanceIDFetcher", func() {
 		})
 	})
 
-	FIt("fetches the last process instance id for each instance", func() {
-		Eventually(func() (map[int]string, error) { return fetcher.Fetch(appID) }, "2s").Should(Equal(map[int]string{
+	It("fetches the last process instance id for each instance", func() {
+		Eventually(func() (map[int]string, error) { return fetcher.Fetch(appID) }, "15s").Should(Equal(map[int]string{
 			1: "1b",
 			2: "2a",
 			3: "3b",
