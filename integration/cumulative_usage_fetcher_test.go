@@ -103,10 +103,9 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 			instances2 := map[int]cf.Instance{
 				1: {InstanceID: 1, ProcessInstanceID: "10"},
 			}
-			app1Usages := getUsages(app1ID, instances1)
-			app2Usages := getUsages(app2ID, instances2)
-			Expect(app1Usages).To(HaveLen(3))
-			Expect(app2Usages).To(HaveLen(1))
+			var app1Usages map[int]interface{}
+			Eventually(func() map[int]interface{} { app1Usages = getUsages(app1ID, instances1); return app1Usages }).Should(HaveLen(3))
+			Eventually(func() map[int]interface{} { return getUsages(app2ID, instances2) }).Should(HaveLen(1))
 
 			app1Inst1Usage, ok := app1Usages[1].(fetchers.CumulativeInstanceData)
 			Expect(ok).To(BeTrue(), "couldn't cast fetcher result to CumulativeInstanceData")
