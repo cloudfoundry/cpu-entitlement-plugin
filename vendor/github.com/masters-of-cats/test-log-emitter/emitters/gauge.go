@@ -22,28 +22,15 @@ type GaugeMetric struct {
 	Values     []GaugeValue
 }
 
-type SpikeEmitter struct {
+type GaugeEmitter struct {
 	client *loggregator.IngressClient
 }
 
-func NewSpikeEmitter(client *loggregator.IngressClient) *SpikeEmitter {
-	return &SpikeEmitter{client: client}
+func NewGaugeEmitter(client *loggregator.IngressClient) *GaugeEmitter {
+	return &GaugeEmitter{client: client}
 }
 
-// func (e SpikeEmitter) Emit(spike *Spike) {
-// 	tags := map[string]string{
-// 		"process_instance_id": spike.ProcessInstanceId,
-// 	}
-
-// 	e.client.EmitGauge(
-// 		loggregator.WithGaugeSourceInfo(spike.SourceId, spike.InstanceId),
-// 		loggregator.WithGaugeValue("spike_start", float64(spike.Start.Unix()), "seconds"),
-// 		loggregator.WithGaugeValue("spike_end", float64(spike.End.Unix()), "seconds"),
-// 		loggregator.WithEnvelopeTags(tags),
-// 	)
-// }
-
-func (e SpikeEmitter) SendGauge(gauge GaugeMetric) {
+func (e GaugeEmitter) SendGauge(gauge GaugeMetric) {
 	opts := []loggregator.EmitGaugeOption{
 		loggregator.WithGaugeSourceInfo(gauge.SourceId, gauge.InstanceId),
 		loggregator.WithEnvelopeTags(gauge.Tags),
@@ -54,7 +41,7 @@ func (e SpikeEmitter) SendGauge(gauge GaugeMetric) {
 	e.client.EmitGauge(opts...)
 }
 
-func (e SpikeEmitter) EmitGauge() http.HandlerFunc {
+func (e GaugeEmitter) EmitGauge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, "Sorry, only POST methods are supported.", http.StatusMethodNotAllowed)
