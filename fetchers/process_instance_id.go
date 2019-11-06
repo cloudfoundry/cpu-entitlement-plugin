@@ -27,6 +27,14 @@ func NewProcessInstanceIDFetcher(client LogCacheClient) ProcessInstanceIDFetcher
 	return NewProcessInstanceIDFetcherWithLimit(client, 1000)
 }
 
+// Fetch searches in a 30s interval, in which each app instance will have
+// emitted at least one metric. As log-cache read is limited to 1000 results,
+// we have implemented some pagination here. We start with the topmost 1000
+// results, and if we do receive 1000 back, there may be more, so we reduce
+// `end` back to the timestamp of the earliest metric from the results and
+// re-read. As soon as fewer than 1000 results are returned we stop, as we have
+// exhausted the range. We also apply a 10 iteration sanity check to avoid
+// looping forever.
 func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) {
 	start := time.Now().Add(-30 * time.Second)
 	end := time.Now()
@@ -39,6 +47,7 @@ func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) 
 			logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
 			logcache.WithNameFilter("absolute_entitlement"),
 			logcache.WithEndTime(end),
+			logcache.WithLimit(f.limit),
 		)
 
 		if err != nil {

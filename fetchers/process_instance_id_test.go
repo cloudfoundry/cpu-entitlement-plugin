@@ -29,65 +29,6 @@ var _ = Describe("Process Instance ID Fetcher", func() {
 		processInstanceIDs, err = fetcher.Fetch("the-app")
 	})
 
-	When("some datapoints exist for an app", func() {
-		BeforeEach(func() {
-			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
-				{
-					InstanceId: "0",
-					Tags: map[string]string{
-						"process_instance_id": "instance-0-new",
-					},
-					Timestamp: 10,
-				},
-				{
-					InstanceId: "2",
-					Tags: map[string]string{
-						"process_instance_id": "instance-2",
-					},
-					Timestamp: 2,
-				},
-				{
-					InstanceId: "1",
-					Tags: map[string]string{
-						"process_instance_id": "instance-1",
-					},
-					Timestamp: 1,
-				},
-				{
-					InstanceId: "0",
-					Tags: map[string]string{
-						"process_instance_id": "instance-0-old",
-					},
-					Timestamp: 0,
-				},
-			}, nil)
-		})
-
-		It("invokes the logcache client with the right params", func() {
-			Expect(logCacheClient.ReadCallCount()).To(Equal(1))
-			_, appGuid, startTime, _ := logCacheClient.ReadArgsForCall(0)
-			Expect(appGuid).To(Equal("the-app"))
-			Expect(startTime).To(BeTemporally("~", time.Now().Add(-30*time.Second)))
-
-			// This is untestable. So, dear reader, please verify that the Read() invocation asks for the following options:
-			// * logcache.WithDescending(),
-			// * logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
-			// * logcache.WithNameFilter("absolute_entitlement")
-		})
-
-		It("succeeds", func() {
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("returns a map from instance id to process instance id", func() {
-			Expect(processInstanceIDs).To(Equal(map[int]string{
-				0: "instance-0-new",
-				1: "instance-1",
-				2: "instance-2",
-			}))
-		})
-	})
-
 	When("the first query returns #limit envelopes but doesn't return enough data to build the list of instances", func() {
 		BeforeEach(func() {
 			fetcher = fetchers.NewProcessInstanceIDFetcherWithLimit(logCacheClient, 3)
