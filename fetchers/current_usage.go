@@ -58,19 +58,19 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 		return nil, err
 	}
 
-	for instanceID, _ := range appInstances {
+	for instanceID := range appInstances {
 		if _, ok := currentUsage[instanceID]; ok {
 			continue
 		}
 
 		result, ok := cumulativeResult[instanceID]
 		if !ok {
-			return nil, fmt.Errorf("could not find historical usage for instance ID %d", instanceID)
+			continue
 		}
 
 		cumulativeData, ok := result.(CumulativeInstanceData)
 		if !ok {
-			return map[int]interface{}{}, errors.New("")
+			return map[int]interface{}{}, errors.New("cumulative fetcher returned result in unexpected struct")
 		}
 
 		currentUsage[instanceID] = CurrentInstanceData{
