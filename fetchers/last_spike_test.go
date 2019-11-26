@@ -80,6 +80,125 @@ var _ = Describe("LastSpikeFetcher", func() {
 			Expect(spikes).To(HaveKey(0))
 		})
 	})
+
+	When("the message is nil", func() {
+		BeforeEach(func() {
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "abc",
+					},
+					Timestamp: 10,
+					Message:   nil,
+				},
+			}, nil)
+		})
+
+		It("ignores the invalid entries", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(spikes).To(HaveLen(0))
+		})
+	})
+
+	When("the gauge is nil", func() {
+		BeforeEach(func() {
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "abc",
+					},
+					Timestamp: 10,
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: nil,
+					},
+				},
+			}, nil)
+		})
+
+		It("ignores the invalid entries", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(spikes).To(HaveLen(0))
+		})
+	})
+
+	When("there are no metrics", func() {
+		BeforeEach(func() {
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "abc",
+					},
+					Timestamp: 10,
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: nil,
+						},
+					},
+				},
+			}, nil)
+		})
+
+		It("ignores the invalid entries", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(spikes).To(HaveLen(0))
+		})
+	})
+
+	When("it returns a spike_troll metric", func() {
+		BeforeEach(func() {
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "abc",
+					},
+					Timestamp: 10,
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								"spike_troll": &loggregator_v2.GaugeValue{Value: 5},
+							},
+						},
+					},
+				},
+			}, nil)
+		})
+
+		It("ignores the invalid entries", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(spikes).To(HaveLen(0))
+		})
+	})
+
+	When("there is only a spike_start and no spike_end", func() {
+		BeforeEach(func() {
+			logCacheClient.ReadReturns([]*loggregator_v2.Envelope{
+				{
+					InstanceId: "0",
+					Tags: map[string]string{
+						"process_instance_id": "abc",
+					},
+					Timestamp: 10,
+					Message: &loggregator_v2.Envelope_Gauge{
+						Gauge: &loggregator_v2.Gauge{
+							Metrics: map[string]*loggregator_v2.GaugeValue{
+								"spike_start": &loggregator_v2.GaugeValue{Value: 5},
+							},
+						},
+					},
+				},
+			}, nil)
+		})
+
+		It("ignores the invalid entries", func() {
+			Expect(fetchErr).NotTo(HaveOccurred())
+			Expect(spikes).To(HaveLen(0))
+		})
+	})
+
 })
 
 func MetricEnvelope(appGuid, instanceId string, metric Metric) *loggregator_v2.Envelope {
