@@ -5,6 +5,9 @@ set -eu
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 task=${1}
 
+image_args=("--inputs-from" "main/garden" "--image" "garden-ci-image")
+
 fly -t "$GARDEN_REMOTE_ATC_URL" execute \
   -c "$DIR/../$task" \
-  -i cpu-entitlement-plugin="$DIR/.."
+  -i cpu-entitlement-plugin="$DIR/.." \
+  ${image_args[@]}
