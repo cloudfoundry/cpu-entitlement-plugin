@@ -7,6 +7,7 @@ require (
 	code.cloudfoundry.org/cli v6.46.1+incompatible
 	code.cloudfoundry.org/go-loggregator v7.4.0+incompatible
 	code.cloudfoundry.org/gofileutils v0.0.0-20170111115228-4d0c80011a0f // indirect
+	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/log-cache v2.3.1+incompatible
 	code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d // indirect
 	github.com/SermoDigital/jose v0.9.1 // indirect
@@ -29,6 +30,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.9.6 // indirect
+	github.com/jessevdk/go-flags v1.4.0
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/masters-of-cats/test-log-emitter v0.0.0-20191106103349-3dd687b193d5

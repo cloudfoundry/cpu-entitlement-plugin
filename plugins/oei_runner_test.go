@@ -6,8 +6,11 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins/pluginsfakes"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Runner", func() {
@@ -18,6 +21,7 @@ var _ = Describe("Runner", func() {
 		runner *plugins.OverEntitlementInstancesRunner
 		err    error
 		report reporter.OEIReport
+		logger lager.Logger
 	)
 
 	BeforeEach(func() {
@@ -44,16 +48,22 @@ var _ = Describe("Runner", func() {
 		fakeReporter.OverEntitlementInstancesReturns(report, nil)
 
 		runner = plugins.NewOverEntitlementInstancesRunner(fakeReporter, fakeRenderer)
+		logger = lagertest.NewTestLogger("test-oei")
 	})
 
 	JustBeforeEach(func() {
-		err = runner.Run()
+		err = runner.Run(logger)
 	})
 
 	It("collects reports and renders them", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fakeRenderer.RenderCallCount()).To(Equal(1))
 		Expect(fakeRenderer.RenderArgsForCall(0)).To(Equal(report))
+	})
+
+	It("logs start and end of function", func() {
+		Expect(logger).To(gbytes.Say("run.start"))
+		Expect(logger).To(gbytes.Say("run.end"))
 	})
 
 	When("the reporter fails", func() {
@@ -64,6 +74,14 @@ var _ = Describe("Runner", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("reporter-err"))
 		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-creating-oei-report"),
+				gbytes.Say(`log_level":2`),
+				gbytes.Say("reporter-err")),
+			)
+		})
 	})
 
 	When("the renderer fails", func() {
@@ -73,6 +91,14 @@ var _ = Describe("Runner", func() {
 
 		It("returns the error", func() {
 			Expect(err).To(MatchError("renderer-err"))
+		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-rendering-oei-metrics"),
+				gbytes.Say(`log_level":2`),
+				gbytes.Say("renderer-err")),
+			)
 		})
 	})
 })

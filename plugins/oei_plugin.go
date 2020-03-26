@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/cli/cf/terminal"
@@ -10,6 +11,8 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
+	flags "github.com/jessevdk/go-flags"
 )
 
 type CPUEntitlementAdminPlugin struct{}
@@ -19,12 +22,32 @@ func NewOverEntitlementInstancesPlugin() CPUEntitlementAdminPlugin {
 }
 
 func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) {
+	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
+	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
+
+	opts := struct {
+		Debug bool `short:"d" long:"debug" description:"Show verbose debug information"`
+	}{}
+
+	args, err := flags.ParseArgs(&opts, args)
+	if err != nil {
+		ui.Failed("Invalid arguments.")
+		os.Exit(1)
+	}
+
+	logger := lager.NewLogger("over-entitlement-instances")
+	outputSink := ioutil.Discard
+	if opts.Debug {
+		outputSink = os.Stdout
+	}
+
+	logger.RegisterSink(lager.NewPrettySink(outputSink, lager.DEBUG))
+
+	logger.Info("start")
+	defer logger.Info("end")
 	if args[0] == "CLI-MESSAGE-UNINSTALL" {
 		os.Exit(0)
 	}
-
-	traceLogger := trace.NewLogger(os.Stdout, true, os.Getenv("CF_TRACE"), "")
-	ui := terminal.NewUI(os.Stdin, os.Stdout, terminal.NewTeePrinter(os.Stdout), traceLogger)
 
 	logCacheURL, err := getLogCacheURL(cli)
 	if err != nil {
@@ -46,7 +69,7 @@ func (p CPUEntitlementAdminPlugin) Run(cli plugin.CliConnection, args []string) 
 	renderer := output.NewOverEntitlementInstancesRenderer(output.NewTerminalDisplay(ui))
 	runner := NewOverEntitlementInstancesRunner(reporter, renderer)
 
-	err = runner.Run()
+	err = runner.Run(logger)
 	if err != nil {
 		ui.Failed(err.Error())
 		os.Exit(1)

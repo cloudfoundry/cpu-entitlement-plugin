@@ -6,11 +6,14 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 )
 
 var _ = Describe("Reporter", func() {
@@ -21,6 +24,7 @@ var _ = Describe("Reporter", func() {
 		cfClient               *reporterfakes.FakeAppReporterCloudFoundryClient
 		instanceReporter       reporter.AppReporter
 		reports                reporter.ApplicationReport
+		logger                 lager.Logger
 		err                    error
 		appName                string
 		appGuid                string
@@ -35,6 +39,7 @@ var _ = Describe("Reporter", func() {
 		currentUsageFetcher = new(reporterfakes.FakeInstanceDataFetcher)
 		lastSpikeFetcher = new(reporterfakes.FakeInstanceDataFetcher)
 		cfClient = new(reporterfakes.FakeAppReporterCloudFoundryClient)
+		logger = lagertest.NewTestLogger("app-reporter-test")
 		appInstances = map[int]cf.Instance{0: cf.Instance{InstanceID: 0}}
 		cfClient.GetApplicationReturns(cf.Application{Name: appName, Guid: appGuid, Instances: appInstances}, nil)
 		cfClient.GetCurrentOrgReturns("the-org", nil)
@@ -52,7 +57,7 @@ var _ = Describe("Reporter", func() {
 	})
 
 	JustBeforeEach(func() {
-		reports, err = instanceReporter.CreateApplicationReport(appName)
+		reports, err = instanceReporter.CreateApplicationReport(logger, appName)
 	})
 
 	Describe("Report", func() {
@@ -82,6 +87,13 @@ var _ = Describe("Reporter", func() {
 			Expect(reports.ApplicationName).To(Equal(appName))
 		})
 
+		It("logs start and end of the function", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("create-application-report.start"),
+				gbytes.Say(appName),
+				gbytes.Say("create-application-report.end")))
+		})
+
 		When("getting the application errors", func() {
 			BeforeEach(func() {
 				cfClient.GetApplicationReturns(cf.Application{}, errors.New("app error"))
@@ -90,6 +102,15 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("app error"))
 			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-get-app"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("app error"),
+				))
+			})
+
 		})
 
 		It("reports the org", func() {
@@ -103,6 +124,14 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("org error"))
+			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-get-current-org"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("org error"),
+				))
 			})
 		})
 
@@ -118,6 +147,14 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("space error"))
 			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-get-current-space"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("space error"),
+				))
+			})
 		})
 
 		It("reports the user", func() {
@@ -132,6 +169,14 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("user error"))
 			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-get-username"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("user error"),
+				))
+			})
 		})
 
 		It("combines current usage, cumulative usage and last spike data", func() {
@@ -143,13 +188,25 @@ var _ = Describe("Reporter", func() {
 			Expect(reports.InstanceReports[0].LastSpike).To(Equal(reporter.LastSpike{From: time.Unix(5, 0), To: time.Unix(10, 0)}))
 		})
 
+		When("there are no instances for the app", func() {
+			BeforeEach(func() {
+				cfClient.GetApplicationReturns(cf.Application{}, nil)
+			})
+
+			It("logs that there are no instances", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("no-instances-found-for-app"),
+					gbytes.Say(`"log_level":1`),
+				))
+			})
+		})
+
 		When("current usage data, historical usage data and last spike data cannot be matched by instance id", func() {
 			BeforeEach(func() {
-				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
-					0: fetchers.CumulativeInstanceData{
-						InstanceID: 0,
-						Usage:      0.5,
-					},
+				cumulativeUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{0: fetchers.CumulativeInstanceData{
+					InstanceID: 0,
+					Usage:      0.5,
+				},
 				}, nil)
 				currentUsageFetcher.FetchInstanceDataReturns(map[int]interface{}{
 					1: fetchers.CurrentInstanceData{
@@ -216,6 +273,14 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-historical-error"))
 			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-fetch-cumulative-usage"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("fetch-historical-error"),
+				))
+			})
 		})
 
 		When("the fetcher does not return any data", func() {
@@ -225,6 +290,14 @@ var _ = Describe("Reporter", func() {
 
 			It("returns an UnsupportedCFDeploymentError", func() {
 				Expect(err).To(MatchError(reporter.NewUnsupportedCFDeploymentError(appName)))
+			})
+
+			It("logs that there is no current usage data", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("no-current-usage-data-found"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("Could not find any CPU data for app"),
+				))
 			})
 		})
 
@@ -240,6 +313,14 @@ var _ = Describe("Reporter", func() {
 				Expect(len(reports.InstanceReports)).To(Equal(2))
 				Expect(reports.InstanceReports[0].CumulativeUsage).To(Equal(reporter.CumulativeUsage{}))
 				Expect(reports.InstanceReports[1].CumulativeUsage).To(Equal(reporter.CumulativeUsage{Value: 0.1}))
+			})
+
+			It("logs the wrong type", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("cumulative-usage-reporter-returned-wrong-type"),
+					gbytes.Say(`"log_level":1`),
+					gbytes.Say(`"instance-data":"hello"`),
+				))
 			})
 		})
 
@@ -270,6 +351,14 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-spike-error"))
 			})
+
+			It("logs the wrong type", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-fetch-last-spikes"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("fetch-spike-error"),
+				))
+			})
 		})
 
 		When("the fetcher returns the wrong type of instance data", func() {
@@ -290,6 +379,14 @@ var _ = Describe("Reporter", func() {
 				Expect(reports.InstanceReports[0].LastSpike.To).To(Equal(time.Time{}))
 				Expect(reports.InstanceReports[1].LastSpike.From).To(Equal(time.Unix(1, 0)))
 				Expect(reports.InstanceReports[1].LastSpike.To).To(Equal(time.Unix(2, 0)))
+			})
+
+			It("logs the wrong type", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("last-spike-reporter-returned-wrong-type"),
+					gbytes.Say(`"log_level":1`),
+					gbytes.Say(`"instance-data":"hello"`),
+				))
 			})
 		})
 
@@ -341,6 +438,14 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-current-error"))
 			})
+
+			It("logs the error", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("failed-to-fetch-current-usage"),
+					gbytes.Say(`"log_level":2`),
+					gbytes.Say("fetch-current-error"),
+				))
+			})
 		})
 
 		When("the fetcher returns the wrong type of instance data", func() {
@@ -354,6 +459,14 @@ var _ = Describe("Reporter", func() {
 			It("skips the instance with the wrong type", func() {
 				Expect(len(reports.InstanceReports)).To(Equal(1))
 				Expect(reports.InstanceReports[0].CurrentUsage).To(Equal(reporter.CurrentUsage{Value: 1.7}))
+			})
+
+			It("logs the wrong type", func() {
+				Expect(logger).To(SatisfyAll(
+					gbytes.Say("current-usage-reporter-returned-wrong-type"),
+					gbytes.Say(`"log_level":1`),
+					gbytes.Say(`"instance-data":"hello"`),
+				))
 			})
 		})
 

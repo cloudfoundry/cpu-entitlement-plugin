@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 //go:generate counterfeiter . OverEntitlementInstancesReporter
@@ -28,11 +29,22 @@ func NewOverEntitlementInstancesRunner(oeiReporter OverEntitlementInstancesRepor
 	}
 }
 
-func (r *OverEntitlementInstancesRunner) Run() error {
+func (r *OverEntitlementInstancesRunner) Run(logger lager.Logger) error {
+	logger = logger.Session("run")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	report, err := r.reporter.OverEntitlementInstances()
 	if err != nil {
+		logger.Error("failed-creating-oei-report", err)
 		return err
 	}
 
-	return r.renderer.Render(report)
+	err = r.renderer.Render(report)
+	if err != nil {
+		logger.Error("failed-rendering-oei-metrics", err)
+		return err
+	}
+
+	return nil
 }

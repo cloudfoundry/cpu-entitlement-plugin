@@ -213,6 +213,62 @@ var _ = Describe("cpu-plugins", func() {
 		})
 	})
 
+	Describe("debug logs", func() {
+		BeforeEach(func() {
+			cfLogin()
+			createAndTargetOrgAndSpace()
+		})
+
+		AfterEach(func() {
+			Expect(Cmd("cf", "delete-org", "-f", org).WithTimeout("1m").Run()).To(gexec.Exit(0))
+		})
+
+		When("using --debug", func() {
+			Describe("cpu-entitlement-plugin", func() {
+				It("prints additional logs", func() {
+					Expect(Cmd("cf", "cpu", "no-such-app", "--debug").Run()).To(SatisfyAll(
+						gbytes.Say("\"source\":\"cpu-entitlement\""),
+						gbytes.Say("\"message\":\"cpu-entitlement.start\"")))
+				})
+			})
+
+			Describe("over-entitlement-instances", func() {
+				It("prints additional logs", func() {
+					Expect(Cmd("cf", "over-entitlement-instances", "no-such-app", "--debug").Run()).To(SatisfyAll(
+						gbytes.Say("\"source\":\"over-entitlement-instances\""),
+						gbytes.Say("\"message\":\"over-entitlement-instances.start\"")))
+				})
+			})
+
+			It("uses human readable timestamps", func() {
+				Expect(Cmd("cf", "cpu", "no-such-app", "--debug").Run()).To(
+					gbytes.Say(`"timestamp":"\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d`),
+				)
+			})
+
+			It("uses human readable log levels", func() {
+				Expect(Cmd("cf", "over-entitlement-instances", "no-such-app", "--debug").Run()).To(
+					gbytes.Say(`"level":"info"`),
+				)
+			})
+		})
+
+		When("not using --debug", func() {
+			Describe("cpu-entitlement-plugin", func() {
+				It("prints additional logs", func() {
+					Expect(Cmd("cf", "cpu", "no-such-app").Run()).ToNot(
+						gbytes.Say("\"source\":\"cpu-entitlement\""))
+				})
+				Describe("over-entitlement-instances", func() {
+					It("prints additional logs", func() {
+						Expect(Cmd("cf", "over-entitlement-instances", "no-such-app").Run()).ToNot(
+							gbytes.Say("\"source\":\"over-entitlement-instances\""))
+					})
+				})
+			})
+		})
+	})
+
 	Describe("providing a CA cert rather than using --skip-ssl-validation", func() {
 		var (
 			certFile string

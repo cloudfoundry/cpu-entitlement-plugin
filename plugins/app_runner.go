@@ -4,6 +4,7 @@ import (
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/result"
+	"code.cloudfoundry.org/lager"
 	"github.com/fatih/color"
 )
 
@@ -16,7 +17,7 @@ type OutputRenderer interface {
 //go:generate counterfeiter . Reporter
 
 type Reporter interface {
-	CreateApplicationReport(appName string) (reporter.ApplicationReport, error)
+	CreateApplicationReport(logger lager.Logger, appName string) (reporter.ApplicationReport, error)
 }
 
 type AppRunner struct {
@@ -31,18 +32,24 @@ func NewAppRunner(reporter Reporter, metricsRenderer OutputRenderer) AppRunner {
 	}
 }
 
-func (r AppRunner) Run(appName string) result.Result {
-	applicationReport, err := r.reporter.CreateApplicationReport(appName)
+func (r AppRunner) Run(logger lager.Logger, appName string) result.Result {
+	logger = logger.Session("run", lager.Data{"app-name": appName})
+	logger.Info("start")
+	defer logger.Info("end")
+	applicationReport, err := r.reporter.CreateApplicationReport(logger, appName)
 	if err != nil {
 		if _, ok := err.(reporter.UnsupportedCFDeploymentError); ok {
+			logger.Error("unsupported-cf-deployment", err)
 			return result.FailureFromError(err)
 		}
 
+		logger.Error("failed-creating-app-report", err)
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
 
 	err = r.metricsRenderer.ShowApplicationReport(applicationReport)
 	if err != nil {
+		logger.Error("failed-rendering-app-metrics", err)
 		return result.FailureFromError(err)
 	}
 
