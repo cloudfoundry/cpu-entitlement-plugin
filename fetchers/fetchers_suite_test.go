@@ -3,6 +3,8 @@ package fetchers_test
 import (
 	"testing"
 
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,6 +14,14 @@ func TestFetchers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Fetchers Suite")
 }
+
+var (
+	logger lager.Logger
+)
+
+var _ = BeforeSuite(func() {
+	logger = lagertest.NewTestLogger("cumulative-usage-test")
+})
 
 type Metric struct {
 	Usage       float64

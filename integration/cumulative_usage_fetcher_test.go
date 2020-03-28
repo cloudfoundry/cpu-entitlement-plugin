@@ -25,7 +25,7 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 	)
 
 	getUsages := func(appGUID string, appInstances map[int]cf.Instance) map[int]interface{} {
-		usages, err := fetcher.FetchInstanceData(appGUID, appInstances)
+		usages, err := fetcher.FetchInstanceData(logger, appGUID, appInstances)
 		Expect(err).NotTo(HaveOccurred())
 		return usages
 	}
@@ -103,7 +103,7 @@ var _ = Describe("Cumulative Usage Fetcher", func() {
 		})
 
 		It("returns an error about the url", func() {
-			_, err := fetcher.FetchInstanceData("anything", nil)
+			_, err := fetcher.FetchInstanceData(logger, "anything", nil)
 			Expect(err).To(MatchError(ContainSubstring("dial")))
 		})
 	})

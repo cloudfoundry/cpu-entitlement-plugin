@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+	"code.cloudfoundry.org/lager"
 )
 
 type CumulativeInstanceData struct {
@@ -21,10 +22,15 @@ func NewCumulativeUsageFetcher(logCacheClient LogCacheClient) CumulativeUsageFet
 	return CumulativeUsageFetcher{logCacheClient: logCacheClient}
 }
 
-func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
-	promqlResult, err := f.logCacheClient.PromQL(context.Background(),
-		fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid))
+func (f CumulativeUsageFetcher) FetchInstanceData(logger lager.Logger, appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+	logger = logger.Session("cumulative-usage-fetcher", lager.Data{"app-guid": appGuid})
+	logger.Info("start")
+	defer logger.Info("end")
+
+	query := fmt.Sprintf(`absolute_usage{source_id="%s"} / absolute_entitlement{source_id="%s"}`, appGuid, appGuid)
+	promqlResult, err := f.logCacheClient.PromQL(context.Background(), query)
 	if err != nil {
+		logger.Error("promql-failed", err, lager.Data{"query": query})
 		return nil, err
 	}
 
@@ -32,6 +38,7 @@ func (f CumulativeUsageFetcher) FetchInstanceData(appGuid string, appInstances m
 	for _, sample := range promqlResult.GetVector().GetSamples() {
 		instanceID, err := strconv.Atoi(sample.GetMetric()["instance_id"])
 		if err != nil {
+			logger.Info("ignoring-corrupt-instance-id", lager.Data{"instance-id": sample.GetMetric()["instance_id"]})
 			continue
 		}
 		processInstanceID := sample.GetMetric()["process_instance_id"]

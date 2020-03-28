@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
 
@@ -17,7 +18,7 @@ type CurrentInstanceData struct {
 
 //go:generate counterfeiter . Fetcher
 type Fetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
+	FetchInstanceData(logger lager.Logger, appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
 }
 
 type CurrentUsageFetcher struct {
@@ -39,22 +40,28 @@ func NewCurrentUsageFetcherWithFallbackFetcher(client LogCacheClient, fallbackFe
 	}
 }
 
-func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
-	res, err := f.client.PromQL(
-		context.Background(),
-		fmt.Sprintf(`idelta(absolute_usage{source_id="%s"}[1m]) / idelta(absolute_entitlement{source_id="%s"}[1m])`, appGUID, appGUID),
-	)
+func (f CurrentUsageFetcher) FetchInstanceData(logger lager.Logger, appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+	logger = logger.Session("current-usage-fetcher", lager.Data{"app-guid": appGUID})
+	logger.Info("start")
+	defer logger.Info("end")
+
+	query := fmt.Sprintf(`idelta(absolute_usage{source_id="%s"}[1m]) / idelta(absolute_entitlement{source_id="%s"}[1m])`, appGUID, appGUID)
+	res, err := f.client.PromQL(context.Background(), query)
 	if err != nil {
+		logger.Error("promql-failed", err, lager.Data{"query": query})
 		return nil, err
 	}
 
-	currentUsage := parseCurrentUsage(res, appInstances)
+	currentUsage := parseCurrentUsage(logger, res, appInstances)
 	if len(currentUsage) == len(appInstances) {
 		return currentUsage, nil
 	}
 
-	cumulativeResult, err := f.fallbackFetcher.FetchInstanceData(appGUID, appInstances)
+	logger.Info("falling-back-to-cumulative-fetcher")
+
+	cumulativeResult, err := f.fallbackFetcher.FetchInstanceData(logger, appGUID, appInstances)
 	if err != nil {
+		logger.Error("fallback-fetcher-failed", err)
 		return nil, err
 	}
 
@@ -70,7 +77,9 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 
 		cumulativeData, ok := result.(CumulativeInstanceData)
 		if !ok {
-			return map[int]interface{}{}, errors.New("cumulative fetcher returned result in unexpected struct")
+			err = errors.New("cumulative fetcher returned result in unexpected struct")
+			logger.Error("unexpected-type-from-fetcher", err, lager.Data{"result": result})
+			return map[int]interface{}{}, err
 		}
 
 		currentUsage[instanceID] = CurrentInstanceData{
@@ -82,11 +91,12 @@ func (f CurrentUsageFetcher) FetchInstanceData(appGUID string, appInstances map[
 	return currentUsage, nil
 }
 
-func parseCurrentUsage(res *logcache_v1.PromQL_InstantQueryResult, appInstances map[int]cf.Instance) map[int]interface{} {
+func parseCurrentUsage(logger lager.Logger, res *logcache_v1.PromQL_InstantQueryResult, appInstances map[int]cf.Instance) map[int]interface{} {
 	usagePerInstance := make(map[int]interface{})
 	for _, sample := range res.GetVector().GetSamples() {
 		instanceID, err := strconv.Atoi(sample.GetMetric()["instance_id"])
 		if err != nil {
+			logger.Info("ignoring-corrupt-instance-id", lager.Data{"instance-id": sample.GetMetric()["instance_id"]})
 			continue
 		}
 

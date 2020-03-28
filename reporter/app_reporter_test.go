@@ -260,7 +260,7 @@ var _ = Describe("Reporter", func() {
 
 		It("fetches the usage data correctly", func() {
 			Expect(cumulativeUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			actualAppGuid, actualAppInstances := cumulativeUsageFetcher.FetchInstanceDataArgsForCall(0)
+			_, actualAppGuid, actualAppInstances := cumulativeUsageFetcher.FetchInstanceDataArgsForCall(0)
 			Expect(actualAppGuid).To(Equal(appGuid))
 			Expect(actualAppInstances).To(Equal(appInstances))
 		})
@@ -338,7 +338,7 @@ var _ = Describe("Reporter", func() {
 	Describe("Last spike", func() {
 		It("fetches the spike data correctly", func() {
 			Expect(lastSpikeFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			actualAppGuid, actualAppInstances := cumulativeUsageFetcher.FetchInstanceDataArgsForCall(0)
+			_, actualAppGuid, actualAppInstances := cumulativeUsageFetcher.FetchInstanceDataArgsForCall(0)
 			Expect(actualAppGuid).To(Equal(appGuid))
 			Expect(actualAppInstances).To(Equal(appInstances))
 		})
@@ -425,7 +425,7 @@ var _ = Describe("Reporter", func() {
 
 		It("fetches the usage data correctly", func() {
 			Expect(currentUsageFetcher.FetchInstanceDataCallCount()).To(Equal(1))
-			actualAppGuid, actualAppInstances := currentUsageFetcher.FetchInstanceDataArgsForCall(0)
+			_, actualAppGuid, actualAppInstances := currentUsageFetcher.FetchInstanceDataArgsForCall(0)
 			Expect(actualAppGuid).To(Equal(appGuid))
 			Expect(actualAppInstances).To(Equal(appInstances))
 		})

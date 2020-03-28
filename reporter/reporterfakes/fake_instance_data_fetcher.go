@@ -6,14 +6,16 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeInstanceDataFetcher struct {
-	FetchInstanceDataStub        func(string, map[int]cf.Instance) (map[int]interface{}, error)
+	FetchInstanceDataStub        func(lager.Logger, string, map[int]cf.Instance) (map[int]interface{}, error)
 	fetchInstanceDataMutex       sync.RWMutex
 	fetchInstanceDataArgsForCall []struct {
-		arg1 string
-		arg2 map[int]cf.Instance
+		arg1 lager.Logger
+		arg2 string
+		arg3 map[int]cf.Instance
 	}
 	fetchInstanceDataReturns struct {
 		result1 map[int]interface{}
@@ -27,17 +29,18 @@ type FakeInstanceDataFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 string, arg2 map[int]cf.Instance) (map[int]interface{}, error) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceData(arg1 lager.Logger, arg2 string, arg3 map[int]cf.Instance) (map[int]interface{}, error) {
 	fake.fetchInstanceDataMutex.Lock()
 	ret, specificReturn := fake.fetchInstanceDataReturnsOnCall[len(fake.fetchInstanceDataArgsForCall)]
 	fake.fetchInstanceDataArgsForCall = append(fake.fetchInstanceDataArgsForCall, struct {
-		arg1 string
-		arg2 map[int]cf.Instance
-	}{arg1, arg2})
-	fake.recordInvocation("FetchInstanceData", []interface{}{arg1, arg2})
+		arg1 lager.Logger
+		arg2 string
+		arg3 map[int]cf.Instance
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("FetchInstanceData", []interface{}{arg1, arg2, arg3})
 	fake.fetchInstanceDataMutex.Unlock()
 	if fake.FetchInstanceDataStub != nil {
-		return fake.FetchInstanceDataStub(arg1, arg2)
+		return fake.FetchInstanceDataStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -52,17 +55,17 @@ func (fake *FakeInstanceDataFetcher) FetchInstanceDataCallCount() int {
 	return len(fake.fetchInstanceDataArgsForCall)
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(string, map[int]cf.Instance) (map[int]interface{}, error)) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataCalls(stub func(lager.Logger, string, map[int]cf.Instance) (map[int]interface{}, error)) {
 	fake.fetchInstanceDataMutex.Lock()
 	defer fake.fetchInstanceDataMutex.Unlock()
 	fake.FetchInstanceDataStub = stub
 }
 
-func (fake *FakeInstanceDataFetcher) FetchInstanceDataArgsForCall(i int) (string, map[int]cf.Instance) {
+func (fake *FakeInstanceDataFetcher) FetchInstanceDataArgsForCall(i int) (lager.Logger, string, map[int]cf.Instance) {
 	fake.fetchInstanceDataMutex.RLock()
 	defer fake.fetchInstanceDataMutex.RUnlock()
 	argsForCall := fake.fetchInstanceDataArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeInstanceDataFetcher) FetchInstanceDataReturns(result1 map[int]interface{}, result2 error) {

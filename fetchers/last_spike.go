@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
@@ -26,7 +27,11 @@ func NewLastSpikeFetcher(client LogCacheClient, since time.Time) *LastSpikeFetch
 	return &LastSpikeFetcher{client: client, since: since}
 }
 
-func (f LastSpikeFetcher) FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+func (f LastSpikeFetcher) FetchInstanceData(logger lager.Logger, appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+	logger = logger.Session("last-spike-fetcher", lager.Data{"app-guid": appGUID})
+	logger.Info("start")
+	defer logger.Info("end")
+
 	res, err := f.client.Read(context.Background(), appGUID, f.since,
 		logcache.WithEnvelopeTypes(logcache_v1.EnvelopeType_GAUGE),
 		logcache.WithDescending(),

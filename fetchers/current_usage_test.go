@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("CurrentUsage", func() {
@@ -37,7 +38,12 @@ var _ = Describe("CurrentUsage", func() {
 	})
 
 	JustBeforeEach(func() {
-		currentUsage, fetchErr = fetcher.FetchInstanceData(appGuid, appInstances)
+		currentUsage, fetchErr = fetcher.FetchInstanceData(logger, appGuid, appInstances)
+	})
+
+	It("logs start and end", func() {
+		Expect(logger).To(gbytes.Say("current-usage-fetcher.start"))
+		Expect(logger).To(gbytes.Say("current-usage-fetcher.end"))
 	})
 
 	When("fetching the current usage fails", func() {

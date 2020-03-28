@@ -9,6 +9,8 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/httpclient"
 	. "code.cloudfoundry.org/cpu-entitlement-plugin/test_utils"
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,6 +29,7 @@ var (
 	logEmitterHttpClient *http.Client
 	logCacheClient       *logcache.Client
 	getToken             func() (string, error)
+	logger               lager.Logger
 )
 
 var _ = BeforeSuite(func() {
@@ -48,6 +51,7 @@ var _ = BeforeSuite(func() {
 		logCacheURL,
 		logcache.WithHTTPClient(httpclient.NewAuthClient(getToken)),
 	)
+	logger = lagertest.NewTestLogger("cumulative-usage-fetcher-test")
 })
 
 func createInsecureHttpClient() *http.Client {

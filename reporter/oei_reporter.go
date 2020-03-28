@@ -5,6 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
+	"code.cloudfoundry.org/lager"
 )
 
 type OEIReport struct {
@@ -21,7 +22,7 @@ type SpaceReport struct {
 //go:generate counterfeiter . MetricsFetcher
 
 type MetricsFetcher interface {
-	FetchInstanceData(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
+	FetchInstanceData(logger lager.Logger, appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
 }
 
 //go:generate counterfeiter . CloudFoundryClient
@@ -44,23 +45,30 @@ func NewOverEntitlementInstances(cf CloudFoundryClient, metricsFetcher MetricsFe
 	}
 }
 
-func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) {
+func (r OverEntitlementInstances) OverEntitlementInstances(logger lager.Logger) (OEIReport, error) {
+	logger = logger.Session("oei-reporter")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	org, err := r.cf.GetCurrentOrg()
 	if err != nil {
+		logger.Error("failed-to-get-current-org", err)
 		return OEIReport{}, err
 	}
 
 	user, err := r.cf.Username()
 	if err != nil {
+		logger.Error("failed-to-get-username", err)
 		return OEIReport{}, err
 	}
 
 	spaces, err := r.cf.GetSpaces()
 	if err != nil {
+		logger.Error("failed-to-get-spaces", err)
 		return OEIReport{}, err
 	}
 
-	spaceReports, err := r.buildSpaceReports(spaces)
+	spaceReports, err := r.buildSpaceReports(logger, spaces)
 	if err != nil {
 		return OEIReport{}, err
 	}
@@ -68,10 +76,10 @@ func (r OverEntitlementInstances) OverEntitlementInstances() (OEIReport, error) 
 	return OEIReport{Org: org, Username: user, SpaceReports: spaceReports}, nil
 }
 
-func (r OverEntitlementInstances) buildSpaceReports(spaces []cf.Space) ([]SpaceReport, error) {
+func (r OverEntitlementInstances) buildSpaceReports(logger lager.Logger, spaces []cf.Space) ([]SpaceReport, error) {
 	spaceReports := []SpaceReport{}
 	for _, space := range spaces {
-		apps, err := r.filterApps(space.Applications)
+		apps, err := r.filterApps(logger, space.Applications)
 		if err != nil {
 			return nil, err
 		}
@@ -90,10 +98,10 @@ func (r OverEntitlementInstances) buildSpaceReports(spaces []cf.Space) ([]SpaceR
 	return spaceReports, nil
 }
 
-func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]string, error) {
+func (r OverEntitlementInstances) filterApps(logger lager.Logger, spaceApps []cf.Application) ([]string, error) {
 	apps := []string{}
 	for _, app := range spaceApps {
-		isOverEntitlement, err := r.isOverEntitlement(app.Guid, app.Instances)
+		isOverEntitlement, err := r.isOverEntitlement(logger, app.Guid, app.Instances)
 		if err != nil {
 			return nil, err
 		}
@@ -104,9 +112,11 @@ func (r OverEntitlementInstances) filterApps(spaceApps []cf.Application) ([]stri
 	return apps, nil
 }
 
-func (r OverEntitlementInstances) isOverEntitlement(appGuid string, appInstances map[int]cf.Instance) (bool, error) {
-	appInstancesUsages, err := r.metricsFetcher.FetchInstanceData(appGuid, appInstances)
+func (r OverEntitlementInstances) isOverEntitlement(logger lager.Logger, appGuid string, appInstances map[int]cf.Instance) (bool, error) {
+	logger = logger.Session("is-over-entitlement", lager.Data{"app-guid": appGuid})
+	appInstancesUsages, err := r.metricsFetcher.FetchInstanceData(logger, appGuid, appInstances)
 	if err != nil {
+		logger.Error("failed-to-fetch-instance-metrics", err)
 		return false, err
 	}
 
@@ -114,6 +124,8 @@ func (r OverEntitlementInstances) isOverEntitlement(appGuid string, appInstances
 	for _, instanceData := range appInstancesUsages {
 		cumulativeInstanceData, ok := instanceData.(fetchers.CumulativeInstanceData)
 		if !ok {
+			logger.Info("metrics-fetcher-returned-wrong-type",
+				lager.Data{"instance-data": instanceData})
 			continue
 		}
 

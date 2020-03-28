@@ -32,7 +32,7 @@ type AppReporter struct {
 //go:generate counterfeiter . InstanceDataFetcher
 
 type InstanceDataFetcher interface {
-	FetchInstanceData(appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
+	FetchInstanceData(logger lager.Logger, appGUID string, appInstances map[int]cf.Instance) (map[int]interface{}, error)
 }
 
 //go:generate counterfeiter . AppReporterCloudFoundryClient
@@ -116,7 +116,7 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 
 	latestReports := map[int]InstanceReport{}
 
-	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
+	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
 		logger.Error("failed-to-fetch-current-usage", err)
 		return ApplicationReport{}, err
@@ -140,7 +140,7 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 		latestReports[instanceID] = currentReport
 	}
 
-	lastSpikePerInstance, err := r.lastSpikeFetcher.FetchInstanceData(application.Guid, application.Instances)
+	lastSpikePerInstance, err := r.lastSpikeFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
 		logger.Error("failed-to-fetch-last-spikes", err)
 		return ApplicationReport{}, err
@@ -161,7 +161,7 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 		latestReports[instanceID] = currentReport
 	}
 
-	cumulativeUsagePerInstance, err := r.cumulativeUsageFetcher.FetchInstanceData(application.Guid, application.Instances)
+	cumulativeUsagePerInstance, err := r.cumulativeUsageFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
 		logger.Error("failed-to-fetch-cumulative-usage", err)
 		return ApplicationReport{}, err

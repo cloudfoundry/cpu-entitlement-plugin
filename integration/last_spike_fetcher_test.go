@@ -22,7 +22,7 @@ var _ = Describe("Last Spike Fetcher", func() {
 	)
 
 	getSpikes := func(appGuid string, instanceMap map[int]cf.Instance) map[int]interface{} {
-		spikes, err := fetcher.FetchInstanceData(appGuid, instanceMap)
+		spikes, err := fetcher.FetchInstanceData(logger, appGuid, instanceMap)
 		Expect(err).NotTo(HaveOccurred())
 		return spikes
 	}

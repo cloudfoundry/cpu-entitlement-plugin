@@ -6,12 +6,14 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeOverEntitlementInstancesReporter struct {
-	OverEntitlementInstancesStub        func() (reporter.OEIReport, error)
+	OverEntitlementInstancesStub        func(lager.Logger) (reporter.OEIReport, error)
 	overEntitlementInstancesMutex       sync.RWMutex
 	overEntitlementInstancesArgsForCall []struct {
+		arg1 lager.Logger
 	}
 	overEntitlementInstancesReturns struct {
 		result1 reporter.OEIReport
@@ -25,15 +27,16 @@ type FakeOverEntitlementInstancesReporter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstances() (reporter.OEIReport, error) {
+func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstances(arg1 lager.Logger) (reporter.OEIReport, error) {
 	fake.overEntitlementInstancesMutex.Lock()
 	ret, specificReturn := fake.overEntitlementInstancesReturnsOnCall[len(fake.overEntitlementInstancesArgsForCall)]
 	fake.overEntitlementInstancesArgsForCall = append(fake.overEntitlementInstancesArgsForCall, struct {
-	}{})
-	fake.recordInvocation("OverEntitlementInstances", []interface{}{})
+		arg1 lager.Logger
+	}{arg1})
+	fake.recordInvocation("OverEntitlementInstances", []interface{}{arg1})
 	fake.overEntitlementInstancesMutex.Unlock()
 	if fake.OverEntitlementInstancesStub != nil {
-		return fake.OverEntitlementInstancesStub()
+		return fake.OverEntitlementInstancesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -48,10 +51,17 @@ func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstancesCallCo
 	return len(fake.overEntitlementInstancesArgsForCall)
 }
 
-func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstancesCalls(stub func() (reporter.OEIReport, error)) {
+func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstancesCalls(stub func(lager.Logger) (reporter.OEIReport, error)) {
 	fake.overEntitlementInstancesMutex.Lock()
 	defer fake.overEntitlementInstancesMutex.Unlock()
 	fake.OverEntitlementInstancesStub = stub
+}
+
+func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstancesArgsForCall(i int) lager.Logger {
+	fake.overEntitlementInstancesMutex.RLock()
+	defer fake.overEntitlementInstancesMutex.RUnlock()
+	argsForCall := fake.overEntitlementInstancesArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeOverEntitlementInstancesReporter) OverEntitlementInstancesReturns(result1 reporter.OEIReport, result2 error) {

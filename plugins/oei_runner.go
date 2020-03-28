@@ -8,7 +8,7 @@ import (
 //go:generate counterfeiter . OverEntitlementInstancesReporter
 
 type OverEntitlementInstancesReporter interface {
-	OverEntitlementInstances() (reporter.OEIReport, error)
+	OverEntitlementInstances(logger lager.Logger) (reporter.OEIReport, error)
 }
 
 //go:generate counterfeiter . OverEntitlementInstancesRenderer
@@ -34,7 +34,7 @@ func (r *OverEntitlementInstancesRunner) Run(logger lager.Logger) error {
 	logger.Info("start")
 	defer logger.Info("end")
 
-	report, err := r.reporter.OverEntitlementInstances()
+	report, err := r.reporter.OverEntitlementInstances(logger)
 	if err != nil {
 		logger.Error("failed-creating-oei-report", err)
 		return err

@@ -36,6 +36,7 @@ func (r AppRunner) Run(logger lager.Logger, appName string) result.Result {
 	logger = logger.Session("run", lager.Data{"app-name": appName})
 	logger.Info("start")
 	defer logger.Info("end")
+
 	applicationReport, err := r.reporter.CreateApplicationReport(logger, appName)
 	if err != nil {
 		if _, ok := err.(reporter.UnsupportedCFDeploymentError); ok {

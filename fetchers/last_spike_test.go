@@ -36,7 +36,7 @@ var _ = Describe("LastSpikeFetcher", func() {
 	})
 
 	JustBeforeEach(func() {
-		spikes, fetchErr = fetcher.FetchInstanceData(appGuid, appInstances)
+		spikes, fetchErr = fetcher.FetchInstanceData(logger, appGuid, appInstances)
 	})
 
 	When("fetching the list of data points from log-cache fails", func() {

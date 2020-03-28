@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers/fetchersfakes"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Fetchers/CumulativeUsage", func() {
@@ -34,7 +35,12 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 	})
 
 	JustBeforeEach(func() {
-		cumulativeUsage, fetchErr = fetcher.FetchInstanceData(appGuid, appInstances)
+		cumulativeUsage, fetchErr = fetcher.FetchInstanceData(logger, appGuid, appInstances)
+	})
+
+	It("logs start and end", func() {
+		Expect(logger).To(gbytes.Say("cumulative-usage-fetcher.start"))
+		Expect(logger).To(gbytes.Say("cumulative-usage-fetcher.end"))
 	})
 
 	When("fetched data has corrupt instance id", func() {
@@ -50,6 +56,13 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 			Expect(fetchErr).NotTo(HaveOccurred())
 			Expect(cumulativeUsage).To(BeEmpty())
 		})
+
+		It("logs the problem", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("ignoring-corrupt-instance-id"),
+				gbytes.Say(`"instance-id":"dyado"`),
+			))
+		})
 	})
 
 	When("fetching the cumulative usage fails", func() {
@@ -59,6 +72,13 @@ var _ = Describe("Fetchers/CumulativeUsage", func() {
 
 		It("returns the error", func() {
 			Expect(fetchErr).To(MatchError("fetch-failed"))
+		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("promql-failed"),
+				gbytes.Say("fetch-failed"),
+			))
 		})
 	})
 })

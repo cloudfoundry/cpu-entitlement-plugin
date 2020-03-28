@@ -19,7 +19,7 @@ var _ = Describe("CurrentUsage", func() {
 
 	getCurrentUsage := func(appID string, instanceID int, processInstanceID string) func() float64 {
 		return func() float64 {
-			usages, err := fetcher.FetchInstanceData(appID, map[int]cf.Instance{instanceID: {InstanceID: instanceID, ProcessInstanceID: processInstanceID}})
+			usages, err := fetcher.FetchInstanceData(logger, appID, map[int]cf.Instance{instanceID: {InstanceID: instanceID, ProcessInstanceID: processInstanceID}})
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 			if len(usages) != 1 {
 				return -1

@@ -7,8 +7,11 @@ import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter/reporterfakes"
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Over-entitlement Instances Reporter", func() {
@@ -17,6 +20,7 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		fakeCfClient       *reporterfakes.FakeCloudFoundryClient
 		fakeMetricsFetcher *reporterfakes.FakeMetricsFetcher
 		report             reporter.OEIReport
+		logger             lager.Logger
 		err                error
 	)
 
@@ -42,7 +46,7 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			},
 		}, nil)
 
-		fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+		fakeMetricsFetcher.FetchInstanceDataStub = func(logger lager.Logger, appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 			switch appGuid {
 			case "space1-app1-guid":
 				return map[int]interface{}{
@@ -62,15 +66,22 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			return nil, nil
 		}
 
+		logger = lagertest.NewTestLogger("oei-reporter-test")
+
 		oeiReporter = reporter.NewOverEntitlementInstances(fakeCfClient, fakeMetricsFetcher)
 	})
 
 	JustBeforeEach(func() {
-		report, err = oeiReporter.OverEntitlementInstances()
+		report, err = oeiReporter.OverEntitlementInstances(logger)
 	})
 
 	It("succeeds", func() {
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("logs start and end of function", func() {
+		Expect(logger).To(gbytes.Say("oei-reporter.start"))
+		Expect(logger).To(gbytes.Say("oei-reporter.end"))
 	})
 
 	It("returns all instances that are over entitlement", func() {
@@ -96,6 +107,14 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-space-error"))
 		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-to-get-spaces"),
+				gbytes.Say(`"log_level":2`),
+				gbytes.Say("get-space-error"),
+			))
+		})
 	})
 
 	When("getting the entitlement usage for an app fails", func() {
@@ -105,6 +124,15 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 		It("returns the error", func() {
 			Expect(err).To(MatchError("fetch-error"))
+		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-to-fetch-instance-metrics"),
+				gbytes.Say(`"log_level":2`),
+				gbytes.Say(`"app-guid":"space1-app1-guid"`),
+				gbytes.Say("fetch-error"),
+			))
 		})
 	})
 
@@ -116,6 +144,14 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-org-error"))
 		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-to-get-current-org"),
+				gbytes.Say(`"log_level":2`),
+				gbytes.Say("get-org-error"),
+			))
+		})
 	})
 
 	When("getting the username fails", func() {
@@ -126,11 +162,19 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-user-error"))
 		})
+
+		It("logs the error", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("failed-to-get-username"),
+				gbytes.Say(`"log_level":2`),
+				gbytes.Say("get-user-error"),
+			))
+		})
 	})
 
 	When("the fetcher returns the wrong type", func() {
 		BeforeEach(func() {
-			fakeMetricsFetcher.FetchInstanceDataStub = func(appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+			fakeMetricsFetcher.FetchInstanceDataStub = func(_ lager.Logger, appGuid string, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
 				switch appGuid {
 				case "space1-app1-guid":
 					return map[int]interface{}{
@@ -150,6 +194,14 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 			Expect(len(report.SpaceReports)).To(Equal(1))
 			Expect(len(report.SpaceReports[0].Apps)).To(Equal(1))
 			Expect(report.SpaceReports[0].Apps[0]).To(Equal("app2"))
+		})
+
+		It("logs the wrong type", func() {
+			Expect(logger).To(SatisfyAll(
+				gbytes.Say("metrics-fetcher-returned-wrong-type"),
+				gbytes.Say(`"log_level":1`),
+				gbytes.Say(`"instance-data":"hello"`),
+			))
 		})
 	})
 
