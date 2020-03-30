@@ -2,8 +2,8 @@ package integration_test
 
 import (
 	"code.cloudfoundry.org/cpu-entitlement-plugin/fetchers"
-	"github.com/masters-of-cats/test-log-emitter/emitters"
 	"github.com/google/uuid"
+	"github.com/masters-of-cats/test-log-emitter/emitters"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -44,7 +44,7 @@ var _ = Describe("ProcessInstanceIDFetcher", func() {
 	})
 
 	It("fetches the last process instance id for each instance", func() {
-		Eventually(func() (map[int]string, error) { return fetcher.Fetch(appID) }, "15s").Should(Equal(map[int]string{
+		Eventually(func() (map[int]string, error) { return fetcher.Fetch(logger, appID) }, "15s").Should(Equal(map[int]string{
 			1: "1b",
 			2: "2a",
 			3: "3b",

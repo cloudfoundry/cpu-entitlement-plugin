@@ -68,7 +68,7 @@ var _ = Describe("App Runner", func() {
 		Expect(actualAppName).To(Equal("app-name"))
 
 		Expect(outputRenderer.ShowApplicationReportCallCount()).To(Equal(1))
-		actualApplicationReport := outputRenderer.ShowApplicationReportArgsForCall(0)
+		_, actualApplicationReport := outputRenderer.ShowApplicationReportArgsForCall(0)
 		Expect(actualApplicationReport).To(Equal(applicationReport))
 	})
 
@@ -87,14 +87,6 @@ var _ = Describe("App Runner", func() {
 			Expect(runResult.ErrorMessage).To(ContainSubstring("app-name"))
 			Expect(runResult.WarningMessage).To(BeEmpty())
 		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("unsupported-cf-deployment"),
-				gbytes.Say(`log_level":2`),
-				gbytes.Say("app-name")),
-			)
-		})
 	})
 
 	When("creating the reports fails with a general error", func() {
@@ -107,14 +99,6 @@ var _ = Describe("App Runner", func() {
 			Expect(runResult.ErrorMessage).To(Equal("reports error"))
 			Expect(runResult.WarningMessage).To(ContainSubstring("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-creating-app-report"),
-				gbytes.Say(`log_level":2`),
-				gbytes.Say("reports error")),
-			)
-		})
 	})
 
 	When("rendering the app metrics fails", func() {
@@ -125,14 +109,6 @@ var _ = Describe("App Runner", func() {
 		It("returns a failure", func() {
 			Expect(runResult.IsFailure).To(BeTrue())
 			Expect(runResult.ErrorMessage).To(Equal("render error"))
-		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-rendering-app-metrics"),
-				gbytes.Say(`log_level":2`),
-				gbytes.Say("render error")),
-			)
 		})
 	})
 })

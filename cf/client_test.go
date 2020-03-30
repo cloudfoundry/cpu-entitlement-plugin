@@ -8,6 +8,8 @@ import (
 	plugin_models "code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf/cffakes"
+	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -18,12 +20,14 @@ var _ = Describe("Client", func() {
 		fakeProcessInstanceIDFetcher *cffakes.FakeProcessInstanceIDFetcher
 		cfClient                     cf.Client
 		err                          error
+		logger                       lager.Logger
 	)
 
 	BeforeEach(func() {
 		fakeCli = new(cffakes.FakeCli)
 		fakeProcessInstanceIDFetcher = new(cffakes.FakeProcessInstanceIDFetcher)
 		cfClient = cf.NewClient(fakeCli, fakeProcessInstanceIDFetcher)
+		logger = lagertest.NewTestLogger("cf-client-test")
 	})
 
 	Describe("Spaces", func() {
@@ -54,7 +58,7 @@ var _ = Describe("Client", func() {
 				}
 				return plugin_models.GetSpace_Model{}, fmt.Errorf("Space '%s' not found", spaceName)
 			}
-			fakeProcessInstanceIDFetcher.FetchStub = func(appGuid string) (map[int]string, error) {
+			fakeProcessInstanceIDFetcher.FetchStub = func(logger lager.Logger, appGuid string) (map[int]string, error) {
 				switch appGuid {
 				case "space-1-app-1-guid":
 					return map[int]string{0: "space-1-app-1-process-instance-0"}, nil
@@ -69,7 +73,7 @@ var _ = Describe("Client", func() {
 		})
 
 		JustBeforeEach(func() {
-			spaces, err = cfClient.GetSpaces()
+			spaces, err = cfClient.GetSpaces(logger)
 		})
 
 		It("fetches all spaces", func() {
@@ -140,7 +144,7 @@ var _ = Describe("Client", func() {
 		})
 
 		JustBeforeEach(func() {
-			application, err = cfClient.GetApplication("myapp")
+			application, err = cfClient.GetApplication(logger, "myapp")
 		})
 
 		It("gets the application info", func() {
@@ -157,7 +161,8 @@ var _ = Describe("Client", func() {
 
 		It("gets process instance IDs", func() {
 			Expect(fakeProcessInstanceIDFetcher.FetchCallCount()).To(Equal(1))
-			Expect(fakeProcessInstanceIDFetcher.FetchArgsForCall(0)).To(Equal("qwerty"))
+			_, appId := fakeProcessInstanceIDFetcher.FetchArgsForCall(0)
+			Expect(appId).To(Equal("qwerty"))
 		})
 
 		It("gets the application instances", func() {
@@ -232,7 +237,7 @@ var _ = Describe("Client", func() {
 		})
 
 		JustBeforeEach(func() {
-			org, err = cfClient.GetCurrentOrg()
+			org, err = cfClient.GetCurrentOrg(logger)
 		})
 
 		It("returns the org", func() {
@@ -261,7 +266,7 @@ var _ = Describe("Client", func() {
 		})
 
 		JustBeforeEach(func() {
-			space, err = cfClient.GetCurrentSpace()
+			space, err = cfClient.GetCurrentSpace(logger)
 		})
 
 		It("returns the space", func() {
@@ -290,7 +295,7 @@ var _ = Describe("Client", func() {
 		})
 
 		JustBeforeEach(func() {
-			user, err = cfClient.Username()
+			user, err = cfClient.Username(logger)
 		})
 
 		It("returns the user", func() {

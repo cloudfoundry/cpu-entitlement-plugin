@@ -53,7 +53,7 @@ var _ = Describe("Renderer", func() {
 		)
 		JustBeforeEach(func() {
 			appReport = reporter.ApplicationReport{ApplicationName: "myapp", Org: "theorg", Space: "thespace", Username: "theuser", InstanceReports: instanceReports}
-			Expect(renderer.ShowApplicationReport(appReport)).To(Succeed())
+			Expect(renderer.ShowApplicationReport(logger, appReport)).To(Succeed())
 		})
 
 		It("shows a message with the application info", func() {
@@ -70,7 +70,7 @@ var _ = Describe("Renderer", func() {
 
 		It("shows the instances table", func() {
 			Expect(display.ShowTableCallCount()).To(Equal(1))
-			headers, rows := display.ShowTableArgsForCall(0)
+			_, headers, rows := display.ShowTableArgsForCall(0)
 			Expect(headers).To(Equal([]string{"", bold("avg usage"), bold("curr usage")}))
 			Expect(rows).To(Equal([][]string{
 				{"#123", "50.00%", "150.00%"},
@@ -99,7 +99,7 @@ var _ = Describe("Renderer", func() {
 
 			It("highlights the overentitled row", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
-				_, rows := display.ShowTableArgsForCall(0)
+				_, _, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
 					{"#123", "50.00%", "150.00%"},
 					redRow("#432", "150.00%", "175.00%"),
@@ -120,7 +120,7 @@ var _ = Describe("Renderer", func() {
 
 			It("highlights the near overentitled row", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
-				_, rows := display.ShowTableArgsForCall(0)
+				_, _, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
 					{"#123", "50.00%", "150.00%"},
 					yellowRow("#432", "96.00%", "175.00%"),
@@ -143,7 +143,7 @@ var _ = Describe("Renderer", func() {
 
 			It("highlights both rows in various colours", func() {
 				Expect(display.ShowTableCallCount()).To(Equal(1))
-				_, rows := display.ShowTableArgsForCall(0)
+				_, _, rows := display.ShowTableArgsForCall(0)
 				Expect(rows).To(Equal([][]string{
 					yellowRow("#123", "96.00%", "150.00%"),
 					redRow("#432", "150.00%", "175.00%"),

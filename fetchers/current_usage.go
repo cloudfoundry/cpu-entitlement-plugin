@@ -61,7 +61,7 @@ func (f CurrentUsageFetcher) FetchInstanceData(logger lager.Logger, appGUID stri
 
 	cumulativeResult, err := f.fallbackFetcher.FetchInstanceData(logger, appGUID, appInstances)
 	if err != nil {
-		logger.Error("fallback-fetcher-failed", err)
+		logger.Info("fallback-fetcher-failed")
 		return nil, err
 	}
 

@@ -58,7 +58,8 @@ var _ = Describe("Runner", func() {
 	It("collects reports and renders them", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fakeRenderer.RenderCallCount()).To(Equal(1))
-		Expect(fakeRenderer.RenderArgsForCall(0)).To(Equal(report))
+		_, actualReport := fakeRenderer.RenderArgsForCall(0)
+		Expect(actualReport).To(Equal(report))
 	})
 
 	It("logs start and end of function", func() {
@@ -74,14 +75,6 @@ var _ = Describe("Runner", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("reporter-err"))
 		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-creating-oei-report"),
-				gbytes.Say(`log_level":2`),
-				gbytes.Say("reporter-err")),
-			)
-		})
 	})
 
 	When("the renderer fails", func() {
@@ -91,14 +84,6 @@ var _ = Describe("Runner", func() {
 
 		It("returns the error", func() {
 			Expect(err).To(MatchError("renderer-err"))
-		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-rendering-oei-metrics"),
-				gbytes.Say(`log_level":2`),
-				gbytes.Say("renderer-err")),
-			)
 		})
 	})
 })

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/lager"
 	logcache "code.cloudfoundry.org/log-cache/pkg/client"
 	"code.cloudfoundry.org/log-cache/pkg/rpc/logcache_v1"
 )
@@ -35,7 +36,11 @@ func NewProcessInstanceIDFetcher(client LogCacheClient) ProcessInstanceIDFetcher
 // re-read. As soon as fewer than 1000 results are returned we stop, as we have
 // exhausted the range. We also apply a 10 iteration sanity check to avoid
 // looping forever.
-func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) {
+func (f ProcessInstanceIDFetcher) Fetch(logger lager.Logger, appGUID string) (map[int]string, error) {
+	logger = logger.Session("process-instance-id-fetch", lager.Data{"app-guid": appGUID})
+	logger.Info("start")
+	defer logger.Info("end")
+
 	start := time.Now().Add(-30 * time.Second)
 	end := time.Now()
 
@@ -51,12 +56,14 @@ func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) 
 		)
 
 		if err != nil {
+			logger.Error("log-cache-read-failed", err)
 			return nil, err
 		}
 
 		for _, envelope := range envelopes {
 			instanceID, err := strconv.Atoi(envelope.InstanceId)
 			if err != nil {
+				logger.Info("ignoring-corrupt-instance-id", lager.Data{"envelope": envelope})
 				continue
 			}
 
@@ -74,6 +81,7 @@ func (f ProcessInstanceIDFetcher) Fetch(appGUID string) (map[int]string, error) 
 			break
 		}
 
+		logger.Info("more-metrics-to-fetch", lager.Data{"iteration": i, "max-iterations": maxReadTries, "page-size": f.limit})
 		end = time.Unix(0, envelopes[len(envelopes)-1].Timestamp)
 	}
 

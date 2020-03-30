@@ -11,7 +11,7 @@ import (
 //go:generate counterfeiter . OutputRenderer
 
 type OutputRenderer interface {
-	ShowApplicationReport(appReport reporter.ApplicationReport) error
+	ShowApplicationReport(logger lager.Logger, appReport reporter.ApplicationReport) error
 }
 
 //go:generate counterfeiter . Reporter
@@ -33,24 +33,21 @@ func NewAppRunner(reporter Reporter, metricsRenderer OutputRenderer) AppRunner {
 }
 
 func (r AppRunner) Run(logger lager.Logger, appName string) result.Result {
-	logger = logger.Session("run", lager.Data{"app-name": appName})
+	logger = logger.Session("run", lager.Data{"app": appName})
 	logger.Info("start")
 	defer logger.Info("end")
 
 	applicationReport, err := r.reporter.CreateApplicationReport(logger, appName)
 	if err != nil {
 		if _, ok := err.(reporter.UnsupportedCFDeploymentError); ok {
-			logger.Error("unsupported-cf-deployment", err)
 			return result.FailureFromError(err)
 		}
 
-		logger.Error("failed-creating-app-report", err)
 		return result.FailureFromError(err).WithWarning(bold("Your Cloud Foundry may not have enabled the CPU Entitlements feature. Please consult your operator."))
 	}
 
-	err = r.metricsRenderer.ShowApplicationReport(applicationReport)
+	err = r.metricsRenderer.ShowApplicationReport(logger, applicationReport)
 	if err != nil {
-		logger.Error("failed-rendering-app-metrics", err)
 		return result.FailureFromError(err)
 	}
 

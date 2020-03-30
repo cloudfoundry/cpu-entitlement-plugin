@@ -107,14 +107,6 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-space-error"))
 		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-to-get-spaces"),
-				gbytes.Say(`"log_level":2`),
-				gbytes.Say("get-space-error"),
-			))
-		})
 	})
 
 	When("getting the entitlement usage for an app fails", func() {
@@ -124,15 +116,6 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 		It("returns the error", func() {
 			Expect(err).To(MatchError("fetch-error"))
-		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-to-fetch-instance-metrics"),
-				gbytes.Say(`"log_level":2`),
-				gbytes.Say(`"app-guid":"space1-app1-guid"`),
-				gbytes.Say("fetch-error"),
-			))
 		})
 	})
 
@@ -144,14 +127,6 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-org-error"))
 		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-to-get-current-org"),
-				gbytes.Say(`"log_level":2`),
-				gbytes.Say("get-org-error"),
-			))
-		})
 	})
 
 	When("getting the username fails", func() {
@@ -161,14 +136,6 @@ var _ = Describe("Over-entitlement Instances Reporter", func() {
 
 		It("returns the error", func() {
 			Expect(err).To(MatchError("get-user-error"))
-		})
-
-		It("logs the error", func() {
-			Expect(logger).To(SatisfyAll(
-				gbytes.Say("failed-to-get-username"),
-				gbytes.Say(`"log_level":2`),
-				gbytes.Say("get-user-error"),
-			))
 		})
 	})
 

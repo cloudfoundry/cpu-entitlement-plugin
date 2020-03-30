@@ -36,11 +36,12 @@ type InstanceDataFetcher interface {
 }
 
 //go:generate counterfeiter . AppReporterCloudFoundryClient
+
 type AppReporterCloudFoundryClient interface {
-	GetApplication(appName string) (cf.Application, error)
-	GetCurrentOrg() (string, error)
-	GetCurrentSpace() (string, error)
-	Username() (string, error)
+	GetApplication(logger lager.Logger, appName string) (cf.Application, error)
+	GetCurrentOrg(logger lager.Logger) (string, error)
+	GetCurrentSpace(logger lager.Logger) (string, error)
+	Username(logger lager.Logger) (string, error)
 }
 
 type ApplicationReport struct {
@@ -81,31 +82,27 @@ func NewAppReporter(cfClient AppReporterCloudFoundryClient, currentUsageFetcher,
 }
 
 func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string) (ApplicationReport, error) {
-	logger = logger.Session("create-application-report", lager.Data{"app-name": appName})
+	logger = logger.Session("create-application-report", lager.Data{"app": appName})
 	logger.Info("start")
 	defer logger.Info("end")
 
-	application, err := r.cfClient.GetApplication(appName)
+	application, err := r.cfClient.GetApplication(logger, appName)
 	if err != nil {
-		logger.Error("failed-to-get-app", err)
 		return ApplicationReport{}, err
 	}
 
-	org, err := r.cfClient.GetCurrentOrg()
+	org, err := r.cfClient.GetCurrentOrg(logger)
 	if err != nil {
-		logger.Error("failed-to-get-current-org", err)
 		return ApplicationReport{}, err
 	}
 
-	space, err := r.cfClient.GetCurrentSpace()
+	space, err := r.cfClient.GetCurrentSpace(logger)
 	if err != nil {
-		logger.Error("failed-to-get-current-space", err)
 		return ApplicationReport{}, err
 	}
 
-	user, err := r.cfClient.Username()
+	user, err := r.cfClient.Username(logger)
 	if err != nil {
-		logger.Error("failed-to-get-username", err)
 		return ApplicationReport{}, err
 	}
 
@@ -118,7 +115,6 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 
 	currentUsagePerInstance, err := r.currentUsageFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
-		logger.Error("failed-to-fetch-current-usage", err)
 		return ApplicationReport{}, err
 	}
 	if len(currentUsagePerInstance) == 0 {
@@ -142,7 +138,6 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 
 	lastSpikePerInstance, err := r.lastSpikeFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
-		logger.Error("failed-to-fetch-last-spikes", err)
 		return ApplicationReport{}, err
 	}
 
@@ -163,7 +158,6 @@ func (r AppReporter) CreateApplicationReport(logger lager.Logger, appName string
 
 	cumulativeUsagePerInstance, err := r.cumulativeUsageFetcher.FetchInstanceData(logger, application.Guid, application.Instances)
 	if err != nil {
-		logger.Error("failed-to-fetch-cumulative-usage", err)
 		return ApplicationReport{}, err
 	}
 

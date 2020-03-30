@@ -30,7 +30,7 @@ var _ = Describe("OEI Renderer", func() {
 	})
 
 	JustBeforeEach(func() {
-		renderErr = renderer.Render(report)
+		renderErr = renderer.Render(logger, report)
 	})
 
 	It("succeeds", func() {
@@ -46,7 +46,7 @@ var _ = Describe("OEI Renderer", func() {
 
 	It("shows applications over entitlement", func() {
 		Expect(display.ShowTableCallCount()).To(Equal(1))
-		headers, rows := display.ShowTableArgsForCall(0)
+		_, headers, rows := display.ShowTableArgsForCall(0)
 		Expect(headers).To(ConsistOf("space", "app"))
 
 		Expect(len(rows)).To(Equal(3))

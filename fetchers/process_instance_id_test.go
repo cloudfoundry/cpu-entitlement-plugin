@@ -26,7 +26,7 @@ var _ = Describe("Process Instance ID Fetcher", func() {
 	})
 
 	JustBeforeEach(func() {
-		processInstanceIDs, err = fetcher.Fetch("the-app")
+		processInstanceIDs, err = fetcher.Fetch(logger, "the-app")
 	})
 
 	When("the first query returns #limit envelopes but doesn't return enough data to build the list of instances", func() {

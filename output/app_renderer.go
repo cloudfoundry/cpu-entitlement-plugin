@@ -5,6 +5,7 @@ import (
 
 	"code.cloudfoundry.org/cli/cf/terminal"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 	"github.com/fatih/color"
 )
 
@@ -19,14 +20,18 @@ type AppRenderer struct {
 
 type AppDisplay interface {
 	ShowMessage(message string, values ...interface{})
-	ShowTable(headers []string, rows [][]string) error
+	ShowTable(logger lager.Logger, headers []string, rows [][]string) error
 }
 
 func NewAppRenderer(display AppDisplay) AppRenderer {
 	return AppRenderer{display: display}
 }
 
-func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport) error {
+func (r AppRenderer) ShowApplicationReport(logger lager.Logger, appReport reporter.ApplicationReport) error {
+	logger = logger.Session("show-application-report")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	r.showAppInfoHeader(appReport)
 
 	if len(appReport.InstanceReports) == 0 {
@@ -34,7 +39,7 @@ func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport)
 		return nil
 	}
 
-	if err := r.showTable(appReport); err != nil {
+	if err := r.showTable(logger, appReport); err != nil {
 		return err
 	}
 	r.showMessage(appReport)
@@ -43,7 +48,7 @@ func (r AppRenderer) ShowApplicationReport(appReport reporter.ApplicationReport)
 	return nil
 }
 
-func (r AppRenderer) showTable(appReport reporter.ApplicationReport) error {
+func (r AppRenderer) showTable(logger lager.Logger, appReport reporter.ApplicationReport) error {
 	var rows [][]string
 	for _, report := range appReport.InstanceReports {
 		rowColor := noColor
@@ -58,7 +63,7 @@ func (r AppRenderer) showTable(appReport reporter.ApplicationReport) error {
 		rows = append(rows, colorizeRow([]string{instanceID, avgEntitlementRatio, currEntitlementRatio}, rowColor))
 	}
 
-	err := r.display.ShowTable([]string{"", terminal.Colorize("avg usage", color.Bold), terminal.Colorize("curr usage", color.Bold)}, rows)
+	err := r.display.ShowTable(logger, []string{"", terminal.Colorize("avg usage", color.Bold), terminal.Colorize("curr usage", color.Bold)}, rows)
 	if err != nil {
 		return err
 	}

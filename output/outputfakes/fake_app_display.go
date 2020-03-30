@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/output"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeAppDisplay struct {
@@ -14,11 +15,12 @@ type FakeAppDisplay struct {
 		arg1 string
 		arg2 []interface{}
 	}
-	ShowTableStub        func([]string, [][]string) error
+	ShowTableStub        func(lager.Logger, []string, [][]string) error
 	showTableMutex       sync.RWMutex
 	showTableArgsForCall []struct {
-		arg1 []string
-		arg2 [][]string
+		arg1 lager.Logger
+		arg2 []string
+		arg3 [][]string
 	}
 	showTableReturns struct {
 		result1 error
@@ -62,27 +64,28 @@ func (fake *FakeAppDisplay) ShowMessageArgsForCall(i int) (string, []interface{}
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeAppDisplay) ShowTable(arg1 []string, arg2 [][]string) error {
-	var arg1Copy []string
-	if arg1 != nil {
-		arg1Copy = make([]string, len(arg1))
-		copy(arg1Copy, arg1)
-	}
-	var arg2Copy [][]string
+func (fake *FakeAppDisplay) ShowTable(arg1 lager.Logger, arg2 []string, arg3 [][]string) error {
+	var arg2Copy []string
 	if arg2 != nil {
-		arg2Copy = make([][]string, len(arg2))
+		arg2Copy = make([]string, len(arg2))
 		copy(arg2Copy, arg2)
+	}
+	var arg3Copy [][]string
+	if arg3 != nil {
+		arg3Copy = make([][]string, len(arg3))
+		copy(arg3Copy, arg3)
 	}
 	fake.showTableMutex.Lock()
 	ret, specificReturn := fake.showTableReturnsOnCall[len(fake.showTableArgsForCall)]
 	fake.showTableArgsForCall = append(fake.showTableArgsForCall, struct {
-		arg1 []string
-		arg2 [][]string
-	}{arg1Copy, arg2Copy})
-	fake.recordInvocation("ShowTable", []interface{}{arg1Copy, arg2Copy})
+		arg1 lager.Logger
+		arg2 []string
+		arg3 [][]string
+	}{arg1, arg2Copy, arg3Copy})
+	fake.recordInvocation("ShowTable", []interface{}{arg1, arg2Copy, arg3Copy})
 	fake.showTableMutex.Unlock()
 	if fake.ShowTableStub != nil {
-		return fake.ShowTableStub(arg1, arg2)
+		return fake.ShowTableStub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -97,17 +100,17 @@ func (fake *FakeAppDisplay) ShowTableCallCount() int {
 	return len(fake.showTableArgsForCall)
 }
 
-func (fake *FakeAppDisplay) ShowTableCalls(stub func([]string, [][]string) error) {
+func (fake *FakeAppDisplay) ShowTableCalls(stub func(lager.Logger, []string, [][]string) error) {
 	fake.showTableMutex.Lock()
 	defer fake.showTableMutex.Unlock()
 	fake.ShowTableStub = stub
 }
 
-func (fake *FakeAppDisplay) ShowTableArgsForCall(i int) ([]string, [][]string) {
+func (fake *FakeAppDisplay) ShowTableArgsForCall(i int) (lager.Logger, []string, [][]string) {
 	fake.showTableMutex.RLock()
 	defer fake.showTableMutex.RUnlock()
 	argsForCall := fake.showTableArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeAppDisplay) ShowTableReturns(result1 error) {

@@ -6,12 +6,14 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeCloudFoundryClient struct {
-	GetCurrentOrgStub        func() (string, error)
+	GetCurrentOrgStub        func(lager.Logger) (string, error)
 	getCurrentOrgMutex       sync.RWMutex
 	getCurrentOrgArgsForCall []struct {
+		arg1 lager.Logger
 	}
 	getCurrentOrgReturns struct {
 		result1 string
@@ -21,9 +23,10 @@ type FakeCloudFoundryClient struct {
 		result1 string
 		result2 error
 	}
-	GetSpacesStub        func() ([]cf.Space, error)
+	GetSpacesStub        func(lager.Logger) ([]cf.Space, error)
 	getSpacesMutex       sync.RWMutex
 	getSpacesArgsForCall []struct {
+		arg1 lager.Logger
 	}
 	getSpacesReturns struct {
 		result1 []cf.Space
@@ -33,9 +36,10 @@ type FakeCloudFoundryClient struct {
 		result1 []cf.Space
 		result2 error
 	}
-	UsernameStub        func() (string, error)
+	UsernameStub        func(lager.Logger) (string, error)
 	usernameMutex       sync.RWMutex
 	usernameArgsForCall []struct {
+		arg1 lager.Logger
 	}
 	usernameReturns struct {
 		result1 string
@@ -49,15 +53,16 @@ type FakeCloudFoundryClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCloudFoundryClient) GetCurrentOrg() (string, error) {
+func (fake *FakeCloudFoundryClient) GetCurrentOrg(arg1 lager.Logger) (string, error) {
 	fake.getCurrentOrgMutex.Lock()
 	ret, specificReturn := fake.getCurrentOrgReturnsOnCall[len(fake.getCurrentOrgArgsForCall)]
 	fake.getCurrentOrgArgsForCall = append(fake.getCurrentOrgArgsForCall, struct {
-	}{})
-	fake.recordInvocation("GetCurrentOrg", []interface{}{})
+		arg1 lager.Logger
+	}{arg1})
+	fake.recordInvocation("GetCurrentOrg", []interface{}{arg1})
 	fake.getCurrentOrgMutex.Unlock()
 	if fake.GetCurrentOrgStub != nil {
-		return fake.GetCurrentOrgStub()
+		return fake.GetCurrentOrgStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -72,10 +77,17 @@ func (fake *FakeCloudFoundryClient) GetCurrentOrgCallCount() int {
 	return len(fake.getCurrentOrgArgsForCall)
 }
 
-func (fake *FakeCloudFoundryClient) GetCurrentOrgCalls(stub func() (string, error)) {
+func (fake *FakeCloudFoundryClient) GetCurrentOrgCalls(stub func(lager.Logger) (string, error)) {
 	fake.getCurrentOrgMutex.Lock()
 	defer fake.getCurrentOrgMutex.Unlock()
 	fake.GetCurrentOrgStub = stub
+}
+
+func (fake *FakeCloudFoundryClient) GetCurrentOrgArgsForCall(i int) lager.Logger {
+	fake.getCurrentOrgMutex.RLock()
+	defer fake.getCurrentOrgMutex.RUnlock()
+	argsForCall := fake.getCurrentOrgArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeCloudFoundryClient) GetCurrentOrgReturns(result1 string, result2 error) {
@@ -104,15 +116,16 @@ func (fake *FakeCloudFoundryClient) GetCurrentOrgReturnsOnCall(i int, result1 st
 	}{result1, result2}
 }
 
-func (fake *FakeCloudFoundryClient) GetSpaces() ([]cf.Space, error) {
+func (fake *FakeCloudFoundryClient) GetSpaces(arg1 lager.Logger) ([]cf.Space, error) {
 	fake.getSpacesMutex.Lock()
 	ret, specificReturn := fake.getSpacesReturnsOnCall[len(fake.getSpacesArgsForCall)]
 	fake.getSpacesArgsForCall = append(fake.getSpacesArgsForCall, struct {
-	}{})
-	fake.recordInvocation("GetSpaces", []interface{}{})
+		arg1 lager.Logger
+	}{arg1})
+	fake.recordInvocation("GetSpaces", []interface{}{arg1})
 	fake.getSpacesMutex.Unlock()
 	if fake.GetSpacesStub != nil {
-		return fake.GetSpacesStub()
+		return fake.GetSpacesStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -127,10 +140,17 @@ func (fake *FakeCloudFoundryClient) GetSpacesCallCount() int {
 	return len(fake.getSpacesArgsForCall)
 }
 
-func (fake *FakeCloudFoundryClient) GetSpacesCalls(stub func() ([]cf.Space, error)) {
+func (fake *FakeCloudFoundryClient) GetSpacesCalls(stub func(lager.Logger) ([]cf.Space, error)) {
 	fake.getSpacesMutex.Lock()
 	defer fake.getSpacesMutex.Unlock()
 	fake.GetSpacesStub = stub
+}
+
+func (fake *FakeCloudFoundryClient) GetSpacesArgsForCall(i int) lager.Logger {
+	fake.getSpacesMutex.RLock()
+	defer fake.getSpacesMutex.RUnlock()
+	argsForCall := fake.getSpacesArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeCloudFoundryClient) GetSpacesReturns(result1 []cf.Space, result2 error) {
@@ -159,15 +179,16 @@ func (fake *FakeCloudFoundryClient) GetSpacesReturnsOnCall(i int, result1 []cf.S
 	}{result1, result2}
 }
 
-func (fake *FakeCloudFoundryClient) Username() (string, error) {
+func (fake *FakeCloudFoundryClient) Username(arg1 lager.Logger) (string, error) {
 	fake.usernameMutex.Lock()
 	ret, specificReturn := fake.usernameReturnsOnCall[len(fake.usernameArgsForCall)]
 	fake.usernameArgsForCall = append(fake.usernameArgsForCall, struct {
-	}{})
-	fake.recordInvocation("Username", []interface{}{})
+		arg1 lager.Logger
+	}{arg1})
+	fake.recordInvocation("Username", []interface{}{arg1})
 	fake.usernameMutex.Unlock()
 	if fake.UsernameStub != nil {
-		return fake.UsernameStub()
+		return fake.UsernameStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -182,10 +203,17 @@ func (fake *FakeCloudFoundryClient) UsernameCallCount() int {
 	return len(fake.usernameArgsForCall)
 }
 
-func (fake *FakeCloudFoundryClient) UsernameCalls(stub func() (string, error)) {
+func (fake *FakeCloudFoundryClient) UsernameCalls(stub func(lager.Logger) (string, error)) {
 	fake.usernameMutex.Lock()
 	defer fake.usernameMutex.Unlock()
 	fake.UsernameStub = stub
+}
+
+func (fake *FakeCloudFoundryClient) UsernameArgsForCall(i int) lager.Logger {
+	fake.usernameMutex.RLock()
+	defer fake.usernameMutex.RUnlock()
+	argsForCall := fake.usernameArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeCloudFoundryClient) UsernameReturns(result1 string, result2 error) {

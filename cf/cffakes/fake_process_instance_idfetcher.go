@@ -5,13 +5,15 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/cf"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeProcessInstanceIDFetcher struct {
-	FetchStub        func(string) (map[int]string, error)
+	FetchStub        func(lager.Logger, string) (map[int]string, error)
 	fetchMutex       sync.RWMutex
 	fetchArgsForCall []struct {
-		arg1 string
+		arg1 lager.Logger
+		arg2 string
 	}
 	fetchReturns struct {
 		result1 map[int]string
@@ -25,16 +27,17 @@ type FakeProcessInstanceIDFetcher struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeProcessInstanceIDFetcher) Fetch(arg1 string) (map[int]string, error) {
+func (fake *FakeProcessInstanceIDFetcher) Fetch(arg1 lager.Logger, arg2 string) (map[int]string, error) {
 	fake.fetchMutex.Lock()
 	ret, specificReturn := fake.fetchReturnsOnCall[len(fake.fetchArgsForCall)]
 	fake.fetchArgsForCall = append(fake.fetchArgsForCall, struct {
-		arg1 string
-	}{arg1})
-	fake.recordInvocation("Fetch", []interface{}{arg1})
+		arg1 lager.Logger
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("Fetch", []interface{}{arg1, arg2})
 	fake.fetchMutex.Unlock()
 	if fake.FetchStub != nil {
-		return fake.FetchStub(arg1)
+		return fake.FetchStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -49,17 +52,17 @@ func (fake *FakeProcessInstanceIDFetcher) FetchCallCount() int {
 	return len(fake.fetchArgsForCall)
 }
 
-func (fake *FakeProcessInstanceIDFetcher) FetchCalls(stub func(string) (map[int]string, error)) {
+func (fake *FakeProcessInstanceIDFetcher) FetchCalls(stub func(lager.Logger, string) (map[int]string, error)) {
 	fake.fetchMutex.Lock()
 	defer fake.fetchMutex.Unlock()
 	fake.FetchStub = stub
 }
 
-func (fake *FakeProcessInstanceIDFetcher) FetchArgsForCall(i int) string {
+func (fake *FakeProcessInstanceIDFetcher) FetchArgsForCall(i int) (lager.Logger, string) {
 	fake.fetchMutex.RLock()
 	defer fake.fetchMutex.RUnlock()
 	argsForCall := fake.fetchArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeProcessInstanceIDFetcher) FetchReturns(result1 map[int]string, result2 error) {

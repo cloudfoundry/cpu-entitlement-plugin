@@ -28,9 +28,9 @@ type MetricsFetcher interface {
 //go:generate counterfeiter . CloudFoundryClient
 
 type CloudFoundryClient interface {
-	GetSpaces() ([]cf.Space, error)
-	GetCurrentOrg() (string, error)
-	Username() (string, error)
+	GetSpaces(logger lager.Logger) ([]cf.Space, error)
+	GetCurrentOrg(logger lager.Logger) (string, error)
+	Username(logger lager.Logger) (string, error)
 }
 
 type OverEntitlementInstances struct {
@@ -50,21 +50,18 @@ func (r OverEntitlementInstances) OverEntitlementInstances(logger lager.Logger) 
 	logger.Info("start")
 	defer logger.Info("end")
 
-	org, err := r.cf.GetCurrentOrg()
+	org, err := r.cf.GetCurrentOrg(logger)
 	if err != nil {
-		logger.Error("failed-to-get-current-org", err)
 		return OEIReport{}, err
 	}
 
-	user, err := r.cf.Username()
+	user, err := r.cf.Username(logger)
 	if err != nil {
-		logger.Error("failed-to-get-username", err)
 		return OEIReport{}, err
 	}
 
-	spaces, err := r.cf.GetSpaces()
+	spaces, err := r.cf.GetSpaces(logger)
 	if err != nil {
-		logger.Error("failed-to-get-spaces", err)
 		return OEIReport{}, err
 	}
 
@@ -116,7 +113,6 @@ func (r OverEntitlementInstances) isOverEntitlement(logger lager.Logger, appGuid
 	logger = logger.Session("is-over-entitlement", lager.Data{"app-guid": appGuid})
 	appInstancesUsages, err := r.metricsFetcher.FetchInstanceData(logger, appGuid, appInstances)
 	if err != nil {
-		logger.Error("failed-to-fetch-instance-metrics", err)
 		return false, err
 	}
 

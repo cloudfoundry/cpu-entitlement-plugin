@@ -6,13 +6,15 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeOverEntitlementInstancesRenderer struct {
-	RenderStub        func(reporter.OEIReport) error
+	RenderStub        func(lager.Logger, reporter.OEIReport) error
 	renderMutex       sync.RWMutex
 	renderArgsForCall []struct {
-		arg1 reporter.OEIReport
+		arg1 lager.Logger
+		arg2 reporter.OEIReport
 	}
 	renderReturns struct {
 		result1 error
@@ -24,16 +26,17 @@ type FakeOverEntitlementInstancesRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOverEntitlementInstancesRenderer) Render(arg1 reporter.OEIReport) error {
+func (fake *FakeOverEntitlementInstancesRenderer) Render(arg1 lager.Logger, arg2 reporter.OEIReport) error {
 	fake.renderMutex.Lock()
 	ret, specificReturn := fake.renderReturnsOnCall[len(fake.renderArgsForCall)]
 	fake.renderArgsForCall = append(fake.renderArgsForCall, struct {
-		arg1 reporter.OEIReport
-	}{arg1})
-	fake.recordInvocation("Render", []interface{}{arg1})
+		arg1 lager.Logger
+		arg2 reporter.OEIReport
+	}{arg1, arg2})
+	fake.recordInvocation("Render", []interface{}{arg1, arg2})
 	fake.renderMutex.Unlock()
 	if fake.RenderStub != nil {
-		return fake.RenderStub(arg1)
+		return fake.RenderStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -48,17 +51,17 @@ func (fake *FakeOverEntitlementInstancesRenderer) RenderCallCount() int {
 	return len(fake.renderArgsForCall)
 }
 
-func (fake *FakeOverEntitlementInstancesRenderer) RenderCalls(stub func(reporter.OEIReport) error) {
+func (fake *FakeOverEntitlementInstancesRenderer) RenderCalls(stub func(lager.Logger, reporter.OEIReport) error) {
 	fake.renderMutex.Lock()
 	defer fake.renderMutex.Unlock()
 	fake.RenderStub = stub
 }
 
-func (fake *FakeOverEntitlementInstancesRenderer) RenderArgsForCall(i int) reporter.OEIReport {
+func (fake *FakeOverEntitlementInstancesRenderer) RenderArgsForCall(i int) (lager.Logger, reporter.OEIReport) {
 	fake.renderMutex.RLock()
 	defer fake.renderMutex.RUnlock()
 	argsForCall := fake.renderArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeOverEntitlementInstancesRenderer) RenderReturns(result1 error) {

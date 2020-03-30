@@ -6,13 +6,15 @@ import (
 
 	"code.cloudfoundry.org/cpu-entitlement-plugin/plugins"
 	"code.cloudfoundry.org/cpu-entitlement-plugin/reporter"
+	"code.cloudfoundry.org/lager"
 )
 
 type FakeOutputRenderer struct {
-	ShowApplicationReportStub        func(reporter.ApplicationReport) error
+	ShowApplicationReportStub        func(lager.Logger, reporter.ApplicationReport) error
 	showApplicationReportMutex       sync.RWMutex
 	showApplicationReportArgsForCall []struct {
-		arg1 reporter.ApplicationReport
+		arg1 lager.Logger
+		arg2 reporter.ApplicationReport
 	}
 	showApplicationReportReturns struct {
 		result1 error
@@ -24,16 +26,17 @@ type FakeOutputRenderer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOutputRenderer) ShowApplicationReport(arg1 reporter.ApplicationReport) error {
+func (fake *FakeOutputRenderer) ShowApplicationReport(arg1 lager.Logger, arg2 reporter.ApplicationReport) error {
 	fake.showApplicationReportMutex.Lock()
 	ret, specificReturn := fake.showApplicationReportReturnsOnCall[len(fake.showApplicationReportArgsForCall)]
 	fake.showApplicationReportArgsForCall = append(fake.showApplicationReportArgsForCall, struct {
-		arg1 reporter.ApplicationReport
-	}{arg1})
-	fake.recordInvocation("ShowApplicationReport", []interface{}{arg1})
+		arg1 lager.Logger
+		arg2 reporter.ApplicationReport
+	}{arg1, arg2})
+	fake.recordInvocation("ShowApplicationReport", []interface{}{arg1, arg2})
 	fake.showApplicationReportMutex.Unlock()
 	if fake.ShowApplicationReportStub != nil {
-		return fake.ShowApplicationReportStub(arg1)
+		return fake.ShowApplicationReportStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -48,17 +51,17 @@ func (fake *FakeOutputRenderer) ShowApplicationReportCallCount() int {
 	return len(fake.showApplicationReportArgsForCall)
 }
 
-func (fake *FakeOutputRenderer) ShowApplicationReportCalls(stub func(reporter.ApplicationReport) error) {
+func (fake *FakeOutputRenderer) ShowApplicationReportCalls(stub func(lager.Logger, reporter.ApplicationReport) error) {
 	fake.showApplicationReportMutex.Lock()
 	defer fake.showApplicationReportMutex.Unlock()
 	fake.ShowApplicationReportStub = stub
 }
 
-func (fake *FakeOutputRenderer) ShowApplicationReportArgsForCall(i int) reporter.ApplicationReport {
+func (fake *FakeOutputRenderer) ShowApplicationReportArgsForCall(i int) (lager.Logger, reporter.ApplicationReport) {
 	fake.showApplicationReportMutex.RLock()
 	defer fake.showApplicationReportMutex.RUnlock()
 	argsForCall := fake.showApplicationReportArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeOutputRenderer) ShowApplicationReportReturns(result1 error) {

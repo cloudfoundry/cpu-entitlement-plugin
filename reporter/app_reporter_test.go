@@ -102,15 +102,6 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("app error"))
 			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-get-app"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("app error"),
-				))
-			})
-
 		})
 
 		It("reports the org", func() {
@@ -124,14 +115,6 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("org error"))
-			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-get-current-org"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("org error"),
-				))
 			})
 		})
 
@@ -147,14 +130,6 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("space error"))
 			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-get-current-space"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("space error"),
-				))
-			})
 		})
 
 		It("reports the user", func() {
@@ -168,14 +143,6 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("user error"))
-			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-get-username"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("user error"),
-				))
 			})
 		})
 
@@ -273,14 +240,6 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-historical-error"))
 			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-fetch-cumulative-usage"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("fetch-historical-error"),
-				))
-			})
 		})
 
 		When("the fetcher does not return any data", func() {
@@ -351,14 +310,6 @@ var _ = Describe("Reporter", func() {
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-spike-error"))
 			})
-
-			It("logs the wrong type", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-fetch-last-spikes"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("fetch-spike-error"),
-				))
-			})
 		})
 
 		When("the fetcher returns the wrong type of instance data", func() {
@@ -379,14 +330,6 @@ var _ = Describe("Reporter", func() {
 				Expect(reports.InstanceReports[0].LastSpike.To).To(Equal(time.Time{}))
 				Expect(reports.InstanceReports[1].LastSpike.From).To(Equal(time.Unix(1, 0)))
 				Expect(reports.InstanceReports[1].LastSpike.To).To(Equal(time.Unix(2, 0)))
-			})
-
-			It("logs the wrong type", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("last-spike-reporter-returned-wrong-type"),
-					gbytes.Say(`"log_level":1`),
-					gbytes.Say(`"instance-data":"hello"`),
-				))
 			})
 		})
 
@@ -437,14 +380,6 @@ var _ = Describe("Reporter", func() {
 
 			It("returns the error", func() {
 				Expect(err).To(MatchError("fetch-current-error"))
-			})
-
-			It("logs the error", func() {
-				Expect(logger).To(SatisfyAll(
-					gbytes.Say("failed-to-fetch-current-usage"),
-					gbytes.Say(`"log_level":2`),
-					gbytes.Say("fetch-current-error"),
-				))
 			})
 		})
 

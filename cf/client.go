@@ -2,6 +2,7 @@ package cf
 
 import (
 	plugin_models "code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/lager"
 )
 
 //go:generate counterfeiter . Cli
@@ -17,7 +18,7 @@ type Cli interface {
 
 //go:generate counterfeiter . ProcessInstanceIDFetcher
 type ProcessInstanceIDFetcher interface {
-	Fetch(appGUID string) (map[int]string, error)
+	Fetch(logger lager.Logger, appGUID string) (map[int]string, error)
 }
 
 type Space struct {
@@ -46,23 +47,29 @@ func NewClient(cli Cli, processInstanceIDFetcher ProcessInstanceIDFetcher) Clien
 	return Client{cli: cli, processInstanceIDFetcher: processInstanceIDFetcher}
 }
 
-func (c Client) GetSpaces() ([]Space, error) {
+func (c Client) GetSpaces(logger lager.Logger) ([]Space, error) {
+	logger = logger.Session("cf-get-spaces")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	var spaces []Space
 
 	cfSpaces, err := c.cli.GetSpaces()
 	if err != nil {
+		logger.Error("failed-to-get-spaces", err)
 		return nil, err
 	}
 
 	for _, cfSpace := range cfSpaces {
 		cfSpaceDetails, err := c.cli.GetSpace(cfSpace.Name)
 		if err != nil {
+			logger.Error("failed-to-get-space", err, lager.Data{"space": cfSpace.Name})
 			return nil, err
 		}
 
 		var applications []Application
 		for _, cfApp := range cfSpaceDetails.Applications {
-			processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(cfApp.Guid)
+			processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(logger, cfApp.Guid)
 			if err != nil {
 				return []Space{}, err
 			}
@@ -80,18 +87,24 @@ func (c Client) GetSpaces() ([]Space, error) {
 	return spaces, nil
 }
 
-func (c Client) GetApplication(appName string) (Application, error) {
+func (c Client) GetApplication(logger lager.Logger, appName string) (Application, error) {
+	logger = logger.Session("cf-get-application", lager.Data{"app": appName})
+	logger.Info("start")
+	defer logger.Info("end")
+
 	app, err := c.cli.GetApp(appName)
 	if err != nil {
+		logger.Error("failed-to-get-app", err)
 		return Application{}, err
 	}
 
 	space, err := c.cli.GetCurrentSpace()
 	if err != nil {
+		logger.Error("failed-to-get-current-space", err)
 		return Application{}, err
 	}
 
-	processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(app.Guid)
+	processInstanceIDs, err := c.processInstanceIDFetcher.Fetch(logger, app.Guid)
 	if err != nil {
 		return Application{}, err
 	}
@@ -108,22 +121,41 @@ func (c Client) GetApplication(appName string) (Application, error) {
 	return Application{Name: app.Name, Guid: app.Guid, Space: space.Name, Instances: instances}, nil
 }
 
-func (c Client) GetCurrentOrg() (string, error) {
+func (c Client) GetCurrentOrg(logger lager.Logger) (string, error) {
+	logger = logger.Session("cf-get-current-org")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	org, err := c.cli.GetCurrentOrg()
 	if err != nil {
+		logger.Error("failed-to-get-current-org", err)
 		return "", err
 	}
 	return org.Name, nil
 }
 
-func (c Client) GetCurrentSpace() (string, error) {
+func (c Client) GetCurrentSpace(logger lager.Logger) (string, error) {
+	logger = logger.Session("cf-get-current-space")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	space, err := c.cli.GetCurrentSpace()
 	if err != nil {
+		logger.Error("failed-to-get-current-space", err)
 		return "", err
 	}
 	return space.Name, nil
 }
 
-func (c Client) Username() (string, error) {
-	return c.cli.Username()
+func (c Client) Username(logger lager.Logger) (string, error) {
+	logger = logger.Session("cf-username")
+	logger.Info("start")
+	defer logger.Info("end")
+
+	username, err := c.cli.Username()
+	if err != nil {
+		logger.Error("failed-to-get-username", err)
+		return "", err
+	}
+	return username, nil
 }

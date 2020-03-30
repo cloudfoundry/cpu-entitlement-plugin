@@ -38,17 +38,23 @@ func (f LastSpikeFetcher) FetchInstanceData(logger lager.Logger, appGUID string,
 		logcache.WithNameFilter("spike"),
 	)
 	if err != nil {
+		logger.Error("logcache-client-read-failed", err)
 		return nil, err
 	}
 
-	return parseLastSpike(res, appInstances)
+	return parseLastSpike(logger, res, appInstances)
 }
 
-func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+func parseLastSpike(logger lager.Logger, res []*loggregator_v2.Envelope, appInstances map[int]cf.Instance) (map[int]interface{}, error) {
+	logger = logger.Session("parse-last-spike")
+	logger.Info("start")
+	defer logger.Info("end")
+
 	lastSpikePerInstance := make(map[int]interface{})
 	for _, envelope := range res {
 		instanceID, err := strconv.Atoi(envelope.InstanceId)
 		if err != nil {
+			logger.Info("ignoring-corrupt-instance-id", lager.Data{"instance-id": envelope.InstanceId, "envelope": envelope})
 			continue
 		}
 
@@ -58,6 +64,7 @@ func parseLastSpike(res []*loggregator_v2.Envelope, appInstances map[int]cf.Inst
 
 		envelopeGauge, ok := envelope.Message.(*loggregator_v2.Envelope_Gauge)
 		if !ok {
+			logger.Info("ignoring-non-gauge-message", lager.Data{"gauge-message": envelope.Message})
 			continue
 		}
 
