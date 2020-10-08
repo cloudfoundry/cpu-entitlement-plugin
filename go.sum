@@ -3,6 +3,7 @@ code.cloudfoundry.org/bytefmt v0.0.0-20190819182555-854d396b647c h1:2RuXx1+tSNWR
 code.cloudfoundry.org/bytefmt v0.0.0-20190819182555-854d396b647c/go.mod h1:wN/zk7mhREp/oviagqUXY3EwuHhWyOvAdsn5Y4CzOrc=
 code.cloudfoundry.org/cli v6.46.1+incompatible h1:pr5E62IznMQ9L3SpNS0zk1otk5THz2O8r6vCEwycetE=
 code.cloudfoundry.org/cli v6.46.1+incompatible/go.mod h1:e4d+EpbwevNhyTZKybrLlyTvpH+W22vMsmdmcTxs/Fo=
+code.cloudfoundry.org/cli v6.53.0+incompatible/go.mod h1:e4d+EpbwevNhyTZKybrLlyTvpH+W22vMsmdmcTxs/Fo=
 code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee h1:iAAPf9s7/+BIiGf+RjgcXLm3NoZaLIJsBXJuUa63Lx8=
 code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee/go.mod h1:Jzi+ccHgo/V/PLQUaQ6hnZcC1c4BS790gx21LRRui4g=
 code.cloudfoundry.org/go-loggregator v7.4.0+incompatible h1:KqZYloMQWM5Zg/BQKunOIA4OODh7djZbk48qqbowNFI=
