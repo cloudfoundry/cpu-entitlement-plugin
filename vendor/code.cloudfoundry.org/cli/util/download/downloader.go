@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"code.cloudfoundry.org/cli/util"
 )
 
 type Downloader struct {
@@ -16,7 +18,8 @@ type Downloader struct {
 
 func NewDownloader(dialTimeout time.Duration) *Downloader {
 	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: util.NewTLSConfig(nil, false),
+		Proxy:           http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			KeepAlive: 30 * time.Second,
 			Timeout:   dialTimeout,
@@ -37,6 +40,7 @@ func (downloader Downloader) Download(url string, tmpDirPath string) (string, er
 	if err != nil {
 		return bpFileName, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		rawBytes, readErr := ioutil.ReadAll(resp.Body)

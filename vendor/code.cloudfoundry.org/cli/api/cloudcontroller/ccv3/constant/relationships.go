@@ -15,4 +15,10 @@ const (
 	// RelationshipTypeOrganization is a relationship with a Cloud Controller
 	// organization.
 	RelationshipTypeOrganization RelationshipType = "organization"
+
+	// RelationshipTypeUser is a relationship with a Cloud Controller user.
+	RelationshipTypeUser RelationshipType = "user"
+
+	// RelationshipTypeQuota is a relationship with a Cloud Controller quota (org quota or space quota).
+	RelationshipTypeQuota RelationshipType = "quota"
 )

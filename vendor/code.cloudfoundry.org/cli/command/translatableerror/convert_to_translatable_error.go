@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/cli/util/clissh/ssherror"
 	"code.cloudfoundry.org/cli/util/download"
 	"code.cloudfoundry.org/cli/util/manifest"
-	"code.cloudfoundry.org/cli/util/manifestparser"
+	"code.cloudfoundry.org/cli/util/v6manifestparser"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ func ConvertToTranslatableError(err error) error {
 		return ApplicationNotStartedError(e)
 	case actionerror.AppNotFoundInManifestError:
 		return AppNotFoundInManifestError(e)
-	case manifestparser.AppNotInManifestError:
+	case v6manifestparser.AppNotInManifestError:
 		return AppNotFoundInManifestError(e)
 	case actionerror.AssignDropletError:
 		return AssignDropletError(e)
@@ -83,7 +83,7 @@ func ConvertToTranslatableError(err error) error {
 		return NoMatchingDomainError(e)
 	case actionerror.NonexistentAppPathError:
 		return FileNotFoundError(e)
-	case manifestparser.InvalidManifestApplicationPathError:
+	case v6manifestparser.InvalidManifestApplicationPathError:
 		return FileNotFoundError(e)
 	case actionerror.NoOrganizationTargetedError:
 		return NoOrganizationTargetedError(e)
@@ -93,8 +93,8 @@ func ConvertToTranslatableError(err error) error {
 		return NotLoggedInError(e)
 	case actionerror.OrganizationNotFoundError:
 		return OrganizationNotFoundError(e)
-	case actionerror.OrganizationQuotaNotFoundForNameError:
-		return OrganizationQuotaNotFoundForNameError(e)
+	case actionerror.QuotaNotFoundForNameError:
+		return QuotaNotFoundForNameError(e)
 	case actionerror.PasswordGrantTypeLogoutRequiredError:
 		return PasswordGrantTypeLogoutRequiredError(e)
 	case actionerror.PluginCommandsConflictError:
@@ -138,10 +138,10 @@ func ConvertToTranslatableError(err error) error {
 		return SharedServiceInstanceNotFoundError(e)
 	case actionerror.SpaceNotFoundError:
 		return SpaceNotFoundError{Name: e.Name}
-	case actionerror.SpaceQuotaNotFoundByNameError:
-		return SpaceQuotaNotFoundByNameError{Name: e.Name}
 	case actionerror.StackNotFoundError:
 		return StackNotFoundError(e)
+	case actionerror.StagingFailedError:
+		return StagingFailedError{Message: e.Reason}
 	case actionerror.StagingTimeoutError:
 		return StagingTimeoutError(e)
 	case actionerror.TaskWorkersUnavailableError:
@@ -202,9 +202,9 @@ func ConvertToTranslatableError(err error) error {
 		return InterpolationError(e)
 
 	// ManifestParser Errors
-	case manifestparser.InterpolationError:
+	case v6manifestparser.InterpolationError:
 		return InterpolationError(e)
-	case manifestparser.InvalidYAMLError:
+	case v6manifestparser.InvalidYAMLError:
 		return InvalidYAMLError(e)
 
 	// Plugin Execution Errors

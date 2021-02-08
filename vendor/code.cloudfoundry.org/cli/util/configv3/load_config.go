@@ -37,8 +37,18 @@ func (c *Config) loadPluginConfig() error {
 	return nil
 }
 
+func GetCFConfig() (*Config, error) {
+	cfConfig, configErr := LoadConfig()
+	if configErr != nil {
+		if _, ok := configErr.(translatableerror.EmptyConfigError); !ok {
+			return nil, configErr
+		}
+	}
+	return cfConfig, nil
+}
+
 // LoadConfig loads the config from the .cf/config.json and os.ENV. If the
-// config.json does not exists, it will use a default config in it's place.
+// config.json does not exists, it will use a default config in its place.
 // Takes in an optional FlagOverride, will only use the first one passed, that
 // can override the given flag values.
 //
@@ -62,7 +72,7 @@ func LoadConfig(flags ...FlagOverride) (*Config, error) {
 
 	config := Config{
 		ConfigFile: JSONConfig{
-			ConfigVersion: 3,
+			ConfigVersion: CurrentConfigVersion,
 			Target:        DefaultTarget,
 			ColorEnabled:  DefaultColorEnabled,
 			PluginRepositories: []PluginRepository{{
@@ -90,7 +100,9 @@ func LoadConfig(flags ...FlagOverride) (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
-			config.ConfigFile = configFile
+			if configFile.ConfigVersion == CurrentConfigVersion {
+				config.ConfigFile = configFile
+			}
 		}
 	}
 
@@ -104,23 +116,22 @@ func LoadConfig(flags ...FlagOverride) (*Config, error) {
 	}
 
 	config.ENV = EnvOverride{
-		BinaryName:        filepath.Base(os.Args[0]),
-		CFColor:           os.Getenv("CF_COLOR"),
-		CFDialTimeout:     os.Getenv("CF_DIAL_TIMEOUT"),
-		CFLogLevel:        os.Getenv("CF_LOG_LEVEL"),
-		CFPassword:        os.Getenv("CF_PASSWORD"),
-		CFPluginHome:      os.Getenv("CF_PLUGIN_HOME"),
-		CFStagingTimeout:  os.Getenv("CF_STAGING_TIMEOUT"),
-		CFStartupTimeout:  os.Getenv("CF_STARTUP_TIMEOUT"),
-		CFTrace:           os.Getenv("CF_TRACE"),
-		CFUsername:        os.Getenv("CF_USERNAME"),
-		DockerPassword:    os.Getenv("CF_DOCKER_PASSWORD"),
-		Experimental:      os.Getenv("CF_CLI_EXPERIMENTAL"),
-		ExperimentalLogin: os.Getenv("CF_EXPERIMENTAL_LOGIN"),
-		ForceTTY:          os.Getenv("FORCE_TTY"),
-		HTTPSProxy:        os.Getenv("https_proxy"),
-		Lang:              os.Getenv("LANG"),
-		LCAll:             os.Getenv("LC_ALL"),
+		BinaryName:       filepath.Base(os.Args[0]),
+		CFColor:          os.Getenv("CF_COLOR"),
+		CFDialTimeout:    os.Getenv("CF_DIAL_TIMEOUT"),
+		CFLogLevel:       os.Getenv("CF_LOG_LEVEL"),
+		CFPassword:       os.Getenv("CF_PASSWORD"),
+		CFPluginHome:     os.Getenv("CF_PLUGIN_HOME"),
+		CFStagingTimeout: os.Getenv("CF_STAGING_TIMEOUT"),
+		CFStartupTimeout: os.Getenv("CF_STARTUP_TIMEOUT"),
+		CFTrace:          os.Getenv("CF_TRACE"),
+		CFUsername:       os.Getenv("CF_USERNAME"),
+		DockerPassword:   os.Getenv("CF_DOCKER_PASSWORD"),
+		Experimental:     os.Getenv("CF_CLI_EXPERIMENTAL"),
+		ForceTTY:         os.Getenv("FORCE_TTY"),
+		HTTPSProxy:       os.Getenv("https_proxy"),
+		Lang:             os.Getenv("LANG"),
+		LCAll:            os.Getenv("LC_ALL"),
 	}
 
 	err = config.loadPluginConfig()

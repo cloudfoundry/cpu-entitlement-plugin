@@ -3,8 +3,11 @@ package configv3
 import "time"
 
 const (
-	// DefaultDialTimeout is the default timeout for the dail.
-	DefaultDialTimeout = 5 * time.Second
+	// CurrentConfigVersion is the version field for the main config file
+	CurrentConfigVersion = 4
+
+	// DefaultDialTimeout is the default timeout for the dial.
+	DefaultDialTimeout = 6 * time.Second
 
 	// DefaultNOAARetryCount is the default number of request retries.
 	DefaultNOAARetryCount = 5

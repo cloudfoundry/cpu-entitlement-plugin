@@ -8,49 +8,36 @@ import (
 
 // JSONConfig represents .cf/config.json.
 type JSONConfig struct {
-	ConfigVersion            int                `json:"ConfigVersion"`
-	Target                   string             `json:"Target"`
-	APIVersion               string             `json:"APIVersion"`
-	AuthorizationEndpoint    string             `json:"AuthorizationEndpoint"`
-	DopplerEndpoint          string             `json:"DopplerEndPoint"`
-	UAAEndpoint              string             `json:"UaaEndpoint"`
-	RoutingEndpoint          string             `json:"RoutingAPIEndpoint"`
 	AccessToken              string             `json:"AccessToken"`
-	SSHOAuthClient           string             `json:"SSHOAuthClient"`
-	UAAOAuthClient           string             `json:"UAAOAuthClient"`
-	UAAOAuthClientSecret     string             `json:"UAAOAuthClientSecret"`
-	UAAGrantType             string             `json:"UAAGrantType"`
-	RefreshToken             string             `json:"RefreshToken"`
-	TargetedOrganization     Organization       `json:"OrganizationFields"`
-	TargetedSpace            Space              `json:"SpaceFields"`
-	SkipSSLValidation        bool               `json:"SSLDisabled"`
+	APIVersion               string             `json:"APIVersion"`
 	AsyncTimeout             int                `json:"AsyncTimeout"`
-	Trace                    string             `json:"Trace"`
+	AuthorizationEndpoint    string             `json:"AuthorizationEndpoint"`
 	ColorEnabled             string             `json:"ColorEnabled"`
+	ConfigVersion            int                `json:"ConfigVersion"`
+	DopplerEndpoint          string             `json:"DopplerEndPoint"`
 	Locale                   string             `json:"Locale"`
-	PluginRepositories       []PluginRepository `json:"PluginRepos"`
+	LogCacheEndpoint         string             `json:"LogCacheEndPoint"`
 	MinCLIVersion            string             `json:"MinCLIVersion"`
 	MinRecommendedCLIVersion string             `json:"MinRecommendedCLIVersion"`
+	TargetedOrganization     Organization       `json:"OrganizationFields"`
+	PluginRepositories       []PluginRepository `json:"PluginRepos"`
+	RefreshToken             string             `json:"RefreshToken"`
+	RoutingEndpoint          string             `json:"RoutingAPIEndpoint"`
+	TargetedSpace            Space              `json:"SpaceFields"`
+	SSHOAuthClient           string             `json:"SSHOAuthClient"`
+	SkipSSLValidation        bool               `json:"SSLDisabled"`
+	Target                   string             `json:"Target"`
+	Trace                    string             `json:"Trace"`
+	UAAEndpoint              string             `json:"UaaEndpoint"`
+	UAAGrantType             string             `json:"UAAGrantType"`
+	UAAOAuthClient           string             `json:"UAAOAuthClient"`
+	UAAOAuthClientSecret     string             `json:"UAAOAuthClientSecret"`
 }
 
 // Organization contains basic information about the targeted organization.
 type Organization struct {
-	GUID            string          `json:"GUID"`
-	Name            string          `json:"Name"`
-	QuotaDefinition QuotaDefinition `json:"QuotaDefinition"`
-}
-
-// QuotaDefinition contains information about the organization's quota.
-type QuotaDefinition struct {
-	GUID                    string `json:"guid"`
-	Name                    string `json:"name"`
-	MemoryLimit             int    `json:"memory_limit"`
-	InstanceMemoryLimit     int    `json:"instance_memory_limit"`
-	TotalRoutes             int    `json:"total_routes"`
-	TotalServices           int    `json:"total_services"`
-	NonBasicServicesAllowed bool   `json:"non_basic_services_allowed"`
-	AppInstanceLimit        int    `json:"app_instance_limit"`
-	TotalReservedRoutePorts int    `json:"total_reserved_route_ports"`
+	GUID string `json:"GUID"`
+	Name string `json:"Name"`
 }
 
 // Space contains basic information about the targeted space.
@@ -62,7 +49,10 @@ type Space struct {
 
 // User represents the user information provided by the JWT access token.
 type User struct {
-	Name string
+	Name     string
+	GUID     string
+	Origin   string
+	IsClient bool
 }
 
 // AccessToken returns the access token for making authenticated API calls.
@@ -126,9 +116,28 @@ func (config *Config) RoutingEndpoint() string {
 	return config.ConfigFile.RoutingEndpoint
 }
 
+// SetAsyncTimeout sets the async timeout.
+func (config *Config) SetAsyncTimeout(timeout int) {
+	config.ConfigFile.AsyncTimeout = timeout
+}
+
 // SetAccessToken sets the current access token.
 func (config *Config) SetAccessToken(accessToken string) {
 	config.ConfigFile.AccessToken = accessToken
+}
+
+// SetColorEnabled sets the color enabled feature to true or false
+func (config *Config) SetColorEnabled(enabled string) {
+	config.ConfigFile.ColorEnabled = enabled
+}
+
+// SetLocale sets the locale, or clears the field if requested
+func (config *Config) SetLocale(locale string) {
+	if locale == "CLEAR" {
+		config.ConfigFile.Locale = ""
+	} else {
+		config.ConfigFile.Locale = locale
+	}
 }
 
 // SetMinCLIVersion sets the minimum CLI version required by the CC.
@@ -140,7 +149,6 @@ func (config *Config) SetMinCLIVersion(minVersion string) {
 func (config *Config) SetOrganizationInformation(guid string, name string) {
 	config.ConfigFile.TargetedOrganization.GUID = guid
 	config.ConfigFile.TargetedOrganization.Name = name
-	config.ConfigFile.TargetedOrganization.QuotaDefinition = QuotaDefinition{}
 }
 
 // SetRefreshToken sets the current refresh token.
@@ -157,16 +165,31 @@ func (config *Config) SetSpaceInformation(guid string, name string, allowSSH boo
 	config.ConfigFile.TargetedSpace.AllowSSH = allowSSH
 }
 
+type TargetInformationArgs struct {
+	Api               string
+	ApiVersion        string
+	Auth              string
+	Doppler           string
+	LogCache          string
+	MinCLIVersion     string
+	Routing           string
+	SkipSSLValidation bool
+}
+
 // SetTargetInformation sets the currently targeted CC API and related other
 // related API URLs.
-func (config *Config) SetTargetInformation(api string, apiVersion string, auth string, minCLIVersion string, doppler string, routing string, skipSSLValidation bool) {
-	config.ConfigFile.Target = api
-	config.ConfigFile.APIVersion = apiVersion
-	config.ConfigFile.AuthorizationEndpoint = auth
-	config.SetMinCLIVersion(minCLIVersion)
-	config.ConfigFile.DopplerEndpoint = doppler
-	config.ConfigFile.RoutingEndpoint = routing
-	config.ConfigFile.SkipSSLValidation = skipSSLValidation
+func (config *Config) SetTargetInformation(args TargetInformationArgs) {
+	config.ConfigFile.Target = args.Api
+	config.ConfigFile.APIVersion = args.ApiVersion
+	config.SetMinCLIVersion(args.MinCLIVersion)
+	config.ConfigFile.DopplerEndpoint = args.Doppler
+	config.ConfigFile.LogCacheEndpoint = args.LogCache
+	config.ConfigFile.RoutingEndpoint = args.Routing
+	config.ConfigFile.SkipSSLValidation = args.SkipSSLValidation
+
+	// NOTE: This gets written to the config file, but I do not believe it is currently
+	// ever read from there.
+	config.ConfigFile.AuthorizationEndpoint = args.Auth
 
 	config.UnsetOrganizationAndSpaceInformation()
 }
@@ -176,6 +199,11 @@ func (config *Config) SetTokenInformation(accessToken string, refreshToken strin
 	config.ConfigFile.AccessToken = accessToken
 	config.ConfigFile.RefreshToken = refreshToken
 	config.ConfigFile.SSHOAuthClient = sshOAuthClient
+}
+
+// SetTrace sets the trace field to either true, false, or a path to a file.
+func (config *Config) SetTrace(trace string) {
+	config.ConfigFile.Trace = trace
 }
 
 // SetUAAClientCredentials sets the client credentials.
@@ -285,13 +313,23 @@ func decodeUserFromJWT(accessToken string) (User, error) {
 
 	claims := token.Claims()
 
-	var ID string
+	var name, GUID, origin string
+	var isClient bool
 	if claims.Has("user_name") {
-		ID = claims.Get("user_name").(string)
+		name = claims.Get("user_name").(string)
+		GUID = claims.Get("user_id").(string)
+		origin = claims.Get("origin").(string)
+		isClient = false
 	} else {
-		ID = claims.Get("client_id").(string)
+		name = claims.Get("client_id").(string)
+		GUID = name
+		isClient = true
 	}
+
 	return User{
-		Name: ID,
+		Name:     name,
+		GUID:     GUID,
+		Origin:   origin,
+		IsClient: isClient,
 	}, nil
 }

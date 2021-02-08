@@ -8,24 +8,23 @@ import (
 
 // EnvOverride represents all the environment variables read by the CF CLI
 type EnvOverride struct {
-	BinaryName        string
-	CFColor           string
-	CFDialTimeout     string
-	CFHome            string
-	CFLogLevel        string
-	CFPassword        string
-	CFPluginHome      string
-	CFStagingTimeout  string
-	CFStartupTimeout  string
-	CFTrace           string
-	CFUsername        string
-	DockerPassword    string
-	Experimental      string
-	ExperimentalLogin string
-	ForceTTY          string
-	HTTPSProxy        string
-	Lang              string
-	LCAll             string
+	BinaryName       string
+	CFColor          string
+	CFDialTimeout    string
+	CFHome           string
+	CFLogLevel       string
+	CFPassword       string
+	CFPluginHome     string
+	CFStagingTimeout string
+	CFStartupTimeout string
+	CFTrace          string
+	CFUsername       string
+	DockerPassword   string
+	Experimental     string
+	ForceTTY         string
+	HTTPSProxy       string
+	Lang             string
+	LCAll            string
 }
 
 // BinaryName returns the running name of the CF CLI
@@ -45,7 +44,7 @@ func (config *Config) CFUsername() string {
 
 // DialTimeout returns the timeout to use when dialing. This is based off of:
 //   1. The $CF_DIAL_TIMEOUT environment variable if set
-//   2. Defaults to 5 seconds
+//   2. Falling back to the default
 func (config *Config) DialTimeout() time.Duration {
 	if config.ENV.CFDialTimeout != "" {
 		envVal, err := strconv.ParseInt(config.ENV.CFDialTimeout, 10, 64)
@@ -69,21 +68,6 @@ func (config *Config) DockerPassword() string {
 func (config *Config) Experimental() bool {
 	if config.ENV.Experimental != "" {
 		envVal, err := strconv.ParseBool(config.ENV.Experimental)
-		if err == nil {
-			return envVal
-		}
-	}
-
-	return false
-}
-
-// ExperimentalLogin is a temporary function during the rewrite of `cf login` that returns whether or not to run the rewritten login. This
-// is based off of:
-//   1. The $CF_EXPERIMENTAL_LOGIN environment variable if set
-//   2. Defaults to false
-func (config *Config) ExperimentalLogin() bool {
-	if config.ENV.ExperimentalLogin != "" {
-		envVal, err := strconv.ParseBool(config.ENV.ExperimentalLogin)
 		if err == nil {
 			return envVal
 		}

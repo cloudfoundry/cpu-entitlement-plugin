@@ -123,6 +123,32 @@ func NewUI(config Config) (*UI, error) {
 	}, nil
 }
 
+// NewPluginUI will return a UI object where OUT and ERR are customizable.
+func NewPluginUI(config Config, outBuffer io.Writer, errBuffer io.Writer) (*UI, error) {
+	translateFunc, translationError := GetTranslationFunc(config)
+	if translationError != nil {
+		return nil, translationError
+	}
+
+	location := time.Now().Location()
+
+	return &UI{
+		In:               nil,
+		Out:              outBuffer,
+		OutForInteration: outBuffer,
+		Err:              errBuffer,
+		colorEnabled:     configv3.ColorDisabled,
+		translate:        translateFunc,
+		terminalLock:     &sync.Mutex{},
+		Exiter:           realExiter,
+		fileLock:         &sync.Mutex{},
+		Interactor:       realInteract,
+		IsTTY:            config.IsTTY(),
+		TerminalWidth:    config.TerminalWidth(),
+		TimezoneLocation: location,
+	}, nil
+}
+
 // NewTestUI will return a UI object where Out, In, and Err are customizable,
 // and colors are disabled
 func NewTestUI(in io.Reader, out io.Writer, err io.Writer) *UI {
@@ -248,30 +274,7 @@ func (ui *UI) DisplayTextWithFlavor(template string, templateValues ...map[strin
 	fmt.Fprintf(ui.Out, "%s\n", ui.TranslateText(template, firstTemplateValues))
 }
 
-// DisplayWarning translates the warning, substitutes in templateValues, and
-// outputs to ui.Err. Only the first map in templateValues is used.
-func (ui *UI) DisplayWarning(template string, templateValues ...map[string]interface{}) {
-	fmt.Fprintf(ui.Err, "%s\n\n", ui.TranslateText(template, templateValues...))
-}
-
-// DisplayWarnings translates the warnings and outputs to ui.Err.
-func (ui *UI) DisplayWarnings(warnings []string) {
-	for _, warning := range warnings {
-		fmt.Fprintf(ui.Err, "%s\n", ui.TranslateText(warning))
-	}
-	if len(warnings) > 0 {
-		fmt.Fprintln(ui.Err)
-	}
-}
-
-// DisplayWarningV7 translates the warning, substitutes in templateValues, and
-// outputs to ui.Err. Only the first map in templateValues is used.
-// This command has one fewer newline than DisplayWarning. Use it before an OK message in V7.
-func (ui *UI) DisplayWarningV7(template string, templateValues ...map[string]interface{}) {
-	fmt.Fprintf(ui.Err, "%s\n", ui.TranslateText(template, templateValues...))
-}
-
-// FlushDeferred diplays text previously deferred (using DeferText) to the UI's
+// FlushDeferred displays text previously deferred (using DeferText) to the UI's
 // `Out`.
 func (ui *UI) FlushDeferred() {
 	ui.terminalLock.Lock()
