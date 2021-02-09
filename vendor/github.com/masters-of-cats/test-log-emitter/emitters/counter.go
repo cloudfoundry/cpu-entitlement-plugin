@@ -10,10 +10,10 @@ import (
 )
 
 type CounterMetric struct {
-	Name       string
-	SourceId   string
-	InstanceId string
-	Tags       map[string]string
+	Name       string            `json:"name"`
+	SourceId   string            `json:"source_id"`
+	InstanceId string            `json:"instance_id"`
+	Tags       map[string]string `json:"tags"`
 }
 
 type CounterEmitter struct {
