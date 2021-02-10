@@ -2,6 +2,8 @@ module code.cloudfoundry.org/cpu-entitlement-plugin
 
 go 1.15
 
+replace github.com/golang/protobuf => github.com/golang/protobuf v1.3.5
+
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20200131002437-cf55d5288a48 // indirect
 	code.cloudfoundry.org/cli v7.1.0+incompatible
