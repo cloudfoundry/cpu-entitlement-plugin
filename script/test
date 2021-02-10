@@ -2,11 +2,12 @@
 
 set -eu
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 RED=1
 GREEN=2
 
+export GARDEN_REMOTE_ATC_URL=${GARDEN_REMOTE_ATC_URL:="garden-ci"}
 export FLY_TARGET="$GARDEN_REMOTE_ATC_URL"
 
 target="${ENV_NAME:-mel-b}"
@@ -26,7 +27,8 @@ print_message() {
 
 usage() {
   colour=$1
-  usage=$(cat <<'EOF'
+  usage=$(
+    cat <<'EOF'
 Usage:
     test -a           --- run all tests in parallel on Concourse (tmux panes will autosplit)
     test -e           --- run all end-to-end tests on Concourse
@@ -35,7 +37,7 @@ Usage:
     test <directory>  --- run tests from a given directory locally
     test -h           --- show this help message
 EOF
-)
+  )
   print_message "$usage" "$colour"
 }
 
@@ -80,8 +82,8 @@ while getopts "aeiuh" OPTION; do
   case $OPTION in
     a)
       run_all_tests_in_parallel
-     exit
-     ;;
+      exit
+      ;;
     i)
       run_tests_in_directory integration
       exit
@@ -89,24 +91,22 @@ while getopts "aeiuh" OPTION; do
     u)
       run_tests_in_directory -skipPackage integration,e2e -r
       exit
-     ;;
+      ;;
     e)
       run_e2e_tests
       exit
-     ;;
+      ;;
     h)
       usage $GREEN
-    exit
-    ;;
+      exit
+      ;;
     *)
       usage $RED
-    exit
-    ;;
- esac
+      exit
+      ;;
+  esac
 done
 
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 
 run_tests_in_directory $@
-
-
