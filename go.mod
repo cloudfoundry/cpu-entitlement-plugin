@@ -30,7 +30,7 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/jessevdk/go-flags v1.4.0
+	github.com/jessevdk/go-flags v1.5.0
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/masters-of-cats/test-log-emitter v0.0.0-20210209153813-5439da8da0ee
