@@ -26,7 +26,7 @@ require (
 	github.com/cloudfoundry/bosh-utils v0.0.0-20210206100354-910bbc6b59f7 // indirect
 	github.com/cppforlife/go-patch v0.2.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2 // indirect
-	github.com/fatih/color v1.10.0
+	github.com/fatih/color v1.12.0
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
