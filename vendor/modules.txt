@@ -99,7 +99,7 @@ github.com/cloudfoundry/bosh-utils/system
 github.com/cppforlife/go-patch/patch
 # github.com/cyphar/filepath-securejoin v0.2.2
 ## explicit
-# github.com/fatih/color v1.13.0
+# github.com/fatih/color v1.14.0
 ## explicit; go 1.13
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.6.0
