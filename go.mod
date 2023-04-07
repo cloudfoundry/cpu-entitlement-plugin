@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.4
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
-	github.com/fatih/color v1.13.0
+	github.com/fatih/color v1.15.0
 	github.com/google/uuid v1.3.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/onsi/ginkgo/v2 v2.9.1
