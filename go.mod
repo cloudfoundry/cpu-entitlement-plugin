@@ -10,7 +10,7 @@ require (
 	code.cloudfoundry.org/go-loggregator/v9 v9.0.8
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.16.0
 	github.com/google/uuid v1.4.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/onsi/ginkgo/v2 v2.13.0
@@ -61,7 +61,7 @@ require (
 	github.com/vito/go-interact v1.0.1 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
