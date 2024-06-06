@@ -1,5 +1,5 @@
-code.cloudfoundry.org/bytefmt v0.0.0-20240604172014-5a751eb643b0 h1:/zh+lZn/dv5wns9ZFzolffRDQzjVq9RVHIhmZmjew2s=
-code.cloudfoundry.org/bytefmt v0.0.0-20240604172014-5a751eb643b0/go.mod h1:UYsU3izGHz/6DkJDzzw0ZjiiNBN8r1/G1a8/2d8gAcc=
+code.cloudfoundry.org/bytefmt v0.0.0-20240605172156-426a20f739e3 h1:fSJMcWk8S5OfswyqeZknpDt8kgS7ZwPXTklFwhsShRk=
+code.cloudfoundry.org/bytefmt v0.0.0-20240605172156-426a20f739e3/go.mod h1:6t7O2mRAFItor74whTAsxXw832+Khw5XdWT6CDqRWcU=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824 h1:gHbMLOZED3z99o6VaIUvMSRQlftamthLWuSf57e2S2s=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824/go.mod h1:vJ99VROIOJj9qZiKAkOsUwOcZvJCByATx1a/LB3JhxA=
 code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c h1:m9Gfb4F5SYOZmGR6U4T028I3f3O21wxdX2CqewoTgKQ=
