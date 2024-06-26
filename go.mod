@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.0.0-20240622173923-7a5a4f8651ac // indirect
+	code.cloudfoundry.org/bytefmt v0.0.0-20240625174231-fca5dc407bce // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
