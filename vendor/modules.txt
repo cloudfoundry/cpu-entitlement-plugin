@@ -61,7 +61,7 @@ code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
 ## explicit; go 1.19
 code.cloudfoundry.org/test-log-emitter/emitters
-# code.cloudfoundry.org/tlsconfig v0.0.0-20240613173017-075d5b187a0d
+# code.cloudfoundry.org/tlsconfig v0.0.0-20240702174858-4c0df2f29c62
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2
@@ -87,7 +87,7 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli v6.4.1+incompatible
 ## explicit
 github.com/cloudfoundry/bosh-cli/director/template
-# github.com/cloudfoundry/bosh-utils v0.0.475
+# github.com/cloudfoundry/bosh-utils v0.0.477
 ## explicit; go 1.21.0
 github.com/cloudfoundry/bosh-utils/errors
 github.com/cloudfoundry/bosh-utils/logger
