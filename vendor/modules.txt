@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.0.0-20240721180527-4329f371d5d3
+# code.cloudfoundry.org/bytefmt v0.0.0-20240722180632-e94c220fe743
 ## explicit; go 1.20
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
@@ -34,7 +34,7 @@ code.cloudfoundry.org/cli/util/ui
 code.cloudfoundry.org/cli/version
 # code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c
 ## explicit; go 1.12
-# code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 => code.cloudfoundry.org/go-diodes v0.0.0-20221128154616-f0ef2e038721
+# code.cloudfoundry.org/go-diodes v0.0.0-20240723012033-bf559dd3d0b1 => code.cloudfoundry.org/go-diodes v0.0.0-20221128154616-f0ef2e038721
 ## explicit; go 1.18
 code.cloudfoundry.org/go-diodes
 # code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65

@@ -18,9 +18,9 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.0.0-20240721180527-4329f371d5d3 // indirect
+	code.cloudfoundry.org/bytefmt v0.0.0-20240722180632-e94c220fe743 // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20240723012033-bf559dd3d0b1 // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240712175922-ffce9516cec8 // indirect
 	github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2 // indirect
