@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.0.0-20240725181214-870a2a4a34a6 // indirect
+	code.cloudfoundry.org/bytefmt v0.0.0-20240726181224-f9b67668c814 // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240723012033-bf559dd3d0b1 // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
@@ -30,14 +30,14 @@ require (
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
 	github.com/charlievieth/fs v0.0.3 // indirect
 	github.com/cloudfoundry/bosh-cli v6.4.1+incompatible // indirect
-	github.com/cloudfoundry/bosh-utils v0.0.479 // indirect
+	github.com/cloudfoundry/bosh-utils v0.0.480 // indirect
 	github.com/cppforlife/go-patch v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240722153945-304e4f0156b8 // indirect
+	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.21.0 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
