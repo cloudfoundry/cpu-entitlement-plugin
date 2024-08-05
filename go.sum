@@ -1,5 +1,5 @@
-code.cloudfoundry.org/bytefmt v0.0.0-20240730181512-d61d30bca0a4 h1:0TdG8CEvxn4T76pDdDRdkvUrXvhHnRH5dV/Ldc8rmPs=
-code.cloudfoundry.org/bytefmt v0.0.0-20240730181512-d61d30bca0a4/go.mod h1:ujeJbPDuEVVnMj8TgwGJEZ2BCcYOaIa7EVRXu995UKY=
+code.cloudfoundry.org/bytefmt v0.0.0-20240804182054-0a63f33a903d h1:ZLm6EHoj1ci9UabYcqoReI2NMXXkKKqPU0tFN2r2kqE=
+code.cloudfoundry.org/bytefmt v0.0.0-20240804182054-0a63f33a903d/go.mod h1:0uEmgxxcOTCe4IeYr8HTbVll002oKimIOGp7vuHVK/o=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824 h1:gHbMLOZED3z99o6VaIUvMSRQlftamthLWuSf57e2S2s=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824/go.mod h1:vJ99VROIOJj9qZiKAkOsUwOcZvJCByATx1a/LB3JhxA=
 code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c h1:m9Gfb4F5SYOZmGR6U4T028I3f3O21wxdX2CqewoTgKQ=
@@ -22,8 +22,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269 h1:FZ7taAmJcTMD2fMBhFUdpfB0kDSXreGQ4ZGF/hxCIcc=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269/go.mod h1:WcLPbgVlRurgazEsaJaCUWzqRg9GIO00o7pWXu5KI2Q=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240730181439-b476395a9e4e h1:Z18hGYNNUAk/dOqEhJNgRGmvnDGXFS+bJUsp0OgNNms=
-code.cloudfoundry.org/tlsconfig v0.0.0-20240730181439-b476395a9e4e/go.mod h1:rzAVGsG1hc6rKuO3zhRZX0rAPtoHLPliSi5478EV6vs=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240804182054-12ab4b1e7eda h1:IH2c3/+jbm9+ZywFR6IZp8DGjUsfZ4doRTtawTa9+jM=
+code.cloudfoundry.org/tlsconfig v0.0.0-20240804182054-12ab4b1e7eda/go.mod h1:Z1OHjOzKJsuapmNYyABoaiapt40bEVkfMU3MfiNUWb0=
 code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d h1:M+zXqtXJqcsmpL76aU0tdl1ho23eYa4axYoM4gD62UA=
 code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d/go.mod h1:YUJiVOr5xl0N/RjMxM1tHmgSpBbi5UM+KoVR5AoejO0=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=

@@ -18,11 +18,11 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.0.0-20240730181512-d61d30bca0a4 // indirect
+	code.cloudfoundry.org/bytefmt v0.0.0-20240804182054-0a63f33a903d // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240730232652-ce6331b0e7c0 // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240730181439-b476395a9e4e // indirect
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240804182054-12ab4b1e7eda // indirect
 	github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
