@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.1.0
+	code.cloudfoundry.org/lager/v3 v3.2.0
 	code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
 	github.com/fatih/color v1.17.0
 	github.com/google/uuid v1.6.0
@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.1.0 // indirect
+	code.cloudfoundry.org/bytefmt v0.2.0 // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240813203737-5032edb05ceb // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
@@ -51,7 +51,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/vito/go-interact v1.0.1 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/term v0.23.0 // indirect

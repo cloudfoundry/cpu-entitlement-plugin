@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.1.0
+# code.cloudfoundry.org/bytefmt v0.2.0
 ## explicit; go 1.20
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
@@ -52,7 +52,7 @@ code.cloudfoundry.org/jsonry
 code.cloudfoundry.org/jsonry/internal/errorcontext
 code.cloudfoundry.org/jsonry/internal/path
 code.cloudfoundry.org/jsonry/internal/tree
-# code.cloudfoundry.org/lager/v3 v3.1.0
+# code.cloudfoundry.org/lager/v3 v3.2.0
 ## explicit; go 1.20
 code.cloudfoundry.org/lager/v3
 code.cloudfoundry.org/lager/v3/internal/truncate
@@ -231,7 +231,7 @@ github.com/vito/go-interact/interact/terminal
 # golang.org/x/crypto v0.26.0
 ## explicit; go 1.20
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
+# golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/slices
