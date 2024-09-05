@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.5.0
+# code.cloudfoundry.org/bytefmt v0.7.0
 ## explicit; go 1.22
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
@@ -61,7 +61,7 @@ code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
 ## explicit; go 1.19
 code.cloudfoundry.org/test-log-emitter/emitters
-# code.cloudfoundry.org/tlsconfig v0.2.0
+# code.cloudfoundry.org/tlsconfig v0.3.0
 ## explicit; go 1.22
 code.cloudfoundry.org/tlsconfig
 # github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2
@@ -87,7 +87,7 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli v6.4.1+incompatible
 ## explicit
 github.com/cloudfoundry/bosh-cli/director/template
-# github.com/cloudfoundry/bosh-utils v0.0.486
+# github.com/cloudfoundry/bosh-utils v0.0.491
 ## explicit; go 1.21.0
 github.com/cloudfoundry/bosh-utils/errors
 github.com/cloudfoundry/bosh-utils/logger
@@ -228,10 +228,10 @@ github.com/sirupsen/logrus
 ## explicit
 github.com/vito/go-interact/interact
 github.com/vito/go-interact/interact/terminal
-# golang.org/x/crypto v0.26.0
+# golang.org/x/crypto v0.27.0
 ## explicit; go 1.20
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.28.0
+# golang.org/x/net v0.29.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -243,15 +243,15 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sys v0.24.0
+# golang.org/x/sys v0.25.0
 ## explicit; go 1.18
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.23.0
+# golang.org/x/term v0.24.0
 ## explicit; go 1.18
 golang.org/x/term
-# golang.org/x/text v0.17.0
+# golang.org/x/text v0.18.0
 ## explicit; go 1.18
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
