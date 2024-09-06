@@ -1,5 +1,5 @@
-code.cloudfoundry.org/bytefmt v0.7.0 h1:8TSEO+rtgRuKPEqPmYf72rnaBc7Heof8/Z0a0imXKLo=
-code.cloudfoundry.org/bytefmt v0.7.0/go.mod h1:YJgoNh6Ly7NlfRp6e1GnRipSPiAAW1oW0tkdDL3e254=
+code.cloudfoundry.org/bytefmt v0.8.0 h1:T5aGtk7RWCo6iZRFPN8nkUdrNpW1egxT2tGgGoCKEVc=
+code.cloudfoundry.org/bytefmt v0.8.0/go.mod h1:r5KBvu0c5aqYIwEVkQMRo7HAEMm1pTnkwxRicbgdDEc=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824 h1:gHbMLOZED3z99o6VaIUvMSRQlftamthLWuSf57e2S2s=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824/go.mod h1:vJ99VROIOJj9qZiKAkOsUwOcZvJCByATx1a/LB3JhxA=
 code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c h1:m9Gfb4F5SYOZmGR6U4T028I3f3O21wxdX2CqewoTgKQ=
@@ -22,8 +22,8 @@ code.cloudfoundry.org/lager/v3 v3.3.0 h1:adWGo2aBLpHVfUG+3D2FQ4B6Mf2Bcz47KITbn8V
 code.cloudfoundry.org/lager/v3 v3.3.0/go.mod h1:k/AYgZTVrwQaneNfQ2EwnZxUb9iUFE7i6AJ3KVOtAdE=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269 h1:FZ7taAmJcTMD2fMBhFUdpfB0kDSXreGQ4ZGF/hxCIcc=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269/go.mod h1:WcLPbgVlRurgazEsaJaCUWzqRg9GIO00o7pWXu5KI2Q=
-code.cloudfoundry.org/tlsconfig v0.3.0 h1:403Gi+oetS8UmrmliF8PeYff/WlOPCoMX2L1fgJICfo=
-code.cloudfoundry.org/tlsconfig v0.3.0/go.mod h1:2x5SW9lTCTc7rxNMU9nh1xBLJ0EMATVnCgED2Br3I1w=
+code.cloudfoundry.org/tlsconfig v0.4.0 h1:yPk995C/KPW7Ck57VqS6chJAKnzTdE/QnXjHLOrrFOw=
+code.cloudfoundry.org/tlsconfig v0.4.0/go.mod h1:AUJ2Wk4VsDw+VDtu7/bK49hbgjy7gScv8ocPTDPKRhw=
 code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d h1:M+zXqtXJqcsmpL76aU0tdl1ho23eYa4axYoM4gD62UA=
 code.cloudfoundry.org/ykk v0.0.0-20170424192843-e4df4ce2fd4d/go.mod h1:YUJiVOr5xl0N/RjMxM1tHmgSpBbi5UM+KoVR5AoejO0=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
@@ -48,8 +48,8 @@ github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5P
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
 github.com/cloudfoundry/bosh-cli v6.4.1+incompatible h1:n5/+NIF9QxvGINOrjh6DmO+GTen78MoCj5+LU9L8bR4=
 github.com/cloudfoundry/bosh-cli v6.4.1+incompatible/go.mod h1:rzIB+e1sn7wQL/TJ54bl/FemPKRhXby5BIMS3tLuWFM=
-github.com/cloudfoundry/bosh-utils v0.0.491 h1:K9YQI9NKJKUQzybU68C/L0NpLvvrwUxJGGtHQqulu8I=
-github.com/cloudfoundry/bosh-utils v0.0.491/go.mod h1:G/4pEwWIXnwnK+RM472+A+YWbfmrwH4xzx7qkdRKsQ8=
+github.com/cloudfoundry/bosh-utils v0.0.494 h1:imtDjRQvKntzE6Nu5ln7llzYoqFiGj73C0dWowUnypI=
+github.com/cloudfoundry/bosh-utils v0.0.494/go.mod h1:GeUdAR5l8z7OYwFkj/eJ+JcyknQZN57UFokguTrXBZs=
 github.com/codegangsta/negroni v1.0.0/go.mod h1:v0y3T5G7Y1UlFfyxFn/QLRU4a2EuNau2iZY63YTKWo0=
 github.com/cppforlife/go-patch v0.2.0 h1:Y14MnCQjDlbw7WXT4k+u6DPAA9XnygN4BfrSpI/19RU=
 github.com/cppforlife/go-patch v0.2.0/go.mod h1:67a7aIi94FHDZdoeGSJRRFDp66l9MhaAG1yGxpUoFD8=

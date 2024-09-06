@@ -1,8 +1,8 @@
 module code.cloudfoundry.org/cpu-entitlement-plugin
 
-go 1.22
+go 1.22.0
 
-toolchain go1.22.2
+toolchain go1.22.3
 
 require (
 	code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
@@ -18,11 +18,11 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.7.0 // indirect
+	code.cloudfoundry.org/bytefmt v0.8.0 // indirect
 	code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240813203737-5032edb05ceb // indirect
 	code.cloudfoundry.org/jsonry v1.1.4 // indirect
-	code.cloudfoundry.org/tlsconfig v0.3.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.4.0 // indirect
 	github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -30,7 +30,7 @@ require (
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
 	github.com/charlievieth/fs v0.0.3 // indirect
 	github.com/cloudfoundry/bosh-cli v6.4.1+incompatible // indirect
-	github.com/cloudfoundry/bosh-utils v0.0.491 // indirect
+	github.com/cloudfoundry/bosh-utils v0.0.494 // indirect
 	github.com/cppforlife/go-patch v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

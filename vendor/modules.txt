@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.7.0
+# code.cloudfoundry.org/bytefmt v0.8.0
 ## explicit; go 1.22
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
@@ -61,7 +61,7 @@ code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
 ## explicit; go 1.19
 code.cloudfoundry.org/test-log-emitter/emitters
-# code.cloudfoundry.org/tlsconfig v0.3.0
+# code.cloudfoundry.org/tlsconfig v0.4.0
 ## explicit; go 1.22
 code.cloudfoundry.org/tlsconfig
 # github.com/SermoDigital/jose v0.9.2-0.20161205224733-f6df55f235c2
@@ -87,8 +87,8 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli v6.4.1+incompatible
 ## explicit
 github.com/cloudfoundry/bosh-cli/director/template
-# github.com/cloudfoundry/bosh-utils v0.0.491
-## explicit; go 1.21.0
+# github.com/cloudfoundry/bosh-utils v0.0.494
+## explicit; go 1.22.0
 github.com/cloudfoundry/bosh-utils/errors
 github.com/cloudfoundry/bosh-utils/logger
 github.com/cloudfoundry/bosh-utils/system
