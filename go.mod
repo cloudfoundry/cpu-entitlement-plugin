@@ -8,7 +8,7 @@ require (
 	code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
 	code.cloudfoundry.org/go-log-cache v1.0.1-0.20230106184352-6dc0e9ab2e65
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.3.0
+	code.cloudfoundry.org/lager/v3 v3.4.0
 	code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269
 	github.com/fatih/color v1.17.0
 	github.com/google/uuid v1.6.0
@@ -55,7 +55,7 @@ require (
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
