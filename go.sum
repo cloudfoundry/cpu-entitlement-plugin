@@ -1,5 +1,5 @@
-code.cloudfoundry.org/bytefmt v0.8.0 h1:T5aGtk7RWCo6iZRFPN8nkUdrNpW1egxT2tGgGoCKEVc=
-code.cloudfoundry.org/bytefmt v0.8.0/go.mod h1:r5KBvu0c5aqYIwEVkQMRo7HAEMm1pTnkwxRicbgdDEc=
+code.cloudfoundry.org/bytefmt v0.9.0 h1:PmZlKwcjR2KqjhDCPcWDMyZYaspXCshkeQ+bfHAg+nM=
+code.cloudfoundry.org/bytefmt v0.9.0/go.mod h1:WEpQg+9NS7k9tV66pocDKhliJWLTXwB8C5rL5isF8nc=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824 h1:gHbMLOZED3z99o6VaIUvMSRQlftamthLWuSf57e2S2s=
 code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824/go.mod h1:vJ99VROIOJj9qZiKAkOsUwOcZvJCByATx1a/LB3JhxA=
 code.cloudfoundry.org/cli-plugin-repo v0.0.0-20210527163012-bfc589866b5c h1:m9Gfb4F5SYOZmGR6U4T028I3f3O21wxdX2CqewoTgKQ=
@@ -18,8 +18,8 @@ code.cloudfoundry.org/gofileutils v0.0.0-20170111115228-4d0c80011a0f h1:UrKzEwTg
 code.cloudfoundry.org/gofileutils v0.0.0-20170111115228-4d0c80011a0f/go.mod h1:sk5LnIjB/nIEU7yP5sDQExVm62wu0pBh3yrElngUisI=
 code.cloudfoundry.org/jsonry v1.1.4 h1:P9N7IlH1/4aRCLcXLgLFj1hkcBmV7muijJzY+K6U4hE=
 code.cloudfoundry.org/jsonry v1.1.4/go.mod h1:6aKilShQP7w/Ez76h1El2/n9y2OkHuU56nKSBB9Gp0A=
-code.cloudfoundry.org/lager/v3 v3.4.0 h1:HflFoHezSfYDIMNxkGctLKgWIvkr5cJqfo8BHGKOlCw=
-code.cloudfoundry.org/lager/v3 v3.4.0/go.mod h1:tpvCqzex59vTU7Ssgxo9h367EGiL6CrNzuohvnTbsEk=
+code.cloudfoundry.org/lager/v3 v3.5.0 h1:6I00P+t0LlzVxZadPntz3dbrTNEzvWg5y9DFdFrEV54=
+code.cloudfoundry.org/lager/v3 v3.5.0/go.mod h1:1wnCVjRSGEEelGLGVpIl4nXiNPDTaBaLyhQh1Yz5HX4=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269 h1:FZ7taAmJcTMD2fMBhFUdpfB0kDSXreGQ4ZGF/hxCIcc=
 code.cloudfoundry.org/test-log-emitter v0.0.0-20230301191511-86176b7ee269/go.mod h1:WcLPbgVlRurgazEsaJaCUWzqRg9GIO00o7pWXu5KI2Q=
 code.cloudfoundry.org/tlsconfig v0.4.0 h1:yPk995C/KPW7Ck57VqS6chJAKnzTdE/QnXjHLOrrFOw=
@@ -98,8 +98,8 @@ github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17
 github.com/google/gofuzz v1.2.0 h1:xRy4A+RhZaiKjJ1bPfwQ8sedCA+YS2YcCHW6ec7JMi0=
 github.com/google/gofuzz v1.2.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
-github.com/google/pprof v0.0.0-20240903155634-a8630aee4ab9 h1:q5g0N9eal4bmJwXHC5z0QCKs8qhS35hFfq0BAYsIwZI=
-github.com/google/pprof v0.0.0-20240903155634-a8630aee4ab9/go.mod h1:vavhavw2zAxS5dIdcRluK6cSGGPlZynqzFM8NdvU144=
+github.com/google/pprof v0.0.0-20240910150728-a0b0bb1d4134 h1:c5FlPPgxOn7kJz3VoPLkQYQXGBS3EklQ4Zfi57uOuqQ=
+github.com/google/pprof v0.0.0-20240910150728-a0b0bb1d4134/go.mod h1:vavhavw2zAxS5dIdcRluK6cSGGPlZynqzFM8NdvU144=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 h1:asbCHRVmodnJTuQ3qamDwqVOIjwqUPTYmYuemVOx+Ys=
@@ -274,8 +274,8 @@ google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 h1:
 google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1/go.mod h1:qpvKtACPCQhAdu3PyQgV4l3LMXZEtft7y8QcarRsp9I=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 h1:pPJltXNxVzT4pK9yD8vR9X75DaWYYmLGMsEvBfFQZzQ=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1/go.mod h1:UqMtugtsSgubUsoxbuAoiCXvqvErP7Gf0so0mK9tHxU=
-google.golang.org/grpc v1.66.0 h1:DibZuoBznOxbDQxRINckZcUvnCEvrW9pcWIE2yF9r1c=
-google.golang.org/grpc v1.66.0/go.mod h1:s3/l6xSSCURdVfAnL+TqCNMyTDAGN6+lZeVxnZR128Y=
+google.golang.org/grpc v1.66.1 h1:hO5qAXR19+/Z44hmvIM4dQFMSYX9XcWsByfoxutBpAM=
+google.golang.org/grpc v1.66.1/go.mod h1:s3/l6xSSCURdVfAnL+TqCNMyTDAGN6+lZeVxnZR128Y=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
 google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQJ+fmap5saPgwCLgHXTUD7jkjRqWcaiX5VyM=
