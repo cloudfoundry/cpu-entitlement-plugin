@@ -1,3 +1,7 @@
+# ⚠️ This plugin is deprecated ⚠️
+There is now a CPU entitlement metric in CF CLI. In CF CLI v8 there is a new column "CPU Entitlement". In CF CLI v9+ this "CPU Entitlemnet metric" will replace the previous "CPU" metric. You read more about it in the [github issue here](https://github.com/cloudfoundry/cli/issues/2812).
+
+
 # Cloud Foundry CPU Entitlement Plugin (EXPERIMENTAL)
 
 Examine the CPU usage of Cloud Foundry applications, relative to their CPU
