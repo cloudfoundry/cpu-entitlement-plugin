@@ -1,8 +1,6 @@
 module code.cloudfoundry.org/cpu-entitlement-plugin
 
-go 1.22.0
-
-toolchain go1.22.3
+go 1.23.0
 
 require (
 	code.cloudfoundry.org/cli v0.0.0-20240402030811-38445c12f824
